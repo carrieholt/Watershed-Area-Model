@@ -15,3 +15,5 @@ double LambertW(double x) {
   if (i == niter) Rf_warning("W: failed convergence");
   return y;
 }
+
+// Add MakeADFun() function calls in phases as in IFR coho SR

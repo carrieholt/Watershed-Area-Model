@@ -12,6 +12,7 @@ library(ggplot2)
 library(gridExtra)
 library(reshape2)
 library(TMB)
+library(zoo)
 
 
 sourceAll <- function(){
@@ -36,88 +37,28 @@ SRDat <- read.csv("DataIn/SRDat.csv")
 
 
 
-
-# Change header names to match generic data headers (this will allow generic functions from Functions.r to be used)
-colnames(CoEscpDat)[colnames(CoEscpDat)=="CU_ID"] <- "CU"
-colnames(CoEscpDat)[colnames(CoEscpDat)=="MU_Name"] <- "MU"
-colnames(CoEscpDat)[colnames(CoEscpDat)=="ReturnYear"] <- "yr"
-colnames(CoEscpDat)[colnames(CoEscpDat)=="Escapement"] <- "Escp"
-
-# ==================================================================================
-# Call functions to plot data availability:
-# ====================================================================================
-plot_CU_DataObs_Over_Time(CoEscpDat, cohoDir, plotName="Fr_Co_DataByCU")
-plot_Num_CUs_Over_Time(CoEscpDat, cohoDir, plotName="Fr_Co_N_CUs")
-
-# Note: these next 2 two escpt plots need to have formatting fixed
-plot_CU_Escp_Over_Time(CoEscpDat, cohoDir, plotName="IFC Esc", samePlot = T)
-plot_CU_Escp_Over_Time(CoEscpDat, cohoDir, plotName="IFC Esc Separate", samePlot = F)
-plot_CU_EscpRatio_Over_Time(CoEscpDat, cohoDir, plotName="Fr_Chinook_EscpRatioByCUs",baseYr=1998)
-
 # ==================================================================================================================
-# Run retrospective analyses:
+# Set up inputs
 # =====================================================================================================================
 
 TMB_Inputs <- list(Scale = 1000, logA_Start = 1, logMuA_mean = 2.5, 
                    logMuA_sig = 2, Tau_dist = 0.1, Tau_A_dist = 0.1, 
                    gamma_mean = 0, gamma_sig = 10, S_dep = 1000, Sgen_sig = 1)
 
-# Run annual restrospective analyses over various levels of p, restrict escapement dataset to 1998+ ============================================================
-# Restrict data set to years 1998+ based on recommendation from Michael Arbeider
-CoEscpDat <- CoEscpDat %>% filter(yr >= 1998)
-CoSRDat <- CoSRDat %>% filter(BroodYear >= 1998)
-
-# Roll up escpaments, and get Gen Mean of htat
-AggEscp <- CoEscpDat %>% group_by(yr) %>% summarise(Agg_Escp = sum(Escp)) %>%
-  mutate(Gen_Mean = rollapply(Agg_Escp, 3, gm_mean, fill = NA, align="right"))
 
 # Choose p values and run annual retrospective analyses for each level of p
 ps <- c(seq(0.5, 0.95,.05), 0.99)
 pp <- 1
-
-# Inputs for retrospective analyses
-EscpDat <- CoEscpDat
-SRDat <- CoSRDat
-startYr <- 2015
-endYr <- 2018
-BroodYrLag <- 2
-genYrs <- 3
 p <- ps[pp]
-BMmodel <- "Aggregate_LRPs"
+
+# Other inputs 
+genYrs <- 3
+Mod <- "Aggregate_LRPs"
 LRPmodel <- "BinLogistic"
-integratedModel <- T
-useGenMean <- F
-TMBInputs <- TMB_Inputs
-outDir <- cohoDir
-RunName <- paste("Bin.AggEscp_",ps[pp]*100, sep="")
-bootstrapMode <- F
-plotLRP=T
+if (LRPmodel == "BernLogistic") Bern_Logistic <- TRUE
+if (LRPmodel == "BinLogistic") Bern_Logistic <- FALSE
 
-#Retro set up
-yearList<-startYr:endYr
-RunInfo <- data.frame(BMmodel, LRPmodel, useGenMean, integratedModel)
-yy <- 1 #First year in retro only
-Dat <-SRDat %>%  filter(BroodYear <= (yearList[yy])-BroodYrLag)
-EscpDat.yy <- EscpDat %>% filter(yr <= yearList[yy]) 
-if (LRPmodel == "BernLogistic") useBern_Logistic <- TRUE
-if (LRPmodel == "BinLogistic") useBern_Logistic <- FALSE
 
-Dat$yr_num <- group_indices(Dat, BroodYear) - 1
-Dat$CU_ID <- group_indices(Dat, CU_ID) - 1
-EscDat <- EscpDat.yy %>%  right_join(unique(Dat[,c("CU_ID", "CU_Name")]))
-
-#LRP_Mod <- Run_Ricker_LRP(SRDat = Dat, EscDat = EscDat, Mod = BMmodel, Bern_Logistic = useBern_Logistic, 
-
-#                          useGenMean = useGenMean, genYrs = genYrs, p = p,  TMB_Inputs)
-#LRP_Mod$LRP
-SRDat <- Dat
-EscDat <- EscDat
-Mod <- BMmodel
-Bern_Logistic <- useBern_Logistic
-useGenMean <- useGenMean
-genYrs <- genYrs
-p <- p
-TMB_Inputs
 
 #Run_Ricker_LRP function
 Scale <- TMB_Inputs$Scale
@@ -131,9 +72,7 @@ data$yr <- SRDat$yr_num
 data$Bern_Logistic <- as.numeric(Bern_Logistic)
 
 # also give model year for which will fit logistic model
-# only give S_Compare values when all obs for all CUs
-# give stocks associated with S_Compare
-# which years do we have obs for all CUs?
+# Only fit the logistic model to years when all CUs have escapement data
 
 Num_CUs_Over_Time <- EscDat %>%  filter(is.na(Escp) == F) %>% group_by(yr) %>% summarise(n=length(unique((CU_Name))))
 Mod_Yrs <- Num_CUs_Over_Time$yr[Num_CUs_Over_Time$n == max(Num_CUs_Over_Time$n)]

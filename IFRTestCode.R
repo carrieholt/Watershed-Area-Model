@@ -1,8 +1,10 @@
-# Code by K.Holt & B.Davis
-# Started on: February 7, 2020
+# Code by C.Holt, Adapted from LRP code developed by K. Holt and B. Davis
 
-# This file contains the code required to explore Interior Fraser Coho escapement datasets and run retrospective analyses of 
-#   data-based LRPs that use logistic regressions
+# Purposes: 
+# (1) estiamte parameters watershed-area model for Chinook salmon, 
+# (2) estimate CU-level benchmarks based on watershed-area model
+# (3) estimate SMU-level LRPs based on logistic regression
+
 library(MASS) # dose.p function to get SE around P95
 library(rsample)
 library(tidyverse)
@@ -14,39 +16,23 @@ library(TMB)
 
 sourceAll <- function(){
   source("benchmarkFunctions.r")
-  source("LRPFunctions.r")
-  source("plotFunctions.r")
-  source("retroFunctions.r")
   source("helperFunctions.r")
 }
 sourceAll()
 
-# If using Integrated models need to load
+# Load TMB  model
 
-# only need to compile if changed model
+# Compile model if changed:
 #dyn.unload(dynlib("TMB_Files/Aggregate_LRPs"))
-#dyn.unload(dynlib("TMB_Files/Aggregate_LRPs_Hier_Surv"))
 #compile("TMB_Files/Aggregate_LRPs.cpp")
-# compile("TMB_Files/Aggregate_LRPs_Hier_Surv.cpp")
-# compile("TMB_Files/Aggregate_LRPs_Hier_Surv_Dep.cpp")
-# compile("TMB_Files/Aggregate_LRPs_Hier_Surv_NoPriors.cpp")
 
 dyn.load(dynlib("TMB_Files/Aggregate_LRPs"))
-dyn.load(dynlib("TMB_Files/Aggregate_LRPs_Hier_Surv"))
-dyn.load(dynlib("TMB_Files/Aggregate_LRPs_Hier_Surv_Dep"))
-dyn.load(dynlib("TMB_Files/Aggregate_LRPs_Hier_Surv_NoPriors"))
 
 # ======================================================================
-# Read-in Coho data:  
+# Read-in example data:  
 # =====================================================================
-codeDir<-getwd()
-setwd('..')
-tmpDir<-getwd()
-cohoDir<-paste(tmpDir,"/IFCohoStudy",sep="")
-setwd(cohoDir)
-CoEscpDat <- read.csv("DataIn/IFCoho_escpByCU.csv")
-CoSRDat <- read.csv("DataIn/IFCoho_SRbyCU.csv")
-setwd(codeDir)
+EscDat <- read.csv("DataIn/EscDat.csv")
+SRDat <- read.csv("DataIn/SRDat.csv")
 
 
 

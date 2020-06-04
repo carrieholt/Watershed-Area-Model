@@ -21,7 +21,7 @@ sourceAll <- function(){
 }
 sourceAll()
 
-# Load TMB  model
+# Load TMB  model (code by B. Davis, adapted by C. Holt)
 
 # Compile model if changed:
 #dyn.unload(dynlib("TMB_Files/Aggregate_LRPs"))
@@ -46,7 +46,7 @@ TMB_Inputs <- list(Scale = 1000, logA_Start = 1, logMuA_mean = 2.5,
                    gamma_mean = 0, gamma_sig = 10, S_dep = 1000, Sgen_sig = 1)
 
 
-# Choose p values and run annual retrospective analyses for each level of p
+# Choose p values for logistic model
 ps <- c(seq(0.5, 0.95,.05), 0.99)
 pp <- 1
 p <- ps[pp]
@@ -60,7 +60,7 @@ if (LRPmodel == "BinLogistic") Bern_Logistic <- FALSE
 
 
 
-#Run_Ricker_LRP function
+#Set up data and parameter lists for input into TMB model
 Scale <- TMB_Inputs$Scale
 data <- list()
 data$S <- SRDat$Spawners/Scale 
@@ -104,6 +104,12 @@ param$logSgen <-  log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spa
 param$B_0 <- 2
 param$B_1 <- 0.1
 
+
+
+# ==================================================================================================================
+# Run TMB
+# =====================================================================================================================
+
 # Phase 1 estimate SR params
 map <- list(logSgen=factor(rep(NA, data$N_Stks)), B_0=factor(NA), B_1=factor(NA)) # Determine which parameters to fix
 
@@ -132,8 +138,7 @@ opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max =
 pl2 <- obj$env$parList(opt$par) # Parameter estimate after phase 2
 summary(sdreport(obj))
 
-# Phase 3 fit logistic model
-# Hold other estimates constant
+# Phase 3 fit logistic model, holding  other estimates constant
 obj <- MakeADFun(data, pl2, DLL=Mod, silent=TRUE)
 
 opt <- tryCatch(
@@ -147,6 +152,11 @@ opt <- tryCatch(
     return(NA)
   }
 )   
+
+
+# ==================================================================================================================
+# Compile outputs
+# =====================================================================================================================
 
 # Create Table of outputs
 All_Ests <- data.frame(summary(sdreport(obj)))

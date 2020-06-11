@@ -122,6 +122,18 @@ summary(sdreport(obj))
 
 
 # Are residuals of Ricker model autocorrelated?
+All_Ests <- data.frame(summary(sdreport(obj)))
+All_Ests$Param <- row.names(All_Ests)
+# put together readable data frame of values
+All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))[[1]]))
+All_Ests$Mod <- Mod
+Preds <- All_Ests %>% filter(Param == "LogR_Pred")
+Preds <- Preds %>% add_column(yr=data$yr, stk=data$stk, logR=data$logR) %>% mutate(Resid=Estimate-logR) 
+ac <- Preds %>% group_by(stk) %>% summarise (autocorr=acf(Resid, plot=F)$acf[2])# provides AR(1) autocorrelation
+len <- Preds %>% group_by(stk) %>% summarise (count=length(Resid))
+ac.CI <- function(n) {qnorm((1 + 0.95)/2)/sqrt(n)} #95% CI for acf assuming white noise, see https://stackoverflow.com/questions/14266333/extract-confidence-interval-values-from-acf-correlogram
+len <- len %>% mutate (CI=ac.CI(count))
+# Need to compare absolut value of ac$autcorr with len$CI, then align with stock-name and output. I think it's the Lower Thompson with AR(1) in resids
 
 
 # pull out SMSY values

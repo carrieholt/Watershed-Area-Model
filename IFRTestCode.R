@@ -24,8 +24,8 @@ sourceAll()
 # Load TMB  model (code by B. Davis, adapted by C. Holt)
 
 # Compile model if changed:
-#dyn.unload(dynlib("TMB_Files/Aggregate_LRPs"))
-#compile("TMB_Files/Aggregate_LRPs.cpp")
+dyn.unload(dynlib("TMB_Files/Aggregate_LRPs"))
+compile("TMB_Files/Aggregate_LRPs.cpp")
 
 dyn.load(dynlib("TMB_Files/Aggregate_LRPs"))
 
@@ -119,6 +119,10 @@ obj <- MakeADFun(data, param, DLL=Mod, silent=TRUE, map=map)
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
 summary(sdreport(obj))
+
+
+# Are residuals of Ricker model autocorrelated?
+
 
 # pull out SMSY values
 All_Ests <- data.frame(summary(sdreport(obj)))

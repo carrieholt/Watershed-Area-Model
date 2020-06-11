@@ -80,6 +80,7 @@ Type objective_function<Type>::operator() ()
     ans += -dnorm(LogR_Pred(i), logR(i),  sigma(stk(i)), true);
   }
   
+  
   // Calculate SMSY using Lambert's W function
   // Approach from Scheurell 2016
   for(int i=0; i<N_Stks; i++){
@@ -152,6 +153,7 @@ Type objective_function<Type>::operator() ()
   ADREPORT(Agg_LRP);
   ADREPORT(A);
   ADREPORT(Logit_Preds);
+  ADREPORT(LogR_Pred);
   
   return ans;
   

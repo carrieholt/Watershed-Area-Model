@@ -1,6 +1,44 @@
 
 #--------------------------------------------------------------------------------------------
-# For  RIcker AR1, single stock
+# For  Ricker AR1, mulitiple stock
+SRDat <- read.csv("DataIn/SRDat.csv")
+
+TMB_Inputs <- list(Scale = 1000, logA_Start = 1, rho_Start = 0.1)
+
+
+#Set up data and parameter lists for input into TMB model
+Scale <- TMB_Inputs$Scale
+data <- list()
+data$S <- SRDat$Spawners/Scale 
+data$logR <- log(SRDat$Recruits/Scale)
+data$stk <- as.numeric(SRDat$CU_ID)
+N_Stocks <- length(unique(SRDat$CU_Name))
+data$yr <- SRDat$yr_num
+
+
+param <- list()
+param$logA <- rep(TMB_Inputs$logA_Start, N_Stocks)
+param$logB <- log(1/( (SRDat %>% group_by(CU_ID) %>% summarise(x=quantile(Spawners, 0.8)))$x/Scale) )
+param$rho <- rep(TMB_Inputs$rho_Start, N_Stocks)
+param$logSigma <- rep(-2, N_Stocks)
+
+
+# Compile model if changed:
+dyn.unload(dynlib("TMB_Files/Ricker_ar1"))
+compile("TMB_Files/Ricker_ar1.cpp")
+
+dyn.load(dynlib("TMB_Files/Ricker_ar1"))
+
+obj <- MakeADFun(data, param, DLL="Ricker_ar1", silent=TRUE)
+
+opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
+pl <- obj$env$parList(opt$par) 
+summary(sdreport(obj))
+
+
+
+#--------------------------------------------------------------------------------------------
+# For  Ricker AR1, single stock
 SRDat <- read.csv("DataIn/SRDat.csv")
 SRDat <- SRDat %>% filter (CU_ID==2)
 
@@ -73,6 +111,12 @@ RickerAR1.solver <- function(R,S){
   return(list(SRfit=SRfit, etheta=SRfit$par, V=V, X=X))
 }
 
+SRDat <- read.csv("DataIn/SRDat.csv")
+SRDat <- SRDat %>% filter (CU_ID==2)
+Scale <- TMB_Inputs$Scale
+data <- list()
+data$S <- SRDat$Spawners/Scale 
+data$logR <- log(SRDat$Recruits/Scale)
 ch <- RickerAR1.solver(exp(data$logR), data$S)$SRfit$par
 ch
 

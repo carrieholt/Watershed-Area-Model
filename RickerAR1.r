@@ -13,7 +13,7 @@ data <- list()
 data$S <- SRDat$Spawners/Scale 
 data$logR <- log(SRDat$Recruits/Scale)
 data$stk <- as.numeric(SRDat$CU_ID)
-
+N_Stocks <- length(unique(SRDat$CU_Name))
 data$yr <- SRDat$yr_num
 
 

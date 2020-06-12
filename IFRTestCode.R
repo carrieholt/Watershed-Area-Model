@@ -43,7 +43,8 @@ SRDat <- read.csv("DataIn/SRDat.csv")
 
 TMB_Inputs <- list(Scale = 1000, logA_Start = 1, logMuA_mean = 2.5, 
                    logMuA_sig = 2, Tau_dist = 0.1, Tau_A_dist = 0.1, 
-                   gamma_mean = 0, gamma_sig = 10, S_dep = 1000, Sgen_sig = 1)
+                   gamma_mean = 0, gamma_sig = 10, S_dep = 1000, Sgen_sig = 1,
+                   rho_Start = 0)
 
 
 # Choose p values for logistic model
@@ -99,6 +100,7 @@ data$Sgen_sig <- TMB_Inputs$Sgen_sig
 param <- list()
 param$logA <- rep(TMB_Inputs$logA_Start, N_Stocks)
 param$logB <- log(1/( (SRDat %>% group_by(CU_ID) %>% summarise(x=quantile(Spawners, 0.8)))$x/Scale) )
+param$rho <- rep(TMB_Inputs$rho_Start, N_Stocks)
 param$logSigma <- rep(-2, N_Stocks)
 param$logSgen <-  log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 param$B_0 <- 2

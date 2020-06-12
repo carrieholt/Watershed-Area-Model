@@ -40,30 +40,30 @@ summary(sdreport(obj))
 RickerAR1.model <- function(theta,R,S){
   a <- exp(as.numeric((theta[1])))
   b <- exp(as.numeric(theta[2]))
-  sig <- exp(as.numeric(theta[3]))
-  rho <- as.numeric(theta[4])
+  rho <- as.numeric(theta[3])
+  sig <- exp(as.numeric(theta[4]))
   n <- length(S)
-  PR <- NA
+  logPR <- NA
   dev <- NA
   for (i in 1:n){ 
     if (i==1) {
-      PR[i] <- a*S[i]*exp(-b*S[i])
-      dev[i] <- R[i]-PR[i]
+      logPR[i] <- log(a) + log(S[i]) - b * S[i]
+      dev[i] <- log(R[i]) - logPR[i]
       }
     if (i>=2) {
-      PR[i] <- a*S[i]*exp(-b*S[i])*exp(rho*dev[i-1])
-      dev[i] <- R[i]-PR[i]
+      logPR[i] <- log(a) + log(S[i]) -b * S[i] + rho * dev[i-1]
+      dev[i] <- log(R[i]) - logPR[i]
       }
   }
-  epsilon.wna=log(R)-log(PR)	#residuals
-  epsilon=as.numeric(na.omit(epsilon.wna))
-  nloglike = -sum(dnorm(epsilon,0,sig, log=T))
+  epsilon.wna <- log(R) - logPR	#residuals
+  epsilon <- as.numeric(na.omit(epsilon.wna))
+  nloglike <- -sum(dnorm(epsilon,0,sig, log=T))
   #return(list(PR=PR, epsilon=epsilon, nloglike=nloglike)) 
   return(nloglike=nloglike) 
 }
 
 RickerAR1.solver <- function(R,S){
-  init.vals<-c(1,-2.4,-2,0)
+  init.vals<-c(1,-2.4,0.1,-2)
   SRfit=optim(par=init.vals,fn=RickerAR1.model,R=R,S=S, method="BFGS", hessian=T)	#CH: hessian=2nd derivative, optim good for up to 40 parameters
   V=solve(SRfit$hessian) #covariance matrix
   std=sqrt(abs(diag(V)))
@@ -71,7 +71,7 @@ RickerAR1.solver <- function(R,S){
   return(list(SRfit=SRfit, etheta=SRfit$par, V=V, X=X))
 }
 
-ch <- c(exp(RickerAR1.solver(exp(data$logR), data$S)$SRfit$par[1:3]),RickerAR1.solver(exp(data$logR), data$S)$SRfit$par[4])
+ch <- RickerAR1.solver(exp(data$logR), data$S)$SRfit$par
 ch
 
 

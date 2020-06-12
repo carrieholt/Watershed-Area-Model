@@ -11,8 +11,7 @@ Type objective_function<Type>:: operator() ()
   PARAMETER(logA);
   PARAMETER(logB);
   PARAMETER(logSigma);
-  PARAMETER(rho);
-  
+
   
   Type ans=0.0;
   int N_Obs = S.size(); 
@@ -24,10 +23,7 @@ Type objective_function<Type>:: operator() ()
   
   // Ricker likelihood
   for (int i = 0; i<N_Obs; i++){
-    if (i == 0) { err(i) = 0;
-    } else if (i >= 1) { err(i) = err(i-1) * rho;
-      }
-    LogR_Pred(i) = logA + log(S(i)) - exp(logB) * S(i) + err(i);
+    LogR_Pred(i) = logA + log(S(i)) - exp(logB) * S(i);
     ans += -dnorm(LogR_Pred(i), logR(i),  sigma, true);
   }
   

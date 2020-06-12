@@ -1,5 +1,6 @@
 
-# For  RIcker AR1
+#--------------------------------------------------------------------------------------------
+# For  RIcker AR1, single stock
 SRDat <- read.csv("DataIn/SRDat.csv")
 SRDat <- SRDat %>% filter (CU_ID==2)
 
@@ -24,19 +25,20 @@ param$logSigma <- rep(-2, N_Stocks)
 
 
 # Compile model if changed:
-dyn.unload(dynlib("TMB_Files/Ricker_ar1"))
-compile("TMB_Files/Ricker_ar1.cpp")
+dyn.unload(dynlib("TMB_Files/Ricker_ar1_single"))
+compile("TMB_Files/Ricker_ar1_single.cpp")
 
-dyn.load(dynlib("TMB_Files/Ricker_ar1"))
+dyn.load(dynlib("TMB_Files/Ricker_ar1_single"))
 
-obj <- MakeADFun(data, param, DLL="Ricker_ar1", silent=TRUE)
+obj <- MakeADFun(data, param, DLL="Ricker_ar1_single", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
 pl <- obj$env$parList(opt$par) 
 summary(sdreport(obj))
 
 
-#R functions for Ricker AR1
+#--------------------------------------------------------------------------------------------
+#R functions for Ricker AR1, single stock
 RickerAR1.model <- function(theta,R,S){
   a <- exp(as.numeric((theta[1])))
   b <- exp(as.numeric(theta[2]))
@@ -75,7 +77,10 @@ ch <- RickerAR1.solver(exp(data$logR), data$S)$SRfit$par
 ch
 
 
-# For  Ricker, gives same results at IFRoutTo2013rec.rds for Lower Thompson (CU_ID=2)
+#--------------------------------------------------------------------------------------------
+# For  Ricker, multiple stocks
+# gives same results at IFRoutTo2013rec.rds for Lower Thompson (CU_ID=2)
+
 SRDat <- read.csv("DataIn/SRDat.csv")
 SRDat <- SRDat %>% filter (CU_ID==2)
 
@@ -88,7 +93,8 @@ data <- list()
 data$S <- SRDat$Spawners/Scale 
 data$logR <- log(SRDat$Recruits/Scale)
 data$stk <- as.numeric(SRDat$CU_ID)
-
+N_Stocks <- length(unique(SRDat$CU_Name))
+#data$N_Stks <- N_Stocks
 data$yr <- SRDat$yr_num
 
 
@@ -111,8 +117,8 @@ pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
 summary(sdreport(obj))
 
 
-
-# R code for Ricker
+#--------------------------------------------------------------------------------------------
+# R code for Ricker, single stock
 Ricker.model <- function(theta,R,S){
   a <- exp(as.numeric((theta[1])))
   b <- exp(as.numeric(theta[2]))
@@ -135,5 +141,13 @@ Ricker.solver <- function(R,S){
   return(list(SRfit=SRfit, etheta=SRfit$par, V=V, X=X))
 }
 
-ch <- exp(Ricker.solver(exp(data$logR), data$S)$SRfit$par[1:3])
+SRDat <- read.csv("DataIn/SRDat.csv")
+SRDat <- SRDat %>% filter (CU_ID==2)
+Scale <- TMB_Inputs$Scale
+data <- list()
+data$S <- SRDat$Spawners/Scale 
+data$logR <- log(SRDat$Recruits/Scale)
+
+
+ch <- Ricker.solver(exp(data$logR), data$S)$SRfit$par
 ch

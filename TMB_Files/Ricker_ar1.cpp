@@ -7,7 +7,8 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(logR);
   DATA_IVECTOR(stk);
   DATA_IVECTOR(yr);
-
+  DATA_IVECTOR(model);
+  
 
   PARAMETER_VECTOR(logA_ar);
   PARAMETER_VECTOR(logB_ar);
@@ -50,9 +51,26 @@ Type objective_function<Type>:: operator() ()
     
   }
 
+  //Compile parameters
+  int N_stks = model.size(); 
+  vector <Type> logA_(N_stks);
+  vector <Type> logB_(N_stks);
+  
+  for (int i = 0; i<N_stks; i++){
+    if(model(i) == 0) {
+      logA_(i) = logA_std(i);
+      logB_(i) = logB_std(i);
+    }    
+    if(model(i) == 1) {
+      logA_(i) = logA_ar(i);
+      logB_(i) = logB_ar(i);
+    }    
     
+  }
+  
   ADREPORT(A_ar);
   ADREPORT(A_std);
+  ADREPORT(logA_);
   ADREPORT(LogR_Pred_ar);
   ADREPORT(LogR_Pred_std);
   

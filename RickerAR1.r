@@ -1,7 +1,17 @@
 
+library(rsample)
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(reshape2)
+library(TMB)
+library(zoo)
+
 #--------------------------------------------------------------------------------------------
 # For  Ricker AR1, mulitiple stock
 SRDat <- read.csv("DataIn/SRDat.csv")
+#SRDat_ar <- filter(SRDat, CU_Name == "Lower_Thompson"|CU_Name == "South_Thompson")
+#SRDat_std <- filter(SRDat, CU_Name != "Lower_Thompson" & CU_Name != "South_Thompson")
 
 TMB_Inputs <- list(Scale = 1000, logA_Start = 1, rho_Start = 0.1)
 
@@ -9,6 +19,7 @@ TMB_Inputs <- list(Scale = 1000, logA_Start = 1, rho_Start = 0.1)
 #Set up data and parameter lists for input into TMB model
 Scale <- TMB_Inputs$Scale
 data <- list()
+# Data 
 data$S <- SRDat$Spawners/Scale 
 data$logR <- log(SRDat$Recruits/Scale)
 data$stk <- as.numeric(SRDat$CU_ID)
@@ -16,12 +27,20 @@ N_Stocks <- length(unique(SRDat$CU_Name))
 data$yr <- SRDat$yr_num
 
 
-param <- list()
-param$logA <- rep(TMB_Inputs$logA_Start, N_Stocks)
-param$logB <- log(1/( (SRDat %>% group_by(CU_ID) %>% summarise(x=quantile(Spawners, 0.8)))$x/Scale) )
-param$rho <- rep(TMB_Inputs$rho_Start, N_Stocks)
-param$logSigma <- rep(-2, N_Stocks)
+#data$model <- rep(1,N_Stocks)
+#data$model[1] <- 1 #3rd stock has
 
+param <- list()
+# Parameters for stocks with AR1
+param$logA_ar <- rep(TMB_Inputs$logA_Start, N_Stocks)
+param$logB_ar <- log(1/( (SRDat %>% group_by(CU_ID) %>% summarise(x=quantile(Spawners, 0.8)))$x/Scale) )
+param$rho <- rep(TMB_Inputs$rho_Start, N_Stocks)
+param$logSigma_ar <- rep(-2, N_Stocks)
+
+# Parameters for stocks without AR1
+param$logA_std <- rep(TMB_Inputs$logA_Start, N_Stocks)
+param$logB_std <- log(1/( (SRDat %>% group_by(CU_ID) %>% summarise(x=quantile(Spawners, 0.8)))$x/Scale) )
+param$logSigma_std <- rep(-2, N_Stocks)
 
 # Compile model if changed:
 dyn.unload(dynlib("TMB_Files/Ricker_ar1"))

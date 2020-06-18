@@ -13,7 +13,7 @@ SRDat <- read.csv("DataIn/SRDat.csv")
 #SRDat_ar <- filter(SRDat, CU_Name == "Lower_Thompson"|CU_Name == "South_Thompson")
 #SRDat_std <- filter(SRDat, CU_Name != "Lower_Thompson" & CU_Name != "South_Thompson")
 
-TMB_Inputs <- list(Scale = 1000, logA_Start = 1, rho_Start = 0.1)
+TMB_Inputs <- list(Scale = 1000, logA_Start = 1, rho_Start = 0.1, Sgen_sig = 1)
 
 
 #Set up data and parameter lists for input into TMB model
@@ -25,10 +25,9 @@ data$logR <- log(SRDat$Recruits/Scale)
 data$stk <- as.numeric(SRDat$CU_ID)
 N_Stocks <- length(unique(SRDat$CU_Name))
 data$yr <- SRDat$yr_num
-
-
 data$model <- rep(0,N_Stocks)
 data$model[3] <- 1 #3rd stock has AR(1)
+#data$Sgen_sig <- TMB_Inputs$Sgen_sig
 
 param <- list()
 # Parameters for stocks with AR1
@@ -41,6 +40,7 @@ param$logSigma_ar <- rep(-2, N_Stocks)
 param$logA_std <- rep(TMB_Inputs$logA_Start, N_Stocks)
 param$logB_std <- log(1/( (SRDat %>% group_by(CU_ID) %>% summarise(x=quantile(Spawners, 0.8)))$x/Scale) )
 param$logSigma_std <- rep(-2, N_Stocks)
+#param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
 # Compile model if changed:
 dyn.unload(dynlib("TMB_Files/Ricker_ar1"))
@@ -48,13 +48,30 @@ compile("TMB_Files/Ricker_ar1.cpp")
 
 dyn.load(dynlib("TMB_Files/Ricker_ar1"))
 
+#map <- list(logSgen=factor(rep(NA, N_Stocks))) # Determine which parameters to fix
+#obj <- MakeADFun(data, param, DLL="Ricker_ar1", silent=TRUE, map=map)
 obj <- MakeADFun(data, param, DLL="Ricker_ar1", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
 pl <- obj$env$parList(opt$par) 
 summary(sdreport(obj))
 
+# pull out SMSY values
+All_Ests <- data.frame(summary(sdreport(obj)))
+All_Ests$Param <- row.names(All_Ests)
+SMSYs <- All_Ests[grepl("SMSY", All_Ests$Param), "Estimate" ]
+upper = c(rep(Inf, 3*N_Stocks), log(SMSYs), Inf, Inf )
 
+pl$logSgen <- log(0.3*SMSYs)
+
+#Phase 2 get Sgen, SMSY etc.
+
+obj <- MakeADFun(data, pl, DLL=Mod, silent=TRUE)
+
+opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5),
+              upper = upper )
+
+summary(sdreport(obj))
 
 #--------------------------------------------------------------------------------------------
 # For  Ricker AR1, single stock

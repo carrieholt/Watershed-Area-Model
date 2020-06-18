@@ -48,6 +48,7 @@ Type objective_function<Type>:: operator() ()
   DATA_IVECTOR(stk);
   DATA_IVECTOR(yr);
   DATA_IVECTOR(model);
+  //DATA_SCALAR(Sgen_sig);
   
 
   PARAMETER_VECTOR(logA_ar);
@@ -57,6 +58,7 @@ Type objective_function<Type>:: operator() ()
   PARAMETER_VECTOR(logA_std);
   PARAMETER_VECTOR(logB_std);
   PARAMETER_VECTOR(logSigma_std);
+  //PARAMETER_VECTOR(logSgen);
   
   
   Type ans=0.0;
@@ -96,7 +98,6 @@ Type objective_function<Type>:: operator() ()
   vector <Type> logA_(N_stks);
   vector <Type> logB_(N_stks);
   vector <Type> SMSY(N_stks);  
-  vector <Type> B = exp(logB_);
   
   for (int i = 0; i<N_stks; i++){
     if(model(i) == 0) {
@@ -110,14 +111,22 @@ Type objective_function<Type>:: operator() ()
     
   }
   
-  
+
   // Calculate SMSY using Lambert's W function
   // Approach from Scheurell 2016
-
-  
+  vector <Type> B = exp(logB_);
   for(int i=0; i<N_stks; i++){
     SMSY[i] =  (1 - LambertW(exp(1-logA_[i])) ) / B[i] ;
   }
+  
+  // Now estimate Sgen
+  //vector <Type> LogSMSY(N_stks);
+  //vector <Type> Sgen = exp(logSgen);
+ 
+  //LogSMSY = logA_ + logSgen - B * Sgen;
+  //vector <Type> Diff = exp(LogSMSY)-SMSY;
+  //ans += -sum(dnorm(Diff, 0, Sgen_sig, true ));
+  
   
   //ADREPORT(A_ar);
   //ADREPORT(A_std);
@@ -125,6 +134,7 @@ Type objective_function<Type>:: operator() ()
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);
   ADREPORT(SMSY);
+  //ADREPORT(Sgen);
   return ans;
   
 }

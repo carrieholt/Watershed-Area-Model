@@ -96,17 +96,24 @@ Type objective_function<Type>:: operator() ()
   //Compile parameters
   int N_stks = model.size(); 
   vector <Type> logA_(N_stks);
+  vector <Type> logAadj_(N_stks);
   vector <Type> logB_(N_stks);
-  vector <Type> SMSY(N_stks);  
+  vector <Type> logSigma_(N_stks);
+  vector <Type> SMSYadj(N_stks);  
   
   for (int i = 0; i<N_stks; i++){
     if(model(i) == 0) {
       logA_(i) = logA_std(i);
       logB_(i) = logB_std(i);
+      logSigma_(i) = logSigma_std(i);
+      logAadj_(i) = logA_std(i) + pow( exp( logSigma_std(i) ), 2) /2;
+      
     }    
     if(model(i) == 1) {
       logA_(i) = logA_ar(i);
       logB_(i) = logB_ar(i);
+      logSigma_(i) = logSigma_ar(i);
+      logAadj_(i) = logA_ar(i) + pow( exp( logSigma_ar(i) ), 2) /2;
     }    
     
   }
@@ -116,12 +123,12 @@ Type objective_function<Type>:: operator() ()
   // Approach from Scheurell 2016
   vector <Type> B = exp(logB_);
   for(int i=0; i<N_stks; i++){
-    SMSY[i] =  (1 - LambertW(exp(1-logA_[i])) ) / B[i] ;
+    SMSYadj[i] =  (1 - LambertW(exp(1-logAadj_[i])) ) / B[i] ;
   }
   
   // Calculate SREP
-  vector <Type> SREP(N_stks);
-  SREP = logA_ / B;
+  vector <Type> SREPadj(N_stks);
+  SREPadj = logAadj_ / B;
   
   // Now estimate Sgen
   //vector <Type> LogSMSY(N_stks);
@@ -135,10 +142,11 @@ Type objective_function<Type>:: operator() ()
   //ADREPORT(A_ar);
   //ADREPORT(A_std);
   ADREPORT(logA_);
+  ADREPORT(logAadj_);
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);
-  ADREPORT(SMSY);
-  ADREPORT(SREP);
+  ADREPORT(SMSYadj);
+  ADREPORT(SREPadj);
   //ADREPORT(Sgen);
   return ans;
   

@@ -16,7 +16,17 @@ library(zoo)
 # Data
 
 SRDatwNA <- read.csv("DataIn/SRinputfile.csv")
-SRDat <- filter(SRDat, Rec != "NA")
+stockwNA <- SRDatwNA %>% filter (is.na(Rec) == TRUE) %>% select (Stocknumber) %>% unique() %>% unlist() #Do not use AR(1) model on 3  stocks with NAs
+SRDat <- SRDatwNA %>% filter(Rec != "NA") %>% filter (Name != "Hoko") 
+
+# Remove NAs for stock-recruitment modelling
+test <- SRDat %>% filter(Stocknumber == stockwNA[1]| Stocknumber == stockwNA[2] | Stocknumber == stockwNA[3])
+for (i in 1:length(stockwNA)) {
+  len <- length (SRDat [which (SRDat$Stocknumber == stockwNA[i]), ]$yr_num) - 1
+  SRDat [which (SRDat$Stocknumber == stockwNA[i]), ]$yr_num <- c (0:len)
+}
+test <- SRDat %>% filter(Stocknumber == stockwNA[1]| Stocknumber == stockwNA[2] | Stocknumber == stockwNA[3])
+
 
 TMB_Inputs <- list(Scale = 1000, logA_Start = 1, rho_Start = 0.1, Sgen_sig = 1)
 

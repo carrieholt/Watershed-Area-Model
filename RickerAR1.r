@@ -158,8 +158,11 @@ data$logR <- log(SRDat$Recruits/Scale)
 ch <- RickerAR1.solver(exp(data$logR), data$S)$SRfit$par
 ch
 sm <- (1 - lambert_W0( exp (1  - ch[1]))) / exp(ch[2]) #SMSY
+sm.adj <- (1 - lambert_W0( exp (1  - (ch[1] + exp(ch[4])^2/2 )))) / exp(ch[2]) #SMSY adjusted for log-normal transformation bias
 sg <- Sgen.solver(exp(ch[1]), exp(ch[2]),1) #SGEN
+sg.adj <- Sgen.solver(exp(ch[1]+ exp(ch[4])^2/2), exp(ch[2]),1) #SGEN
 sr <- ch[1]/exp(ch[2]) #SREP
+sr.adj <- (ch[1] + exp(ch[4])^2/2 )/exp(ch[2]) #SREP
 
 #--------------------------------------------------------------------------------------------
 # For  Ricker, multiple stocks
@@ -227,7 +230,7 @@ Ricker.solver <- function(R,S){
 }
 
 SRDat <- read.csv("DataIn/SRDat.csv")
-SRDat <- SRDat %>% filter (CU_ID==2)
+SRDat <- SRDat %>% filter (CU_ID==0)#2)
 Scale <- TMB_Inputs$Scale
 data <- list()
 data$S <- SRDat$Spawners/Scale 

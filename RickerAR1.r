@@ -41,6 +41,7 @@ param$logA_std <- rep(TMB_Inputs$logA_Start, N_Stocks)
 param$logB_std <- log(1/( (SRDat %>% group_by(CU_ID) %>% summarise(x=quantile(Spawners, 0.8)))$x/Scale) )
 param$logSigma_std <- rep(-2, N_Stocks)
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
+#param$logSgen[3] <- 1.63#log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
 # Compile model if changed:
 dyn.unload(dynlib("TMB_Files/Ricker_ar1"))
@@ -56,13 +57,14 @@ opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max =
 pl <- obj$env$parList(opt$par) 
 summary(sdreport(obj))
 
-# pull out SMSY values
+# For Phase 2, pull out SMSY values
 All_Ests <- data.frame(summary(sdreport(obj)))
 All_Ests$Param <- row.names(All_Ests)
 SMSYs <- All_Ests[grepl("SMSY", All_Ests$Param), "Estimate" ]
 upper = c(rep(Inf, 3*N_Stocks), log(SMSYs), Inf, Inf )
 
 pl$logSgen <- log(0.3*SMSYs)
+#pl$logSgen[3] <- 1.61
 
 #Phase 2 get Sgen, SMSY etc.
 
@@ -71,7 +73,7 @@ obj <- MakeADFun(data, pl, DLL=Mod, silent=TRUE)
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5),
               upper = upper )
 
-summary(sdreport(obj))
+
 
 #--------------------------------------------------------------------------------------------
 # For  Ricker AR1, single stock
@@ -155,6 +157,7 @@ data$S <- SRDat$Spawners/Scale
 data$logR <- log(SRDat$Recruits/Scale)
 ch <- RickerAR1.solver(exp(data$logR), data$S)$SRfit$par
 ch
+Sgen.solver(exp(ch[1]), exp(ch[2]),1)
 
 
 #--------------------------------------------------------------------------------------------
@@ -231,3 +234,24 @@ data$logR <- log(SRDat$Recruits/Scale)
 
 ch <- Ricker.solver(exp(data$logR), data$S)$SRfit$par
 ch
+
+
+#------------------------------------------------------------------------------------------------------------------
+require(gsl)
+
+Sgen.model<-function(S,a,b,sig){
+  PR<-a*S*exp(-b*S)
+  SMSY <- ( 1 - lambert_W0( exp(1 - log(a)))) / b 
+  epsilon.wna <- log(SMSY)-log(PR)	#residuals
+  epsilon <- as.numeric(na.omit(epsilon.wna))
+  nloglike <- -sum(dnorm(epsilon,0,sig, log=T))
+  if(is.na(sum(dnorm(epsilon,0,sig, log=T)))==TRUE) print(c(a,b,sig))
+  return(nloglike)
+  
+}
+
+Sgen.solver <- function(a,b,sig) {
+  SMSY <- (1 - lambert_W0( exp (1  - log(a)))) / b #(log(a)/b)*(0.5-0.07*log(a))
+  SRfit=optimize(f=Sgen.model,interval=c(0, SMSY), a=a, b=b, sig=sig)	 # nb: not optim() !!
+  return(list(SRfit=SRfit$minimum))  # returns the minimum S
+}

@@ -26,8 +26,8 @@ data$stk <- as.numeric(SRDat$CU_ID)
 N_Stocks <- length(unique(SRDat$CU_Name))
 data$yr <- SRDat$yr_num
 #data$N_Stks <- N_Stocks
-#data$model <- rep(0,N_Stocks)
-#data$model[3] <- 1 #3rd stock has AR(1)
+data$model <- rep(0,N_Stocks)
+data$model[3] <- 1 #3rd stock has AR(1)
 #data$Sgen_sig <- TMB_Inputs$Sgen_sig
 
 param <- list()
@@ -42,7 +42,6 @@ param$logA_std <- rep(TMB_Inputs$logA_Start, N_Stocks)
 param$logB_std <- log(1/( (SRDat %>% group_by(CU_ID) %>% summarise(x=quantile(Spawners, 0.8)))$x/Scale) )
 param$logSigma_std <- rep(-2, N_Stocks)
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
-#param$logSgen[3] <- 1.63#log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
 # Compile model if changed:
 dyn.unload(dynlib("TMB_Files/Ricker_ar1"))
@@ -50,6 +49,7 @@ compile("TMB_Files/Ricker_ar1.cpp")
 
 dyn.load(dynlib("TMB_Files/Ricker_ar1"))
 
+# For Phase 1, fix Sgen
 #map <- list(logSgen=factor(rep(NA, N_Stocks))) # Determine which parameters to fix
 #obj <- MakeADFun(data, param, DLL="Ricker_ar1", silent=TRUE, map=map)
 obj <- MakeADFun(data, param, DLL="Ricker_ar1", silent=TRUE)
@@ -62,18 +62,17 @@ summary(sdreport(obj))
 All_Ests <- data.frame(summary(sdreport(obj)))
 All_Ests$Param <- row.names(All_Ests)
 SMSYs <- All_Ests[grepl("SMSY", All_Ests$Param), "Estimate" ]
-upper = c(rep(Inf, 3*N_Stocks), log(SMSYs), Inf, Inf )
+upper <- c(rep(Inf, 3*N_Stocks), log(SMSYs), Inf, Inf )
 
 pl$logSgen <- log(0.3*SMSYs)
-#pl$logSgen[3] <- 1.61
 
-#Phase 2 get Sgen, SMSY etc.
 
-obj <- MakeADFun(data, pl, DLL=Mod, silent=TRUE)
+obj <- MakeADFun(data, pl, DLL="Ricker_ar1", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5),
               upper = upper )
-
+pl <- obj$env$parList(opt$par) 
+summary(sdreport(obj))
 
 
 #--------------------------------------------------------------------------------------------
@@ -115,7 +114,7 @@ summary(sdreport(obj))
 
 
 #--------------------------------------------------------------------------------------------
-#R functions for Ricker AR1, single stock
+#R functions for Ricker AR1, single stock, with SMSY, SGEN, SREP
 RickerAR1.model <- function(theta,R,S){
   a <- exp(as.numeric((theta[1])))
   b <- exp(as.numeric(theta[2]))
@@ -158,8 +157,9 @@ data$S <- SRDat$Spawners/Scale
 data$logR <- log(SRDat$Recruits/Scale)
 ch <- RickerAR1.solver(exp(data$logR), data$S)$SRfit$par
 ch
-Sgen.solver(exp(ch[1]), exp(ch[2]),1)
-
+sm <- (1 - lambert_W0( exp (1  - ch[1]))) / exp(ch[2]) #SMSY
+sg <- Sgen.solver(exp(ch[1]), exp(ch[2]),1) #SGEN
+sr <- ch[1]/exp(ch[2]) #SREP
 
 #--------------------------------------------------------------------------------------------
 # For  Ricker, multiple stocks

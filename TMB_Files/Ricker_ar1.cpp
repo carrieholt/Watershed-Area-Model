@@ -119,6 +119,10 @@ Type objective_function<Type>:: operator() ()
     SMSY[i] =  (1 - LambertW(exp(1-logA_[i])) ) / B[i] ;
   }
   
+  // Calculate SREP
+  vector <Type> SREP(N_stks);
+  SREP = logA_ / B;
+  
   // Now estimate Sgen
   //vector <Type> LogSMSY(N_stks);
   //vector <Type> Sgen = exp(logSgen);
@@ -134,6 +138,7 @@ Type objective_function<Type>:: operator() ()
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);
   ADREPORT(SMSY);
+  ADREPORT(SREP);
   //ADREPORT(Sgen);
   return ans;
   

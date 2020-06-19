@@ -25,8 +25,9 @@ data$logR <- log(SRDat$Recruits/Scale)
 data$stk <- as.numeric(SRDat$CU_ID)
 N_Stocks <- length(unique(SRDat$CU_Name))
 data$yr <- SRDat$yr_num
-data$model <- rep(0,N_Stocks)
-data$model[3] <- 1 #3rd stock has AR(1)
+#data$N_Stks <- N_Stocks
+#data$model <- rep(0,N_Stocks)
+#data$model[3] <- 1 #3rd stock has AR(1)
 #data$Sgen_sig <- TMB_Inputs$Sgen_sig
 
 param <- list()

@@ -6,7 +6,7 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(S);
   DATA_VECTOR(logR);
   DATA_IVECTOR(stk);
-  DATA_IVECTOR(yr);
+  //DATA_IVECTOR(yr);
   
   PARAMETER_VECTOR(logA);
   PARAMETER_VECTOR(logB);

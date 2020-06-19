@@ -15,7 +15,8 @@ library(zoo)
 #---------------------------------------------------------
 # Data
 
-SRDat <- read.csv("DataIn/SRinputfile.csv")
+SRDatwNA <- read.csv("DataIn/SRinputfile.csv")
+SRDat <- filter(SRDat, Rec != "NA")
 
 TMB_Inputs <- list(Scale = 1000, logA_Start = 1, rho_Start = 0.1, Sgen_sig = 1)
 

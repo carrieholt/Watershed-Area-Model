@@ -166,7 +166,7 @@ sr <- ch[1]/exp(ch[2]) #SREP
 # gives same results at IFRoutTo2013rec.rds for Lower Thompson (CU_ID=2)
 
 SRDat <- read.csv("DataIn/SRDat.csv")
-#SRDat <- SRDat %>% filter (CU_ID==2)
+#SRDat <- SRDat %>% filter(Spawners!=9522) #Try removing 4th year of CU_ID 2 (i.e., if it were NA)
 
 TMB_Inputs <- list(Scale = 1000, logA_Start = 1)
 
@@ -175,11 +175,12 @@ TMB_Inputs <- list(Scale = 1000, logA_Start = 1)
 Scale <- TMB_Inputs$Scale
 data <- list()
 data$S <- SRDat$Spawners/Scale 
+
 data$logR <- log(SRDat$Recruits/Scale)
 data$stk <- as.numeric(SRDat$CU_ID)
 N_Stocks <- length(unique(SRDat$CU_Name))
 #data$N_Stks <- N_Stocks
-data$yr <- SRDat$yr_num
+#data$yr <- SRDat$yr_num
 
 
 param <- list()
@@ -230,7 +231,7 @@ SRDat <- SRDat %>% filter (CU_ID==2)
 Scale <- TMB_Inputs$Scale
 data <- list()
 data$S <- SRDat$Spawners/Scale 
-data$S[4] <- NA
+#data$S[4] <- NA #Try putting NA in 4th year of Lower Thompson (CU_ID=2) 
 data$logR <- log(SRDat$Recruits/Scale)
 
 

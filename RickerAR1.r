@@ -166,7 +166,7 @@ sr <- ch[1]/exp(ch[2]) #SREP
 # gives same results at IFRoutTo2013rec.rds for Lower Thompson (CU_ID=2)
 
 SRDat <- read.csv("DataIn/SRDat.csv")
-SRDat <- SRDat %>% filter (CU_ID==2)
+#SRDat <- SRDat %>% filter (CU_ID==2)
 
 TMB_Inputs <- list(Scale = 1000, logA_Start = 1)
 
@@ -230,6 +230,7 @@ SRDat <- SRDat %>% filter (CU_ID==2)
 Scale <- TMB_Inputs$Scale
 data <- list()
 data$S <- SRDat$Spawners/Scale 
+data$S[4] <- NA
 data$logR <- log(SRDat$Recruits/Scale)
 
 

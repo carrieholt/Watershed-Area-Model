@@ -100,6 +100,7 @@ Type objective_function<Type>:: operator() ()
   vector <Type> logB_(N_stks);
   vector <Type> logSigma_(N_stks);
   vector <Type> SMSYadj(N_stks);  
+  vector <Type> SMSY(N_stks);  
   
   for (int i = 0; i<N_stks; i++){
     if(model(i) == 0) {
@@ -124,6 +125,7 @@ Type objective_function<Type>:: operator() ()
   vector <Type> B = exp(logB_);
   for(int i=0; i<N_stks; i++){
     SMSYadj[i] =  (1 - LambertW(exp(1-logAadj_[i])) ) / B[i] ;
+    SMSY[i] =  (1 - LambertW(exp(1-logA_[i])) ) / B[i] ;
   }
   
   // Calculate SREP
@@ -139,13 +141,14 @@ Type objective_function<Type>:: operator() ()
   //ans += -sum(dnorm(Diff, 0, Sgen_sig, true ));
   
   
-  //ADREPORT(A_ar);
-  //ADREPORT(A_std);
+  ADREPORT(A_ar);
+  ADREPORT(A_std);
   ADREPORT(logA_);
   ADREPORT(logAadj_);
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);
   ADREPORT(SMSYadj);
+  ADREPORT(SMSY);
   ADREPORT(SREPadj);
   //ADREPORT(Sgen);
   return ans;

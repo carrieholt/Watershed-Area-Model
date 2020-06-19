@@ -237,10 +237,19 @@ data$S <- SRDat$Spawners/Scale
 #data$S[4] <- NA #Try putting NA in 4th year of Lower Thompson (CU_ID=2) 
 data$logR <- log(SRDat$Recruits/Scale)
 
-
 ch <- Ricker.solver(exp(data$logR), data$S)$SRfit$par
 ch
 
+SRDat <- read.csv("DataIn/SRinputfile.csv")
+SRDat <- SRDat %>% filter (Stocknumber==0)#2)
+Scale <- TMB_Inputs$Scale
+data <- list()
+data$S <- SRDat$Sp/Scale 
+data$logR <- log(SRDat$Rec/Scale)
+
+
+ch <- Ricker.solver(exp(data$logR), data$S)$SRfit$par
+ch
 
 #------------------------------------------------------------------------------------------------------------------
 require(gsl)

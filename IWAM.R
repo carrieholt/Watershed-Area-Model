@@ -61,15 +61,21 @@ data$model <- rep(0,N_Stocks)
 param <- list()
 
 # Parameters for stocks with AR1
-param$logA_ar <- rep(TMB_Inputs$logA_Start, N_Stocks)
+#param$logA_ar <- rep(TMB_Inputs$logA_Start, N_Stocks)
+param$logA_ar <- ( SRDat %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
 Scale.stock <- 10^(digits$maxDigits-1)
-param$logB_ar <- log(1/( (SRDat %>% group_by(Stocknumber) %>% summarise(x=quantile(Sp, 0.8)))$x/Scale.stock) )
+#param$logB_ar <- log(1/( (SRDat %>% group_by(Stocknumber) %>% summarise(x=quantile(Sp, 0.8)))$x/Scale.stock) )
+B_ar <- SRDat %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
+param$logB_ar <- log ( 1/ ( (1/B_ar$m)/Scale.stock ))#Take inverse of B (=Smax and apply scale), the take the inverse again and log to get logB of scaled Smax
 param$rho <- rep(TMB_Inputs$rho_Start, N_Stocks)
-param$logSigma_ar <- rep(-2, N_Stocks)
+param$logSigma_ar <- rep (-2, N_Stocks)
 
 # Parameters for stocks without AR1
-param$logA_std <- rep(TMB_Inputs$logA_Start, N_Stocks)
-param$logB_std <- log(1/( (SRDat %>% group_by(Stocknumber) %>% summarise(x=quantile(Sp, 0.8)))$x/Scale.stock) )
+#param$logA_std <- rep(TMB_Inputs$logA_Start, N_Stocks)
+param$logA_std <- ( SRDat %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
+#param$logB_std <- log(1/( (SRDat %>% group_by(Stocknumber) %>% summarise(x=quantile(Sp, 0.8)))$x/Scale.stock) )
+B_std <- SRDat %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
+param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock ))#log(B_std$m/Scale.stock)
 param$logSigma_std <- rep(-2, N_Stocks)
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 

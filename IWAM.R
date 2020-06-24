@@ -45,23 +45,40 @@ digits <- SRDat %>% group_by(Stocknumber) %>% summarize(maxDigits = count.dig(ma
 SRDat <- left_join(SRDat, digits)
 SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1))
 
-stks_AR <- c("Chikamin", "Keta", "Blossom", "Situk", "Siletz", "Columbia Sp")
-stksNum_AR <- c(4,5,6,10,11,16)
 
-SRDat_std <- SRDat %>% filter(Stocknumber %not in% stksNum_AR) 
-SRDat_AR <- SRDat %>% filter(Stocknumber %in% stksNum_AR) 
+stks_ar <- c("Chikamin", "Keta", "Blossom", "Situk", "Siletz", "Columbia Sp")
+stksNum_ar <- c(4,5,6,10,11,16)
+
+SRDat_std <- SRDat %>% filter(Stocknumber %not in% stksNum_ar) 
+SRDat_ar <- SRDat %>% filter(Stocknumber %in% stksNum_ar) 
+
+# Assign new stock numbers to each stock so that they are sequential. 
+ind_std <- tibble(ind_std= 0:(length(unique(SRDat_std$Name))-1))
+ind_std <- add_column(ind_std, Stocknumber = (unique(SRDat_std$Stocknumber)))
+SRDat_std <- SRDat_std %>% left_join(ind_std)
+
+ind_ar <- tibble(ind_ar= 0:(length(unique(SRDat_ar$Name))-1))
+ind_ar <- add_column(ind_ar, Stocknumber = (unique(SRDat_ar$Stocknumber)))
+SRDat_ar <- SRDat_ar %>% left_join(ind_ar)
 
 TMB_Inputs <- list(logA_Start = 2, rho_Start = 0.1, Sgen_sig = 1) #Scale = 1000, 
 
 # Data 
 data <- list()
-Scale <- SRDat$Scale # Scale <- TMB_Inputs$Scale
-data$S <- SRDat$Sp/Scale 
-data$logR <- log(SRDat$Rec/Scale)
-data$stk <- as.numeric(SRDat$Stocknumber)
-N_Stocks <- length(unique(SRDat$Name))
-data$yr <- SRDat$yr_num
-data$model <- rep(0,N_Stocks)
+Scale_std <- SRDat_std$Scale # Scale <- TMB_Inputs$Scale
+data$S_std <- SRDat_std$Sp/Scale_std 
+data$logR_std <- log(SRDat_std$Rec/Scale_std)
+data$stk_std <- as.numeric(SRDat_std$ind_std)#as.numeric(SRDat_std$Stocknumber)
+N_Stocks_std <- length(unique(SRDat_std$Name))
+data$yr_std <- SRDat_std$yr_num
+
+Scale_ar <- SRDat_ar$Scale # Scale <- TMB_Inputs$Scale
+data$S_ar <- SRDat_ar$Sp/Scale_ar 
+data$logR_ar <- log(SRDat_ar$Rec/Scale_ar)
+data$stk_ar <- as.numeric(SRDat_ar$ind_ar)#as.numeric(SRDat_ar$Stocknumber)
+N_Stocks_ar <- length(unique(SRDat_ar$Name))
+data$yr_ar <- SRDat_ar$yr_num
+#data$model <- rep(0,N_Stocks)
 
 
 #data$model[1] <- 1
@@ -69,24 +86,27 @@ data$model <- rep(0,N_Stocks)
 
 # Parameters
 param <- list()
-
-# Parameters for stocks with AR1
-#param$logA_ar <- rep(TMB_Inputs$logA_Start, N_Stocks)
-#param$logB_ar <- log(1/( (SRDat %>% group_by(Stocknumber) %>% summarise(x=quantile(Sp, 0.8)))$x/Scale.stock) )
-#param$logA_ar <- ( SRDat %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
-Scale.stock <- 10^(digits$maxDigits-1)
-#B_ar <- SRDat %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
-#param$logB_ar <- log ( 1/ ( (1/B_ar$m)/Scale.stock ))#Take inverse of B (=Smax and apply scale), the take the inverse again and log to get logB of scaled Smax
-#param$rho <- rep(TMB_Inputs$rho_Start, N_Stocks)
-#param$logSigma_ar <- rep (-2, N_Stocks)
+Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %not in% stksNum_ar) %>% summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
+Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% stksNum_ar) %>% summarize(Scale.stock_ar = max(Scale)))$Scale.stock_ar
+#Scale.stock <- 10^(digits$maxDigits-1)
 
 # Parameters for stocks without AR1
 #param$logA_std <- rep(TMB_Inputs$logA_Start, N_Stocks)
 #param$logB_std <- log(1/( (SRDat %>% group_by(Stocknumber) %>% summarise(x=quantile(Sp, 0.8)))$x/Scale.stock) )
-param$logA_std <- ( SRDat %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
-B_std <- SRDat %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
-param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock ))#log(B_std$m/Scale.stock)
-param$logSigma_std <- rep(-2, N_Stocks)
+param$logA_std <- ( SRDat_std %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
+B_std <- SRDat_std %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
+param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std ))#log(B_std$m/Scale.stock)
+param$logSigma_std <- rep(-2, N_Stocks_std)
+
+# Parameters for stocks with AR1
+#param$logA_ar <- rep(TMB_Inputs$logA_Start, N_Stocks)
+#param$logB_ar <- log(1/( (SRDat %>% group_by(Stocknumber) %>% summarise(x=quantile(Sp, 0.8)))$x/Scale.stock) )
+param$logA_ar <- ( SRDat_ar %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
+B_ar <- SRDat_ar %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
+param$logB_ar <- log ( 1/ ( (1/B_ar$m)/Scale.stock_ar ))#Take inverse of B (=Smax and apply scale), the take the inverse again and log to get logB of scaled Smax
+param$rho <- rep(TMB_Inputs$rho_Start, N_Stocks_ar)
+param$logSigma_ar <- rep (-2, N_Stocks_ar)
+
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
@@ -106,7 +126,8 @@ pl <- obj$env$parList(opt$par)
 summary(sdreport(obj))
 
 
-# Are residuals of Ricker model autocorrelated? Run Ricker_CheckAr1.cpp TMB code, then lines below to see which stocks
+#------------------------------------------------------------------------------------------------------------------------------------------------
+# Are residuals of Ricker model autocorrelated? Run Ricker_CheckAr1.cpp TMB code below to check
 
 SRDatwNA <- read.csv("DataIn/SRinputfile.csv")
 SRDatwNA <- SRDatwNA %>% filter(Name != "Hoko" & Name != "Hoh") #remove two stocks not used in Parken et al, and not documented in Liermann et al.

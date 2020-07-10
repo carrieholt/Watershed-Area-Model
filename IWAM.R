@@ -125,6 +125,70 @@ opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max =
 pl <- obj$env$parList(opt$par) 
 summary(sdreport(obj))
 
+# Create Table of outputs
+All_Ests <- data.frame(summary(sdreport(obj)))
+All_Ests$Param <- row.names(All_Ests)
+
+
+# Put together readable data frame of values
+All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))[[1]]))
+
+# By first spliting out stocks modelled with standard Ricker and those with aR(1)
+All_Ests_std <- data.frame()
+All_Ests_std <- All_Ests %>% filter (Param %in% c("logA_std", "logB_std", "logSigma_std",  "SMSY_std", "SREP_std"))
+SN_std <- unique(SRDat_std[, c("Stocknumber")])
+All_Ests_std$Stocknumber <- rep(SN_std)
+All_Ests_std <- left_join(All_Ests_std, unique(SRDat_std[, c("Stocknumber", "Name")]))
+
+All_Ests_ar <- data.frame()
+All_Ests_ar<- All_Ests %>% filter (Param %in% c("logA_ar", "logB_ar", "rho",  "logSigma_ar", "SMSY_ar", "SREP_ar" ))
+SN_ar <- unique(SRDat_ar[, c("Stocknumber")])
+All_Ests_ar$Stocknumber <- rep(SN_ar)
+All_Ests_ar <- left_join(All_Ests_ar, unique(SRDat_ar[, c("Stocknumber", "Name")]))
+
+# Combine again
+All_Est <- bind_rows(All_Ests_std, All_Ests_ar) 
+
+Stks_std <- unique(SRDat_std$Stocknumber)
+NStks_std <- length(Stks_std)
+par(mfrow=c(4,5), mar=c(3, 2, 2, 1) + 0.1)
+
+for (i in Stks_std){
+  R <- SRDat_std %>% filter (Stocknumber==i) %>% select(Rec) 
+  S <- SRDat_std %>% filter (Stocknumber==i) %>% select(Sp) 
+  # what is the scale of Ricker b estimate?
+  Sc <- SRDat_std %>% filter (Stocknumber==i) %>% select(Scale) %>% distinct() %>% as.numeric()
+  plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)))
+  
+  a <- All_Ests_std %>% filter (Stocknumber==i) %>% filter(Param=="logA_std") %>% 
+    summarise(A=exp(Estimate)) %>% as.numeric()
+  # Divide b by scale
+  b <- All_Ests_std %>% filter (Stocknumber==i) %>% filter(Param=="logB_std") %>% 
+    summarise(B=exp(Estimate)/Sc) %>% as.numeric()
+  
+  for (j in 1:100){
+    SS[j] <- j*(max(S$Sp)/100)
+    RR[j] <- a * SS[j] * exp(-b*SS[j])
+  }
+  lines(x=SS, y=RR, col="black")
+  name <- All_Ests_std %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
+  mtext(name$Name, side=3)
+}
+# don't want logged param values
+# need to unlog A,B,Sigma -- took A off this list for now
+All_Ests$Estimate[All_Ests$Param %in% c( "logB", "logSigma")] <- exp(All_Ests$Estimate[All_Ests$Param %in% c( "logB", "logSigma")] )
+#All_Ests$Param[All_Ests$Param == "logA"] <- "A"
+All_Ests$Param[All_Ests$Param == "logB"] <- "B"
+All_Ests$Param[All_Ests$Param == "logSigma"] <- "sigma"
+All_Ests$Param[All_Ests$Param == "SMSY"] <- "Smsy"
+All_Ests[All_Ests$Param == "B",] <- All_Ests %>% filter(Param == "B") %>% mutate(Estimate = Estimate/Scale) %>% mutate(Std..Error = Std..Error/Scale)
+All_Ests[All_Ests$Param %in% c("Sgen", "SMSY", "Agg_LRP"), ] <-  All_Ests %>% filter(Param %in% c("Sgen", "SMSY", "Agg_LRP")) %>% 
+  mutate(Estimate = Estimate*Scale) %>% mutate(Std..Error = Std..Error*Scale)
+Preds <- All_Ests %>% filter(Param == "Logit_Preds")
+All_Ests <- All_Ests %>% filter(!(Param %in% c( "logSgen", "Logit_Preds"))) 
+
+out <- list()
+out$All_Ests <- All_Ests
 
 #------------------------------------------------------------------------------------------------------------------------------------------------
 # Are residuals of Ricker model autocorrelated? Run Ricker_CheckAr1.cpp TMB code below to check

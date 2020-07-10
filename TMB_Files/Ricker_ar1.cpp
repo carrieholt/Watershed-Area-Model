@@ -149,29 +149,37 @@ Type objective_function<Type>:: operator() ()
   
   // Code for SMSY SREP without AR model
   int N_stks_std = logA_std.size(); 
-  vector <Type> logAadj_(N_stks_std);
-  vector <Type> SMSYadj(N_stks_std);  
-  vector <Type> SMSY(N_stks_std);  
-  vector <Type> B = exp(logB_std);
-  vector <Type> SREPadj(N_stks_std);
+  int N_stks_ar = logA_ar.size(); 
+  //vector <Type> logAadj_(N_stks_std);
+  //vector <Type> SMSYadj(N_stks_std);  
+  vector <Type> SMSY_std(N_stks_std);  
+  vector <Type> B_std = exp(logB_std);
+  vector <Type> SREP_std(N_stks_std);
+  vector <Type> SMSY_ar(N_stks_ar);  
+  vector <Type> B_ar = exp(logB_ar);
+  vector <Type> SREP_ar(N_stks_ar);
   
   for(int i=0; i<N_stks_std; i++){
-    logAadj_(i) = logA_std(i) + pow( exp( logSigma_std(i) ), 2) /2;
-    SMSYadj(i) =  (1 - LambertW(exp(1-logAadj_(i))) ) / B(i) ;
-    SMSY(i) =  (1 - LambertW(exp(1-logA_std(i))) ) / B(i) ;
+    SMSY_std(i) =  (1 - LambertW(exp(1-logA_std(i))) ) / B_std(i) ;
   }
-  SREPadj = logAadj_ / B;
+  SREP_std = logA_std / B_std;
   
+  for(int i=0; i<N_stks_ar; i++){
+    SMSY_ar(i) =  (1 - LambertW(exp(1-logA_ar(i))) ) / B_ar(i) ;
+  }
+  SREP_ar = logA_ar / B_ar;
   //ADREPORT(A_ar);
-  ADREPORT(A_std);
+  //ADREPORT(A_std);
   //ADREPORT(logA_);
-  ADREPORT(logAadj_);
-  ADREPORT(SMSYadj);
-  ADREPORT(SMSY);
-  ADREPORT(SREPadj);
+  //ADREPORT(logAadj_);
+  //ADREPORT(SMSYadj);
+  ADREPORT(SMSY_std);
+  ADREPORT(SREP_std);
+  ADREPORT(SMSY_ar);
+  ADREPORT(SREP_ar);
   
   //ADREPORT(LogR_Pred_ar);
-  ADREPORT(LogR_Pred_std);
+  //ADREPORT(LogR_Pred_std);
   //ADREPORT(Sgen);
   return ans;
   

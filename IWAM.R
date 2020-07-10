@@ -86,8 +86,10 @@ data$yr_ar <- SRDat_ar$yr_num
 
 # Parameters
 param <- list()
-Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %not in% stksNum_ar) %>% summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
-Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% stksNum_ar) %>% summarize(Scale.stock_ar = max(Scale)))$Scale.stock_ar
+Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %not in% stksNum_ar) %>% 
+                      summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
+Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% stksNum_ar) %>% 
+                     summarize(Scale.stock_ar = max(Scale)))$Scale.stock_ar
 #Scale.stock <- 10^(digits$maxDigits-1)
 
 # Parameters for stocks without AR1
@@ -148,47 +150,61 @@ All_Ests_ar <- left_join(All_Ests_ar, unique(SRDat_ar[, c("Stocknumber", "Name")
 
 # Combine again
 All_Est <- bind_rows(All_Ests_std, All_Ests_ar) 
+All_Est$ar <- All_Est$Stocknumber %in% stksNum_ar
+All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
 
-Stks_std <- unique(SRDat_std$Stocknumber)
-NStks_std <- length(Stks_std)
-par(mfrow=c(4,5), mar=c(3, 2, 2, 1) + 0.1)
+Stks <- unique(SRDat$Stocknumber)
+NStks <- length(Stks)
+par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
 
-for (i in Stks_std){
-  R <- SRDat_std %>% filter (Stocknumber==i) %>% select(Rec) 
-  S <- SRDat_std %>% filter (Stocknumber==i) %>% select(Sp) 
+# Plot SR curves
+for (i in Stks){
+  R <- SRDat %>% filter (Stocknumber==i) %>% select(Rec) 
+  S <- SRDat %>% filter (Stocknumber==i) %>% select(Sp) 
   # what is the scale of Ricker b estimate?
-  Sc <- SRDat_std %>% filter (Stocknumber==i) %>% select(Scale) %>% distinct() %>% as.numeric()
-  plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)))
+  Sc <- SRDat %>% filter (Stocknumber==i) %>% select(Scale) %>% distinct() %>% as.numeric()
+  if(i !=22) plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(R$Rec) ) )
+  if(i ==22) plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(R$Rec) ) )
   
-  a <- All_Ests_std %>% filter (Stocknumber==i) %>% filter(Param=="logA_std") %>% 
+  a <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
     summarise(A=exp(Estimate)) %>% as.numeric()
   # Divide b by scale
-  b <- All_Ests_std %>% filter (Stocknumber==i) %>% filter(Param=="logB_std") %>% 
+  b <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logB") %>% 
     summarise(B=exp(Estimate)/Sc) %>% as.numeric()
   
+  #Parken values for skagit
+  skagit_alpha <- 7.74
+  skagit_beta <- 0.0000657
+  RR_skagit <- NA
+  #RR_std <- NA
+
   for (j in 1:100){
-    SS[j] <- j*(max(S$Sp)/100)
-    RR[j] <- a * SS[j] * exp(-b*SS[j])
+    if (i!=22) SS[j] <- j*(max(S$Sp)/100)
+    if (i==22) SS[j] <- j*(max(S$Sp*3)/100)
+    RR[j] <- a * SS[j] * exp(-b * SS[j])
+    if(i==22) {RR_skagit[j] <- skagit_alpha * SS[j] * exp(-skagit_beta * SS[j])}
+    #if (i %in% stks_ar) {RR_std[j] <- A_std$A[which(A_std$Stocknumber==i)] * SS[j] *  exp(-B_std$B[which(B_std$Stocknumber==i)] * SS[j])}
   }
   lines(x=SS, y=RR, col="black")
-  name <- All_Ests_std %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
+  if(i==22) lines(x=SS, y=RR_skagit, lty="dashed")
+  name <- All_Est %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
   mtext(name$Name, side=3)
-}
-# don't want logged param values
-# need to unlog A,B,Sigma -- took A off this list for now
-All_Ests$Estimate[All_Ests$Param %in% c( "logB", "logSigma")] <- exp(All_Ests$Estimate[All_Ests$Param %in% c( "logB", "logSigma")] )
-#All_Ests$Param[All_Ests$Param == "logA"] <- "A"
-All_Ests$Param[All_Ests$Param == "logB"] <- "B"
-All_Ests$Param[All_Ests$Param == "logSigma"] <- "sigma"
-All_Ests$Param[All_Ests$Param == "SMSY"] <- "Smsy"
-All_Ests[All_Ests$Param == "B",] <- All_Ests %>% filter(Param == "B") %>% mutate(Estimate = Estimate/Scale) %>% mutate(Std..Error = Std..Error/Scale)
-All_Ests[All_Ests$Param %in% c("Sgen", "SMSY", "Agg_LRP"), ] <-  All_Ests %>% filter(Param %in% c("Sgen", "SMSY", "Agg_LRP")) %>% 
-  mutate(Estimate = Estimate*Scale) %>% mutate(Std..Error = Std..Error*Scale)
-Preds <- All_Ests %>% filter(Param == "Logit_Preds")
-All_Ests <- All_Ests %>% filter(!(Param %in% c( "logSgen", "Logit_Preds"))) 
 
-out <- list()
-out$All_Ests <- All_Ests
+  # Plot SMSYs (black for std, red for AR(1), and dashed for Parken et al. 2006)
+  smsy <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
+    summarise(SMSY=Estimate*Sc) %>% as.numeric()
+  
+  if(i %in% stksNum_ar) abline(v=smsy, col="red")
+  else abline(v=smsy, col="black")
+  if(i %in% stksNum_ar) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
+  
+  ParkenSMSY <- as.tibble(read.csv("DataIn/ParkenSMSY.csv"))
+  ParkenSMSY <- ParkenSMSY %>% filter(Stocknumber==i) %>% select (SMSY) %>% as.numeric()
+  abline(v=ParkenSMSY, lty="dashed")
+  
+
+}
+
 
 #------------------------------------------------------------------------------------------------------------------------------------------------
 # Are residuals of Ricker model autocorrelated? Run Ricker_CheckAr1.cpp TMB code below to check
@@ -244,6 +260,12 @@ param$logSigma_std <- rep(-2, N_Stocks)
 
 #dyn.load(dynlib("TMB_Files/Ricker_CheckAr1"))
 
+obj <- MakeADFun(data, param, DLL="Ricker_CheckAr1", silent=TRUE)
+
+opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
+pl <- obj$env$parList(opt$par) 
+summary(sdreport(obj))
+
 All_Ests <- data.frame(summary(sdreport(obj)))
 All_Ests$Param <- row.names(All_Ests)
 All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))[[1]]))
@@ -256,5 +278,9 @@ len <- len %>% mutate (CI=ac.CI(count))
 ac <- ac %>% left_join(len) %>% left_join(unique(SRDat[, c("Stocknumber", "Name")])) %>% filter(abs(autocorr)>CI)
 ac # 6 stocks have significant lag-1 autocorrelation: Chikamin, Keta, Blossom, Situk, Siletz, and Columbia Sp
 
+
+A_std <- All_Ests %>% filter(Param=="logA_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(A=exp(Estimate))
+B_std <- All_Ests %>% filter(Param=="logB_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(B=exp(Estimate)/Scale.stock) 
+SMSY_std <- All_Ests %>% filter(Param=="SMSY") %>% add_column(Stocknumber=unique(data$stk)) 
 
 

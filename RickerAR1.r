@@ -77,8 +77,9 @@ summary(sdreport(obj))
 
 #--------------------------------------------------------------------------------------------
 # For  Ricker AR1, single stock
-SRDat <- read.csv("DataIn/SRDat.csv")
-SRDat <- SRDat %>% filter (CU_ID==2)
+#SRDat <- read.csv("DataIn/SRDat.csv")
+SRDat <- read.csv("DataIn/SRDat_Harrison.csv")
+SRDat <- SRDat %>% filter (CU_ID==0)
 
 TMB_Inputs <- list(Scale = 1000, logA_Start = 1, rho_Start = 0.1)
 
@@ -141,7 +142,9 @@ RickerAR1.model <- function(theta,R,S){
 }
 
 RickerAR1.solver <- function(R,S){
-  init.vals<-c(1,-2.4,0.1,-2)
+  #init.vals<-c(1,-2.4,0.1,-2)
+  init.vals<-c(1,-7,0.1,-2)#good starting values for Harrison
+  
   SRfit=optim(par=init.vals,fn=RickerAR1.model,R=R,S=S, method="BFGS", hessian=T)	#CH: hessian=2nd derivative, optim good for up to 40 parameters
   V=solve(SRfit$hessian) #covariance matrix
   std=sqrt(abs(diag(V)))
@@ -151,6 +154,8 @@ RickerAR1.solver <- function(R,S){
 
 SRDat <- read.csv("DataIn/SRDat.csv")
 SRDat <- SRDat %>% filter (CU_ID==2)
+SRDat <- read.csv("DataIn/SRDat_Harrison.csv")
+SRDat <- SRDat %>% filter (CU_ID==0)
 Scale <- TMB_Inputs$Scale
 data <- list()
 data$S <- SRDat$Spawners/Scale 
@@ -221,16 +226,16 @@ Ricker.model <- function(theta,R,S){
 
 
 Ricker.solver <- function(R,S){
-  init.vals<-c(1,-2.4,-2)
-  SRfit=optim(par=init.vals,fn=Ricker.model,R=R,S=S, method="BFGS", hessian=T)	#CH: hessian=2nd derivative, optim good for up to 40 parameters
-  V=solve(SRfit$hessian) #covariance matrix
-  std=sqrt(abs(diag(V)))
-  X=V/(std%o%std)	#outer product of standard dev matrix (CH comment)
+  init.vals <- c(1,-2.4,-2)
+  SRfit = optim(par=init.vals,fn=Ricker.model,R=R,S=S, method="BFGS", hessian=T)	#CH: hessian=2nd derivative, optim good for up to 40 parameters
+  V = solve(SRfit$hessian) #covariance matrix
+  std = sqrt( abs( diag(V) ) )
+  X = V / (std %o% std)	#outer product of standard dev matrix (CH comment)
   return(list(SRfit=SRfit, etheta=SRfit$par, V=V, X=X))
 }
 
 SRDat <- read.csv("DataIn/SRDat.csv")
-SRDat <- SRDat %>% filter (CU_ID==0)#2)
+SRDat <- SRDat %>% filter (CU_ID==2)
 Scale <- TMB_Inputs$Scale
 data <- list()
 data$S <- SRDat$Spawners/Scale 

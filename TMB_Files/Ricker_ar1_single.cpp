@@ -30,7 +30,8 @@ Type objective_function<Type>:: operator() ()
       err(i) = logR(i) - LogR_Pred(i);
       }
     
-    ans += -dnorm(LogR_Pred(i), logR(i),  sigma, true);
+    //ans += -dnorm(LogR_Pred(i), logR(i),  sigma, true);
+    ans += -dnorm(logR(i), LogR_Pred(i),  sigma, true);
   }
   
   

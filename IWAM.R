@@ -79,9 +79,6 @@ data$stk_ar <- as.numeric(SRDat_ar$ind_ar)#as.numeric(SRDat_ar$Stocknumber)
 N_Stocks_ar <- length(unique(SRDat_ar$Name))
 data$yr_ar <- SRDat_ar$yr_num
 #data$model <- rep(0,N_Stocks)
-
-
-#data$model[1] <- 1
 #data$Sgen_sig <- TMB_Inputs$Sgen_sig
 
 # Parameters
@@ -125,7 +122,7 @@ obj <- MakeADFun(data, param, DLL="Ricker_ar1", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
 pl <- obj$env$parList(opt$par) 
-summary(sdreport(obj))
+summary(sdreport(obj), p.value=TRUE)
 
 # Create Table of outputs
 All_Ests <- data.frame(summary(sdreport(obj)))
@@ -176,6 +173,7 @@ for (i in Stks){
   skagit_alpha <- 7.74
   skagit_beta <- 0.0000657
   RR_skagit <- NA
+  SS <- RR<- NA
   #RR_std <- NA
 
   for (j in 1:100){
@@ -192,7 +190,13 @@ for (i in Stks){
 
   # Plot SMSYs (black for std, red for AR(1), and dashed for Parken et al. 2006)
   smsy <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
-    summarise(SMSY=Estimate*Sc) %>% as.numeric()
+    summarise(SMSY = Estimate * Sc) %>% as.numeric()
+  smsy_ul <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
+    summarise(SMSY_ul = Estimate * Sc + 1.96 * Std..Error * Sc ) %>% as.numeric()
+  smsy_ll <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
+    summarise(SMSY_ul = Estimate * Sc - 1.96 * Std..Error * Sc ) %>% as.numeric()
+  
+
   
   if(i %in% stksNum_ar) abline(v=smsy, col="red")
   else abline(v=smsy, col="black")

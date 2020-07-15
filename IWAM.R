@@ -196,10 +196,13 @@ for (i in Stks){
   smsy_ll <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
     summarise(SMSY_ul = Estimate * Sc - 1.96 * Std..Error * Sc ) %>% as.numeric()
   
-
   
-  if(i %in% stksNum_ar) abline(v=smsy, col="red")
-  else abline(v=smsy, col="black")
+  
+  if (i %in% stksNum_ar) abline(v=smsy, col="red") else abline(v=smsy, col="black")
+
+  if (i %in% stksNum_ar) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=rgb(1,0,0, alpha=0.1), border=NA ) 
+  else polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
+  
   if(i %in% stksNum_ar) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
   
   ParkenSMSY <- as.tibble(read.csv("DataIn/ParkenSMSY.csv"))

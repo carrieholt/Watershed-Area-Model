@@ -188,11 +188,32 @@ All_Est <- bind_rows(All_Ests_std, All_Ests_ar, All_Ests_surv)
 All_Est$ar <- All_Est$Stocknumber %in% stksNum_ar
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
 
+
+# Get predicted values
+Pred_std <- data.frame()
+Pred_std <- All_Ests %>% filter (Param %in% c("LogR_Pred_std"))
+Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_std$Estimate)
+Preds_std <- Preds_std %>% mutate(ObsLogR = log (Rec / Scale)) 
+r2_std <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
+
+Pred_ar <- data.frame()
+Pred_ar <- All_Ests %>% filter (Param %in% c("LogR_Pred_ar"))
+Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_ar$Estimate)
+Preds_ar <- Preds_ar %>% mutate(ObsLogR = log (Rec / Scale)) 
+r2_ar <- Preds_ar %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
+
+Pred_surv <- data.frame()
+Pred_surv <- All_Ests %>% filter (Param %in% c("LogR_Pred_surv"))
+Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_surv$Estimate)
+Preds_surv <- Preds_surv %>% mutate(ObsLogR = log (Rec / Scale)) 
+r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
+
+r2 <- bind_rows(r2_std, r2_ar, r2_surv) %>% arrange(Stocknumber)
+# Plot SR curves
 Stks <- unique(SRDat$Stocknumber)
 NStks <- length(Stks)
 par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
 
-# Plot SR curves
 for (i in Stks){
   R <- SRDat %>% filter (Stocknumber==i) %>% select(Rec) 
   S <- SRDat %>% filter (Stocknumber==i) %>% select(Sp) 
@@ -236,16 +257,22 @@ for (i in Stks){
   
   
   
-  if (i %in% stksNum_ar) abline(v=smsy, col="red") else abline(v=smsy, col="black")
+  if (i %not in% c(stksNum_ar, stksNum_surv)) abline(v=smsy, col="black") 
+  if (i %in% stksNum_ar) abline(v=smsy, col="red") 
+  if (i %in% stksNum_surv) abline(v=smsy, col="dark blue") 
+  #else abline(v=smsy, col="black")
 
-  if (i %in% stksNum_ar) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=rgb(1,0,0, alpha=0.1), border=NA ) 
-  else polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
+  if (i %in% stksNum_ar) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(1,0,0, alpha=0.1), border=NA ) 
+  if (i %in% stksNum_surv) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(0,0,1, alpha=0.1), border=NA ) 
+  if (i %not in% c(stksNum_ar, stksNum_surv))  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
+  #else polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
   
   if(i %in% stksNum_ar) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
   
   ParkenSMSY <- as.tibble(read.csv("DataIn/ParkenSMSY.csv"))
   ParkenSMSY <- ParkenSMSY %>% filter(Stocknumber==i) %>% select (SMSY) %>% as.numeric()
   abline(v=ParkenSMSY, lty="dashed")
+  text(x=max(S$Sp), y= max(R$Rec), labels=c("r2=",r2%>%filter(Stocknumber==i)%>%select(r2)%>%as.numeric()))
   
 
 }

@@ -214,9 +214,9 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(SREP_ar);
   ADREPORT(SMSY_surv);
   ADREPORT(SREP_surv);
-  
-  //ADREPORT(LogR_Pred_ar);
-  //ADREPORT(LogR_Pred_std);
+  ADREPORT(LogR_Pred_ar);
+  ADREPORT(LogR_Pred_std);
+  ADREPORT(LogR_Pred_surv);
   //ADREPORT(Sgen);
   return ans;
   

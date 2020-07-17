@@ -175,6 +175,7 @@ Type objective_function<Type>:: operator() ()
   // Code for SMSY SREP without AR model
   int N_stks_std = logA_std.size(); 
   int N_stks_ar = logA_ar.size(); 
+  //int N_stks_surv = logA_surv.size(); 
   //vector <Type> logAadj_(N_stks_std);
   //vector <Type> SMSYadj(N_stks_std);  
   vector <Type> SMSY_std(N_stks_std);  
@@ -197,7 +198,9 @@ Type objective_function<Type>:: operator() ()
   }
   SREP_ar = logA_ar / B_ar;
   
-  SMSY_surv =  (1 - LambertW(exp(1-logA_surv)) ) / B_surv ;
+  //for(int i=0; i<N_stks_surv; i++){
+    SMSY_surv =  (1 - LambertW(exp(1-logA_surv)) )/ B_surv ;
+  //}
   SREP_surv = logA_surv / B_surv;
   
   //ADREPORT(A_ar);

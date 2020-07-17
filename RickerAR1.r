@@ -256,6 +256,7 @@ data$logR <- log(SRDat$Rec/Scale)
 ch <- Ricker.solver(exp(data$logR), data$S)$SRfit$par
 ch
 
+
 #------------------------------------------------------------------------------------------------------------------
 require(gsl)
 

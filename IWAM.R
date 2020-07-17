@@ -49,12 +49,13 @@ SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1))
 stks_ar <- c("Chikamin", "Keta", "Blossom", "Situk", "Siletz", "Columbia Sp")
 stksNum_ar <- c(4,5,6,10,11,16)
 
-#Cowichan, modeled with Ricker with a surival co-variate
-stksNum_cow <- 23
+# Cowichan modeled with Ricker with a surival co-variate. 
+# Harrison was modeled with survival co-variate, but gives very poor fit with very high gamma and 
+stksNum_surv <- 23#c(0,23)
 
-SRDat_std <- SRDat %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_cow)) 
+SRDat_std <- SRDat %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) 
 SRDat_ar <- SRDat %>% filter(Stocknumber %in% stksNum_ar) 
-SRDat_cow <- SRDat %>% filter(Stocknumber %in% stksNum_cow) 
+SRDat_surv <- SRDat %>% filter(Stocknumber %in% stksNum_surv) 
 
 
 # Assign new stock numbers to each stock so that they are sequential. 
@@ -66,16 +67,18 @@ ind_ar <- tibble(ind_ar= 0:(length(unique(SRDat_ar$Name))-1))
 ind_ar <- add_column(ind_ar, Stocknumber = (unique(SRDat_ar$Stocknumber)))
 SRDat_ar <- SRDat_ar %>% left_join(ind_ar)
 
-ind_cow <- tibble(ind_cow= 0:(length(unique(SRDat_cow$Name))-1))
-ind_cow <- add_column(ind_cow, Stocknumber = (unique(SRDat_cow$Stocknumber)))
-Surv <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Yr<=1999)
-SRDat_cow <- SRDat_cow %>% left_join(ind_cow) %>% left_join(Surv)
+ind_surv <- tibble(ind_surv= 0:(length(unique(SRDat_surv$Name))-1))
+ind_surv <- add_column(ind_surv, Stocknumber = (unique(SRDat_surv$Stocknumber)))
+Surv <- as.data.frame(read.csv("DataIn/Surv.csv")) #%>% filter(Yr<=1999)
+SRDat_surv <- SRDat_surv %>% left_join(ind_surv) %>% left_join(Surv)
 
 
-#remove years 1981-1984, 1986-1987 as per Tompkins et al. 2005
-SRDat_cow <- SRDat_cow %>% filter(Yr >= 1985) %>% filter (Yr != 1986) %>% filter (Yr != 1987)
-n_cow <- length(SRDat_cow$Yr)
-SRDat_cow$yr_num <- 0:(n_cow-1)
+#remove years 1981-1984, 1986-1987  from Cowichan as per Tompkins et al. 2005
+SRDat_surv_Cow <- SRDat_surv %>% filter(Name == "Cowichan" & Yr >= 1985 & Yr !=1986 & Yr != 1987) 
+n_surv_Cow <- length(SRDat_surv_Cow$Yr)
+SRDat_surv_Cow$yr_num <- 0:(n_surv_Cow-1)
+#SRDat_surv_Har <- SRDat_surv %>% filter(Name == "Harrison") 
+SRDat_surv <- SRDat_surv_Cow#bind_rows(SRDat_surv_Har, SRDat_surv_Cow)
 
 TMB_Inputs <- list(logA_Start = 2, rho_Start = 0.1, Sgen_sig = 1) #Scale = 1000, 
 
@@ -95,24 +98,24 @@ data$stk_ar <- as.numeric(SRDat_ar$ind_ar)
 N_Stocks_ar <- length(unique(SRDat_ar$Name))
 data$yr_ar <- SRDat_ar$yr_num
 
-Scale_surv <- SRDat_cow$Scale 
-data$S_surv <- SRDat_cow$Sp/Scale_surv
-data$logR_surv <- log(SRDat_cow$Rec/Scale_surv)
-data$stk_surv <- as.numeric(SRDat_cow$ind_cow)
-N_Stocks_surv <- length(unique(SRDat_cow$Name))
-data$yr_surv <- SRDat_cow$yr_num
-data$Surv_surv <- log(SRDat_cow$Surv)
+Scale_surv <- SRDat_surv$Scale 
+data$S_surv <- SRDat_surv$Sp/Scale_surv
+data$logR_surv <- log(SRDat_surv$Rec/Scale_surv)
+data$stk_surv <- as.numeric(SRDat_surv$ind_surv)
+N_Stocks_surv <- length(unique(SRDat_surv$Name))
+data$yr_surv <- SRDat_surv$yr_num
+data$Surv_surv <- log(SRDat_surv$Surv) #Tompkins et al. used Ln(Surv+1)
 
 #data$model <- rep(0,N_Stocks)
 #data$Sgen_sig <- TMB_Inputs$Sgen_sig
 
 # Parameters
 param <- list()
-Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_cow)) %>% 
+Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) %>% 
                       summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
 Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% stksNum_ar) %>% 
                      summarize(Scale.stock_ar = max(Scale)))$Scale.stock_ar
-Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% stksNum_cow) %>% 
+Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% stksNum_surv) %>% 
                      summarize(Scale.stock_surv = max(Scale)))$Scale.stock_surv
 #Scale.stock <- 10^(digits$maxDigits-1)
 
@@ -130,9 +133,9 @@ param$rho <- rep(TMB_Inputs$rho_Start, N_Stocks_ar)
 param$logSigma_ar <- rep (-2, N_Stocks_ar)
 
 # Parameters for stock with survival covariate
-param$logA_surv <- ( SRDat_cow %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
+param$logA_surv <- ( SRDat_surv %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
 B_surv <- SRDat_cow %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
-param$logB_surv <- log ( 1/ ( (1/B_surv$m)/Scale.stock_cow ))#Take inverse of B (=Smax and apply scale), the take the inverse again and log to get logB of scaled Smax
+param$logB_surv <- log ( 1/ ( (1/B_surv$m)/Scale.stock_surv ))#Take inverse of B (=Smax and apply scale), the take the inverse again and log to get logB of scaled Smax
 param$logSigma_surv <- rep (-2, N_Stocks_surv)
 param$gamma <- rep (0, N_Stocks_surv)
 
@@ -176,9 +179,9 @@ All_Ests_ar <- left_join(All_Ests_ar, unique(SRDat_ar[, c("Stocknumber", "Name")
 
 All_Ests_surv <- data.frame()
 All_Ests_surv<- All_Ests %>% filter (Param %in% c("logA_surv", "logB_surv", "gamma",  "logSigma_surv", "SMSY_surv", "SREP_surv" ))
-SN_surv <- unique(SRDat_cow[, c("Stocknumber")])
+SN_surv <- unique(SRDat_surv[, c("Stocknumber")])
 All_Ests_surv$Stocknumber <- rep(SN_surv)
-All_Ests_surv <- left_join(All_Ests_surv, unique(SRDat_cow[, c("Stocknumber", "Name")]))
+All_Ests_surv <- left_join(All_Ests_surv, unique(SRDat_surv[, c("Stocknumber", "Name")]))
 
 # Combine again
 All_Est <- bind_rows(All_Ests_std, All_Ests_ar, All_Ests_surv) 

@@ -49,8 +49,13 @@ SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1))
 stks_ar <- c("Chikamin", "Keta", "Blossom", "Situk", "Siletz", "Columbia Sp")
 stksNum_ar <- c(4,5,6,10,11,16)
 
-SRDat_std <- SRDat %>% filter(Stocknumber %not in% stksNum_ar) 
+#Cowichan, modeled with Ricker with a surival co-variate
+stksNum_cow <- 23
+
+SRDat_std <- SRDat %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_cow)) 
 SRDat_ar <- SRDat %>% filter(Stocknumber %in% stksNum_ar) 
+SRDat_cow <- SRDat %>% filter(Stocknumber %in% stksNum_cow) 
+
 
 # Assign new stock numbers to each stock so that they are sequential. 
 ind_std <- tibble(ind_std= 0:(length(unique(SRDat_std$Name))-1))
@@ -61,51 +66,75 @@ ind_ar <- tibble(ind_ar= 0:(length(unique(SRDat_ar$Name))-1))
 ind_ar <- add_column(ind_ar, Stocknumber = (unique(SRDat_ar$Stocknumber)))
 SRDat_ar <- SRDat_ar %>% left_join(ind_ar)
 
+ind_cow <- tibble(ind_cow= 0:(length(unique(SRDat_cow$Name))-1))
+ind_cow <- add_column(ind_cow, Stocknumber = (unique(SRDat_cow$Stocknumber)))
+Surv <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Yr<=1999)
+SRDat_cow <- SRDat_cow %>% left_join(ind_cow) %>% left_join(Surv)
+
+
+#remove years 1981-1984, 1986-1987 as per Tompkins et al. 2005
+SRDat_cow <- SRDat_cow %>% filter(Yr >= 1985) %>% filter (Yr != 1986) %>% filter (Yr != 1987)
+n_cow <- length(SRDat_cow$Yr)
+SRDat_cow$yr_num <- 0:(n_cow-1)
+
 TMB_Inputs <- list(logA_Start = 2, rho_Start = 0.1, Sgen_sig = 1) #Scale = 1000, 
 
 # Data 
 data <- list()
-Scale_std <- SRDat_std$Scale # Scale <- TMB_Inputs$Scale
+Scale_std <- SRDat_std$Scale 
 data$S_std <- SRDat_std$Sp/Scale_std 
 data$logR_std <- log(SRDat_std$Rec/Scale_std)
-data$stk_std <- as.numeric(SRDat_std$ind_std)#as.numeric(SRDat_std$Stocknumber)
+data$stk_std <- as.numeric(SRDat_std$ind_std)
 N_Stocks_std <- length(unique(SRDat_std$Name))
 data$yr_std <- SRDat_std$yr_num
 
-Scale_ar <- SRDat_ar$Scale # Scale <- TMB_Inputs$Scale
+Scale_ar <- SRDat_ar$Scale 
 data$S_ar <- SRDat_ar$Sp/Scale_ar 
 data$logR_ar <- log(SRDat_ar$Rec/Scale_ar)
-data$stk_ar <- as.numeric(SRDat_ar$ind_ar)#as.numeric(SRDat_ar$Stocknumber)
+data$stk_ar <- as.numeric(SRDat_ar$ind_ar)
 N_Stocks_ar <- length(unique(SRDat_ar$Name))
 data$yr_ar <- SRDat_ar$yr_num
+
+Scale_surv <- SRDat_cow$Scale 
+data$S_surv <- SRDat_cow$Sp/Scale_surv
+data$logR_surv <- log(SRDat_cow$Rec/Scale_surv)
+data$stk_surv <- as.numeric(SRDat_cow$ind_cow)
+N_Stocks_surv <- length(unique(SRDat_cow$Name))
+data$yr_surv <- SRDat_cow$yr_num
+data$Surv_surv <- log(SRDat_cow$Surv)
+
 #data$model <- rep(0,N_Stocks)
 #data$Sgen_sig <- TMB_Inputs$Sgen_sig
 
 # Parameters
 param <- list()
-Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %not in% stksNum_ar) %>% 
+Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_cow)) %>% 
                       summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
 Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% stksNum_ar) %>% 
                      summarize(Scale.stock_ar = max(Scale)))$Scale.stock_ar
+Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% stksNum_cow) %>% 
+                     summarize(Scale.stock_surv = max(Scale)))$Scale.stock_surv
 #Scale.stock <- 10^(digits$maxDigits-1)
 
 # Parameters for stocks without AR1
-#param$logA_std <- rep(TMB_Inputs$logA_Start, N_Stocks)
-#param$logB_std <- log(1/( (SRDat %>% group_by(Stocknumber) %>% summarise(x=quantile(Sp, 0.8)))$x/Scale.stock) )
 param$logA_std <- ( SRDat_std %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
 B_std <- SRDat_std %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
 param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std ))#log(B_std$m/Scale.stock)
 param$logSigma_std <- rep(-2, N_Stocks_std)
 
 # Parameters for stocks with AR1
-#param$logA_ar <- rep(TMB_Inputs$logA_Start, N_Stocks)
-#param$logB_ar <- log(1/( (SRDat %>% group_by(Stocknumber) %>% summarise(x=quantile(Sp, 0.8)))$x/Scale.stock) )
 param$logA_ar <- ( SRDat_ar %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
 B_ar <- SRDat_ar %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
 param$logB_ar <- log ( 1/ ( (1/B_ar$m)/Scale.stock_ar ))#Take inverse of B (=Smax and apply scale), the take the inverse again and log to get logB of scaled Smax
 param$rho <- rep(TMB_Inputs$rho_Start, N_Stocks_ar)
 param$logSigma_ar <- rep (-2, N_Stocks_ar)
 
+# Parameters for stock with survival covariate
+param$logA_surv <- ( SRDat_cow %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
+B_surv <- SRDat_cow %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
+param$logB_surv <- log ( 1/ ( (1/B_surv$m)/Scale.stock_cow ))#Take inverse of B (=Smax and apply scale), the take the inverse again and log to get logB of scaled Smax
+param$logSigma_surv <- rep (-2, N_Stocks_surv)
+param$gamma <- rep (0, N_Stocks_surv)
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
@@ -145,8 +174,14 @@ SN_ar <- unique(SRDat_ar[, c("Stocknumber")])
 All_Ests_ar$Stocknumber <- rep(SN_ar)
 All_Ests_ar <- left_join(All_Ests_ar, unique(SRDat_ar[, c("Stocknumber", "Name")]))
 
+All_Ests_surv <- data.frame()
+All_Ests_surv<- All_Ests %>% filter (Param %in% c("logA_surv", "logB_surv", "gamma",  "logSigma_surv", "SMSY_surv", "SREP_surv" ))
+SN_surv <- unique(SRDat_cow[, c("Stocknumber")])
+All_Ests_surv$Stocknumber <- rep(SN_surv)
+All_Ests_surv <- left_join(All_Ests_surv, unique(SRDat_cow[, c("Stocknumber", "Name")]))
+
 # Combine again
-All_Est <- bind_rows(All_Ests_std, All_Ests_ar) 
+All_Est <- bind_rows(All_Ests_std, All_Ests_ar, All_Ests_surv) 
 All_Est$ar <- All_Est$Stocknumber %in% stksNum_ar
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
 
@@ -212,7 +247,19 @@ for (i in Stks){
 
 }
 
+KSR.SMSY <- All_Est %>% filter(Name=="KSR") %>% filter(Param=="SMSY") %>% select(Estimate) %>% as.numeric()
+KSR.SMSY.ul <- KSR.SMSY + 1.96 * (All_Est %>% filter(Name=="KSR") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
+KSR.SMSY.ul <- KSR.SMSY.ul * SRDat %>% filter (Name=="KSR") %>% select(Scale) %>% distinct() %>% as.numeric()
 
+Stikine.SMSY <- All_Est %>% filter(Name=="Stikine") %>% filter(Param=="SMSY") %>% select(Estimate) %>% as.numeric()
+Stikine.SMSY.ul <- Stikine.SMSY + 1.96 * (All_Est %>% filter(Name=="Stikine") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
+Stikine.SMSY.ul <- Stikine.SMSY.ul * SRDat %>% filter (Name=="Stikine") %>% select(Scale) %>% distinct() %>% as.numeric()
+
+Cow.SMSY <- All_Est %>% filter(Name=="Cowichan") %>% filter(Param=="SMSY") %>% select(Estimate) %>% as.numeric()
+Cow.SMSY.ul <- Cow.SMSY + 1.96 * (All_Est %>% filter(Name=="Cowichan") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
+Cow.SMSY.ul <- Cow.SMSY.ul * SRDat %>% filter (Name=="Cowichan") %>% select(Scale) %>% distinct() %>% as.numeric()
+Cow.SMSY.ll <- Cow.SMSY - 1.96 * (All_Est %>% filter(Name=="Cowichan") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
+Cow.SMSY.ll <- Cow.SMSY.ll * SRDat %>% filter (Name=="Cowichan") %>% select(Scale) %>% distinct() %>% as.numeric()
 #------------------------------------------------------------------------------------------------------------------------------------------------
 # Are residuals of Ricker model autocorrelated? Run Ricker_CheckAr1.cpp TMB code below to check
 

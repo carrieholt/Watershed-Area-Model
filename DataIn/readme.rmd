@@ -1,0 +1,15 @@
+---
+title: "Readme"
+author: "Carrie Holt"
+date: "July 17, 2020"
+output: html_document
+---
+## readme for data
+
+
+
+-SRinputLiermann.csv file provided by Martin Liermann 21 May 2020. This was data used in Liermann et al. 2010.
+-I changed number of stocks to start from zero instead of 1, and I added yr_num column
+-I renamed SRinput.csv
+17 July 2020.
+-SRinput.csv, I replaced Cowichan Data with the data reported in Tompkins et. 2005.

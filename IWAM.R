@@ -212,7 +212,7 @@ r2 <- bind_rows(r2_std, r2_ar, r2_surv) %>% arrange(Stocknumber)
 
 # Plot SR curves
 
-# For plotting purposes, need to estimate Ricker paramerters for AR1 stocks
+# For plotting purposes, need to estimate std Ricker SMSY for AR1 stocks
 source ("CheckAR1.r")
 
 Stks <- unique(SRDat$Stocknumber)
@@ -273,11 +273,15 @@ for (i in Stks){
   #else polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
   
   if(i %in% stksNum_ar) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
+  if(i %in% stksNum_surv) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
   
   ParkenSMSY <- as.tibble(read.csv("DataIn/ParkenSMSY.csv"))
   ParkenSMSY <- ParkenSMSY %>% filter(Stocknumber==i) %>% select (SMSY) %>% as.numeric()
   abline(v=ParkenSMSY, lty="dashed")
-  text(x=max(S$Sp), y= max(R$Rec), labels=c("r2=",r2%>%filter(Stocknumber==i)%>%select(r2)%>%as.numeric()))
+  lab <-  r2 %>% filter(Stocknumber==i) %>% select(r2) %>% as.numeric() %>% round(3)
+  #text(x=max(S$Sp), y= max(R$Rec), labels=paste0("r2=",lab))
+  legend("topright", legend = "", title= paste0("r2=",lab), bty="n")
+  #legend("topright", legend = "", title= expression(paste(r^2,"=",lab)), bty="n")
   
 
 }

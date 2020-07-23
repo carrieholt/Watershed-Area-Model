@@ -86,21 +86,24 @@ TMB_Inputs <- list(logA_Start = 2, rho_Start = 0.1, Sgen_sig = 1) #Scale = 1000,
 data <- list()
 Scale_std <- SRDat_std$Scale 
 data$S_std <- SRDat_std$Sp/Scale_std 
-data$logR_std <- log(SRDat_std$Rec/Scale_std)
+#data$logR_std <- log(SRDat_std$Rec/Scale_std)
+data$logRS_std <- log( (SRDat_std$Rec/Scale_std) / (SRDat_std$Sp/Scale_std) )
 data$stk_std <- as.numeric(SRDat_std$ind_std)
 N_Stocks_std <- length(unique(SRDat_std$Name))
 data$yr_std <- SRDat_std$yr_num
 
 Scale_ar <- SRDat_ar$Scale 
 data$S_ar <- SRDat_ar$Sp/Scale_ar 
-data$logR_ar <- log(SRDat_ar$Rec/Scale_ar)
+#data$logR_ar <- log(SRDat_ar$Rec/Scale_ar)
+data$logRS_ar <- log( (SRDat_ar$Rec/Scale_ar) / (SRDat_ar$Sp/Scale_ar) ) 
 data$stk_ar <- as.numeric(SRDat_ar$ind_ar)
 N_Stocks_ar <- length(unique(SRDat_ar$Name))
 data$yr_ar <- SRDat_ar$yr_num
 
 Scale_surv <- SRDat_surv$Scale 
 data$S_surv <- SRDat_surv$Sp/Scale_surv
-data$logR_surv <- log(SRDat_surv$Rec/Scale_surv)
+#data$logR_surv <- log(SRDat_surv$Rec/Scale_surv)
+data$logRS_surv <- log( (SRDat_surv$Rec/Scale_surv) / (SRDat_surv$Sp/Scale_surv) )
 data$stk_surv <- as.numeric(SRDat_surv$ind_surv)
 N_Stocks_surv <- length(unique(SRDat_surv$Name))
 data$yr_surv <- SRDat_surv$yr_num
@@ -191,7 +194,8 @@ All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[
 
 # Get predicted values
 Pred_std <- data.frame()
-Pred_std <- All_Ests %>% filter (Param %in% c("LogR_Pred_std"))
+#Pred_std <- All_Ests %>% filter (Param %in% c("LogR_Pred_std"))
+Pred_std <- All_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
 Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_std$Estimate)
 Preds_std <- Preds_std %>% mutate(ObsLogR = log (Rec / Scale)) 
 r2_std <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)

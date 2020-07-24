@@ -46,7 +46,8 @@ TMB_Inputs <- list(logA_Start = 2, rho_Start = 0.1, Sgen_sig = 1) #Scale = 1000,
 data <- list()
 Scale <- SRDat$Scale # Scale <- TMB_Inputs$Scale
 data$S <- SRDat$Sp/Scale 
-data$logR <- log(SRDat$Rec/Scale)
+#data$logR <- log(SRDat$Rec/Scale)
+data$logRS <- log( (SRDat$Rec/Scale) / (SRDat$Sp/Scale) )
 data$stk <- as.numeric(SRDat$Stocknumber)
 N_Stocks <- length(unique(SRDat$Name))
 data$yr <- SRDat$yr_num
@@ -77,8 +78,10 @@ summary(sdreport(obj))
 All_Ests <- data.frame(summary(sdreport(obj)))
 All_Ests$Param <- row.names(All_Ests)
 All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))[[1]]))
-Preds <- All_Ests %>% filter(Param == "LogR_Pred_std")
-Preds <- Preds %>% add_column(yr=data$yr, Stocknumber=data$stk, logR=data$logR) %>% mutate(Resid=Estimate-logR) 
+#Preds <- All_Ests %>% filter(Param == "LogR_Pred_std")
+Preds <- All_Ests %>% filter(Param == "LogRS_Pred_std")
+#Preds <- Preds %>% add_column(yr=data$yr, Stocknumber=data$stk, logR=data$logR) %>% mutate(Resid=Estimate-logR) 
+Preds <- Preds %>% add_column(yr=data$yr, Stocknumber=data$stk, logRS=data$logRS) %>% mutate(Resid=Estimate-logRS) 
 ac <- Preds %>% group_by(Stocknumber) %>% summarise (autocorr=acf(Resid, plot=F)$acf[2])# provides AR(1) autocorrelation
 len <- Preds %>% group_by(Stocknumber) %>% summarise (count=length(Resid))
 ac.CI <- function(n) {qnorm((1 + 0.95)/2)/sqrt(n)} #95% CI for acf assuming white noise, see https://stackoverflow.com/questions/14266333/extract-confidence-interval-values-from-acf-correlogram

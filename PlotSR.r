@@ -1,8 +1,8 @@
-#Plot SR models
+# Plot SR models: curves and linearized mddel
 
 # Plot SR curves
 
-PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv) {
+PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2) {
   Stks <- unique(SRDat$Stocknumber)
   NStks <- length(Stks)
   par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
@@ -35,8 +35,15 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv) {
       if(i==22) {RR_skagit[j] <- skagit_alpha * SS[j] * exp(-skagit_beta * SS[j])}
       #if (i %in% stks_ar) {RR_std[j] <- A_std$A[which(A_std$Stocknumber==i)] * SS[j] *  exp(-B_std$B[which(B_std$Stocknumber==i)] * SS[j])}
     }
-    lines(x=SS, y=RR, col="black")
+    
+    if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
+    if (i %in% stksNum_ar) col.use <- "red"
+    if (i %in% stksNum_surv) col.use <- "blue"
+    lines(x=SS, y=RR, col=col.use) 
+    
+    #For Skagit, add Parken et al. 2006 model curve
     if(i==22) lines(x=SS, y=RR_skagit, lty="dashed")
+    
     name <- All_Est %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
     mtext(name$Name, side=3)
     
@@ -49,12 +56,8 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv) {
       summarise(SMSY_ul = Estimate * Sc - 1.96 * Std..Error * Sc ) %>% as.numeric()
     
     
-    
-    if (i %not in% c(stksNum_ar, stksNum_surv)) abline(v=smsy, col="black") 
-    if (i %in% stksNum_ar) abline(v=smsy, col="red") 
-    if (i %in% stksNum_surv) abline(v=smsy, col="dark blue") 
-    #else abline(v=smsy, col="black")
-    
+    abline(v = smsy, col=col.use)
+
     if (i %in% stksNum_ar) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(1,0,0, alpha=0.1), border=NA ) 
     if (i %in% stksNum_surv) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(0,0,1, alpha=0.1), border=NA ) 
     if (i %not in% c(stksNum_ar, stksNum_surv))  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
@@ -67,10 +70,53 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv) {
     ParkenSMSY <- ParkenSMSY %>% filter(Stocknumber==i) %>% select (SMSY) %>% as.numeric()
     abline(v=ParkenSMSY, lty="dashed")
     lab <-  r2 %>% filter(Stocknumber==i) %>% select(r2) %>% as.numeric() %>% round(2)
-    #text(x=max(S$Sp), y= max(R$Rec), labels=paste0("r2=",lab))
     legend("topright", legend = "", title= paste0("r2=",lab), bty="n")
-    #legend("topright", legend = "", title= expression(paste(r^2,"=",lab)), bty="n")
+  }
+  
+}
+
+
+# Plot SR linearized model
+
+PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2) {
+  Stks <- unique(SRDat$Stocknumber)
+  NStks <- length(Stks)
+  par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
+  
+  for (i in Stks){
+    R <- SRDat %>% filter (Stocknumber==i) %>% select(Rec) 
+    S <- SRDat %>% filter (Stocknumber==i) %>% select(Sp) 
+    LogRS <- log(R$Rec/S$Sp)
     
+    # what is the scale of Ricker b estimate?
+    Sc <- SRDat %>% filter (Stocknumber==i) %>% select(Scale) %>% distinct() %>% as.numeric()
+    if(i !=22) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
+    if(i ==22) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(LogRS) ) )
+    name <- All_Est %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
+    mtext(name$Name, side=3)
+    
+     
+    LogA <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
+      summarise(A=Estimate) %>% as.numeric()
+    # Divide b by scale
+    B <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logB") %>% 
+      summarise(B=exp(Estimate)/Sc) %>% as.numeric()
+
+    if (i %in% stksNum_ar) col.use <- "red"
+    if (i %in% stksNum_surv) col.use <- "blue"
+    if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
+    
+    abline(a=LogA, b=-B, col=col.use)
+    
+    # For Skagit, add the best fit based on Parken et al. 2006 Ricker estimates
+    skagit_alpha <- 7.74
+    skagit_beta <- 0.0000657
+    if (i==22)     abline(a=log(skagit_alpha), b=-skagit_beta, col="black", lty="dashed")
+
+
+    lab <-  r2 %>% filter(Stocknumber==i) %>% select(r2) %>% as.numeric() %>% round(2)
+    legend("topright", legend = "", title= paste0("r2=",lab), bty="n")
+
   }
   
   

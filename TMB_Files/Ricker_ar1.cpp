@@ -44,20 +44,23 @@ template<class Type>
 Type objective_function<Type>:: operator() ()
 {
   DATA_VECTOR(S_std);
-  DATA_VECTOR(logR_std);
+  //DATA_VECTOR(logR_std);
+  DATA_VECTOR(logRS_std);
+  
   // I need to include both ind_std and stk_std, and use ind_stk in the estimation step for loops, but stk_std in the model compilation step at bottom.
   DATA_IVECTOR(stk_std);
   DATA_IVECTOR(yr_std);
   DATA_VECTOR(S_ar);
-  DATA_VECTOR(logR_ar);
+  //DATA_VECTOR(logR_ar);
+  DATA_VECTOR(logRS_ar);
   DATA_IVECTOR(stk_ar);
   DATA_IVECTOR(yr_ar);
   DATA_VECTOR(S_surv);
-  DATA_VECTOR(logR_surv);
+  //DATA_VECTOR(logR_surv);
+  DATA_VECTOR(logRS_surv);
   DATA_IVECTOR(stk_surv);
   DATA_IVECTOR(yr_surv);
   DATA_IVECTOR(Surv_surv);
-  
   //DATA_IVECTOR(model);
   //DATA_SCALAR(Sgen_sig);
   
@@ -73,7 +76,6 @@ Type objective_function<Type>:: operator() ()
   PARAMETER(logB_surv);
   PARAMETER(logSigma_surv);
   PARAMETER(gamma);
-  
   //PARAMETER_VECTOR(logSgen);
   
   
@@ -82,46 +84,62 @@ Type objective_function<Type>:: operator() ()
   int N_Obs_ar = S_ar.size(); 
   int N_Obs_surv = S_surv.size(); 
   
-  vector <Type> LogR_Pred_ar(N_Obs_ar);
+  //vector <Type> LogR_Pred_ar(N_Obs_ar);
+  vector <Type> LogRS_Pred_ar(N_Obs_ar);
   vector <Type> sigma_ar = exp(logSigma_ar);
-  //vector <Type> A_ar = exp(logA_ar);
   vector <Type> err(N_Obs_ar);
 
   
   // Ricker AR1 likelihood
   for (int i = 0; i<N_Obs_ar; i++){
-    if (yr_ar(i) == 0) {LogR_Pred_ar(i) = logA_ar(stk_ar(i)) + log(S_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i);
-        err(i) = logR_ar(i) - LogR_Pred_ar(i);
+    //if (yr_ar(i) == 0) {LogR_Pred_ar(i) = logA_ar(stk_ar(i)) + log(S_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i);
+    if (yr_ar(i) == 0) {LogRS_Pred_ar(i) = logA_ar(stk_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i);
+      
+        //err(i) = logR_ar(i) - LogR_Pred_ar(i);
+        err(i) = logRS_ar(i) - LogRS_Pred_ar(i);
         
-      } else if (yr_ar(i) >= 1) { LogR_Pred_ar(i) = logA_ar(stk_ar(i)) + log(S_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i) + rho(stk_ar(i))*err(i-1);
-        err(i) = logR_ar(i) - LogR_Pred_ar(i);
+      //} else if (yr_ar(i) >= 1) { LogR_Pred_ar(i) = logA_ar(stk_ar(i)) + log(S_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i) + rho(stk_ar(i))*err(i-1);
+    } else if (yr_ar(i) >= 1) { LogRS_Pred_ar(i) = logA_ar(stk_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i) + rho(stk_ar(i))*err(i-1);
+
+        //err(i) = logR_ar(i) - LogR_Pred_ar(i);
+        err(i) = logRS_ar(i) - LogRS_Pred_ar(i);
+        
         }
     
-    ans += -dnorm(LogR_Pred_ar(i), logR_ar(i),  sigma_ar(stk_ar(i)), true);
+    //ans += -dnorm(LogR_Pred_ar(i), logR_ar(i),  sigma_ar(stk_ar(i)), true);
+    ans += -dnorm(LogRS_Pred_ar(i), logRS_ar(i),  sigma_ar(stk_ar(i)), true);
+    
   }
   
-  vector <Type> LogR_Pred_std(N_Obs_std);
+  //vector <Type> LogR_Pred_std(N_Obs_std);
+  vector <Type> LogRS_Pred_std(N_Obs_std);
   vector <Type> sigma_std = exp(logSigma_std);
-  //vector <Type> A_std = exp(logA_std);
   
   // Standard Ricker model
   for (int i = 0; i<N_Obs_std; i++){
     
-    LogR_Pred_std(i) = logA_std(stk_std(i)) + log(S_std(i)) - exp(logB_std(stk_std(i))) * S_std(i);
-    ans += -dnorm(LogR_Pred_std(i), logR_std(i),  sigma_std(stk_std(i)), true);
+    //LogR_Pred_std(i) = logA_std(stk_std(i)) + log(S_std(i)) - exp(logB_std(stk_std(i))) * S_std(i);
+    LogRS_Pred_std(i) = logA_std(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i);
+    
+    //ans += -dnorm(LogR_Pred_std(i), logR_std(i),  sigma_std(stk_std(i)), true);
+    ans += -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);
+    
     
   }
 
-  vector <Type> LogR_Pred_surv(N_Obs_surv);
+  //vector <Type> LogR_Pred_surv(N_Obs_surv);
+  vector <Type> LogRS_Pred_surv(N_Obs_surv);
   Type sigma_surv = exp(logSigma_surv);
-  //Type A_surv = exp(logA_surv);
 
   
   // Ricker likelihood with survival covariate
   for (int i = 0; i<N_Obs_surv; i++){
-    LogR_Pred_surv(i) = logA_surv + log(S_surv(i)) - exp(logB_surv) * S_surv(i) + gamma * Surv_surv(i);
+    //LogR_Pred_surv(i) = logA_surv + log(S_surv(i)) - exp(logB_surv) * S_surv(i) + gamma * Surv_surv(i);
+    LogRS_Pred_surv(i) = logA_surv - exp(logB_surv) * S_surv(i) + gamma * Surv_surv(i);
     
-    ans += -dnorm(LogR_Pred_surv(i), logR_surv(i),  sigma_surv, true);
+    //ans += -dnorm(LogR_Pred_surv(i), logR_surv(i),  sigma_surv, true);
+    ans += -dnorm(LogRS_Pred_surv(i), logRS_surv(i),  sigma_surv, true);
+    
   }
   
   
@@ -214,9 +232,13 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(SREP_ar);
   ADREPORT(SMSY_surv);
   ADREPORT(SREP_surv);
-  ADREPORT(LogR_Pred_ar);
-  ADREPORT(LogR_Pred_std);
-  ADREPORT(LogR_Pred_surv);
+  //ADREPORT(LogR_Pred_ar);
+  //ADREPORT(LogR_Pred_std);
+  //ADREPORT(LogR_Pred_surv);
+  ADREPORT(LogRS_Pred_ar);
+  ADREPORT(LogRS_Pred_std);
+  ADREPORT(LogRS_Pred_surv);
+  
   //ADREPORT(Sgen);
   return ans;
   

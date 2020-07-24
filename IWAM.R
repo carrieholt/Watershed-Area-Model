@@ -1,5 +1,9 @@
 #---------------------------------------------------------
 # Integrated Watershed Area Model
+# Steps
+# 1. Read in data
+# 2. Create data and parameter lists for TMB
+# 3. Estimate SR parameters and SMSY & SREP for synoptic data sets
 
 #---------------------------------------------------------
 # Libaries
@@ -12,13 +16,15 @@ library(reshape2)
 library(TMB)
 library(zoo)
 
-#Functions
+# Functions
 count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
+# For SR plotting purposes, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
+source ("CheckAR1.r")
 
 #---------------------------------------------------------
-# Data
+# 1. Read in data
 
 SRDatwNA <- read.csv("DataIn/SRinputfile.csv")
 SRDatwNA <- SRDatwNA %>% filter(Name != "Hoko" & Name != "Hoh") #remove two stocks not used in Parken et al, and not documented in Liermann et al.
@@ -46,11 +52,11 @@ SRDat <- left_join(SRDat, digits)
 SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1))
 
 
-stks_ar <- c("Chikamin", "Keta", "Blossom", "Situk", "Siletz", "Columbia Sp")
+stks_ar <- c("Chikamin", "Keta", "Blossom", "Situk", "Siletz", "Columbia Sp")#Cowichan, stk-23, not included here becuase modelled as per Tompkins with a surival covariate
 stksNum_ar <- c(4,5,6,10,11,16)
 
 # Cowichan modeled with Ricker with a surival co-variate. 
-# Harrison was modeled with survival co-variate, but gives very poor fit with very high gamma and 
+# Harrison was modeled with survival co-variate, but gives very poor fit with very high gamma and so excluded 
 stksNum_surv <- 23#c(0,23)
 
 SRDat_std <- SRDat %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) 
@@ -80,27 +86,33 @@ SRDat_surv_Cow$yr_num <- 0:(n_surv_Cow-1)
 #SRDat_surv_Har <- SRDat_surv %>% filter(Name == "Harrison") 
 SRDat_surv <- SRDat_surv_Cow#bind_rows(SRDat_surv_Har, SRDat_surv_Cow)
 
+
+# 2. Create data and parameter lists for TMB
+
 TMB_Inputs <- list(logA_Start = 2, rho_Start = 0.1, Sgen_sig = 1) #Scale = 1000, 
 
 # Data 
 data <- list()
 Scale_std <- SRDat_std$Scale 
 data$S_std <- SRDat_std$Sp/Scale_std 
-data$logR_std <- log(SRDat_std$Rec/Scale_std)
+#data$logR_std <- log(SRDat_std$Rec/Scale_std)
+data$logRS_std <- log( (SRDat_std$Rec/Scale_std) / (SRDat_std$Sp/Scale_std) )
 data$stk_std <- as.numeric(SRDat_std$ind_std)
 N_Stocks_std <- length(unique(SRDat_std$Name))
 data$yr_std <- SRDat_std$yr_num
 
 Scale_ar <- SRDat_ar$Scale 
 data$S_ar <- SRDat_ar$Sp/Scale_ar 
-data$logR_ar <- log(SRDat_ar$Rec/Scale_ar)
+#data$logR_ar <- log(SRDat_ar$Rec/Scale_ar)
+data$logRS_ar <- log( (SRDat_ar$Rec/Scale_ar) / (SRDat_ar$Sp/Scale_ar) ) 
 data$stk_ar <- as.numeric(SRDat_ar$ind_ar)
 N_Stocks_ar <- length(unique(SRDat_ar$Name))
 data$yr_ar <- SRDat_ar$yr_num
 
 Scale_surv <- SRDat_surv$Scale 
 data$S_surv <- SRDat_surv$Sp/Scale_surv
-data$logR_surv <- log(SRDat_surv$Rec/Scale_surv)
+#data$logR_surv <- log(SRDat_surv$Rec/Scale_surv)
+data$logRS_surv <- log( (SRDat_surv$Rec/Scale_surv) / (SRDat_surv$Sp/Scale_surv) )
 data$stk_surv <- as.numeric(SRDat_surv$ind_surv)
 N_Stocks_surv <- length(unique(SRDat_surv$Name))
 data$yr_surv <- SRDat_surv$yr_num
@@ -140,6 +152,8 @@ param$logSigma_surv <- rep (-2, N_Stocks_surv)
 param$gamma <- rep (0, N_Stocks_surv)
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
+
+# 3. Estimate SR parameters from synoptic data set and SMSY and SREPs
 
 # Compile model if changed:
 #dyn.unload(dynlib("TMB_Files/Ricker_ar1"))
@@ -191,29 +205,38 @@ All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[
 
 # Get predicted values
 Pred_std <- data.frame()
-Pred_std <- All_Ests %>% filter (Param %in% c("LogR_Pred_std"))
-Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_std$Estimate)
-Preds_std <- Preds_std %>% mutate(ObsLogR = log (Rec / Scale)) 
-r2_std <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
+#Pred_std <- All_Ests %>% filter (Param %in% c("LogR_Pred_std"))
+Pred_std <- All_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
+#Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_std$Estimate)
+Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale") %>% add_column(Pred=Pred_std$Estimate)
+#Preds_std <- Preds_std %>% mutate(ObsLogR = log (Rec / Scale)) 
+Preds_std <- Preds_std %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp/Scale) ) )
+#r2_std <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
+r2_std <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
 Pred_ar <- data.frame()
-Pred_ar <- All_Ests %>% filter (Param %in% c("LogR_Pred_ar"))
-Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_ar$Estimate)
-Preds_ar <- Preds_ar %>% mutate(ObsLogR = log (Rec / Scale)) 
-r2_ar <- Preds_ar %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
+#Pred_ar <- All_Ests %>% filter (Param %in% c("LogR_Pred_ar"))
+Pred_ar <- All_Ests %>% filter (Param %in% c("LogRS_Pred_ar"))
+#Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_ar$Estimate)
+Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale") %>% add_column(Pred=Pred_ar$Estimate)
+#Preds_ar <- Preds_ar %>% mutate(ObsLogR = log (Rec / Scale)) 
+Preds_ar <- Preds_ar %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
+#r2_ar <- Preds_ar %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
+r2_ar <- Preds_ar %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
 Pred_surv <- data.frame()
-Pred_surv <- All_Ests %>% filter (Param %in% c("LogR_Pred_surv"))
-Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_surv$Estimate)
-Preds_surv <- Preds_surv %>% mutate(ObsLogR = log (Rec / Scale)) 
-r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
+#Pred_surv <- All_Ests %>% filter (Param %in% c("LogR_Pred_surv"))
+Pred_surv <- All_Ests %>% filter (Param %in% c("LogRS_Pred_surv"))
+#Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_surv$Estimate)
+Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale") %>% add_column(Pred=Pred_surv$Estimate)
+#Preds_surv <- Preds_surv %>% mutate(ObsLogR = log (Rec / Scale)) 
+Preds_surv <- Preds_surv %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
+#r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
+r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
 r2 <- bind_rows(r2_std, r2_ar, r2_surv) %>% arrange(Stocknumber)
 
 # Plot SR curves
-
-# For plotting purposes, need to estimate std Ricker SMSY for AR1 stocks
-source ("CheckAR1.r")
 
 Stks <- unique(SRDat$Stocknumber)
 NStks <- length(Stks)
@@ -278,13 +301,13 @@ for (i in Stks){
   ParkenSMSY <- as.tibble(read.csv("DataIn/ParkenSMSY.csv"))
   ParkenSMSY <- ParkenSMSY %>% filter(Stocknumber==i) %>% select (SMSY) %>% as.numeric()
   abline(v=ParkenSMSY, lty="dashed")
-  lab <-  r2 %>% filter(Stocknumber==i) %>% select(r2) %>% as.numeric() %>% round(3)
+  lab <-  r2 %>% filter(Stocknumber==i) %>% select(r2) %>% as.numeric() %>% round(2)
   #text(x=max(S$Sp), y= max(R$Rec), labels=paste0("r2=",lab))
   legend("topright", legend = "", title= paste0("r2=",lab), bty="n")
   #legend("topright", legend = "", title= expression(paste(r^2,"=",lab)), bty="n")
   
-
 }
+
 
 KSR.SMSY <- All_Est %>% filter(Name=="KSR") %>% filter(Param=="SMSY") %>% select(Estimate) %>% as.numeric()
 KSR.SMSY.ul <- KSR.SMSY + 1.96 * (All_Est %>% filter(Name=="KSR") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())

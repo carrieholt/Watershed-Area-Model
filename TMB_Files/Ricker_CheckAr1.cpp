@@ -44,7 +44,8 @@ template<class Type>
 Type objective_function<Type>:: operator() ()
 {
   DATA_VECTOR(S);
-  DATA_VECTOR(logR);
+  //DATA_VECTOR(logR);
+  DATA_VECTOR(logRS);
   DATA_IVECTOR(stk);
   DATA_IVECTOR(yr);
   DATA_IVECTOR(model);
@@ -81,16 +82,19 @@ Type objective_function<Type>:: operator() ()
   //  ans += -dnorm(LogR_Pred_ar(i), logR(i),  sigma_ar(stk(i)), true);
  // }
   
-  vector <Type> LogR_Pred_std(N_Obs);
+  //vector <Type> LogR_Pred_std(N_Obs);
+  vector <Type> LogRS_Pred_std(N_Obs);
   vector <Type> sigma_std = exp(logSigma_std);
   vector <Type> A_std = exp(logA_std);
   
   // Standard Ricker model
   for (int i = 0; i<N_Obs; i++){
     
-    LogR_Pred_std(i) = logA_std(stk(i)) + log(S(i)) - exp(logB_std(stk(i))) * S(i);
-    ans += -dnorm(LogR_Pred_std(i), logR(i),  sigma_std(stk(i)), true);
+    //LogR_Pred_std(i) = logA_std(stk(i)) + log(S(i)) - exp(logB_std(stk(i))) * S(i);
+    LogRS_Pred_std(i) = logA_std(stk(i)) - exp(logB_std(stk(i))) * S(i);
     
+    //ans += -dnorm(LogR_Pred_std(i), logR(i),  sigma_std(stk(i)), true);
+    ans += -dnorm(LogRS_Pred_std(i), logRS(i),  sigma_std(stk(i)), true);    
   }
 
   //Compile parameters
@@ -164,7 +168,8 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(SREPadj);
   
   //ADREPORT(LogR_Pred_ar);
-  ADREPORT(LogR_Pred_std);
+  //ADREPORT(LogR_Pred_std);
+  ADREPORT(LogRS_Pred_std);
   //ADREPORT(Sgen);
   return ans;
   

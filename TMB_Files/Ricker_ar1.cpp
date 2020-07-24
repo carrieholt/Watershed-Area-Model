@@ -31,14 +31,21 @@ Type DW = 1. / (exp(W) * (1. + W)); // Derivative
 px[0] = DW * py[0];                 // Reverse mode chain rule
 )
   
-  // Scalar version
-  template<class Type>
-  Type LambertW(Type x){
+// Scalar version
+template<class Type>
+Type LambertW(Type x)
+  {
     CppAD::vector<Type> tx(1);
     tx[0] = x;
     return LambertW(tx)[0];
   }
   
+  
+template <class Type> 
+vector <Type> minus_one_to_one(vector <Type> x) 
+  { 
+    return Type(2) * invlogit(x) - Type(1); 
+  } 
   
 template<class Type>
 Type objective_function<Type>:: operator() ()
@@ -88,6 +95,7 @@ Type objective_function<Type>:: operator() ()
   vector <Type> LogRS_Pred_ar(N_Obs_ar);
   vector <Type> sigma_ar = exp(logSigma_ar);
   vector <Type> err(N_Obs_ar);
+  vector <Type> rho_bounded = minus_one_to_one(rho);
 
   
   // Ricker AR1 likelihood
@@ -99,7 +107,7 @@ Type objective_function<Type>:: operator() ()
         err(i) = logRS_ar(i) - LogRS_Pred_ar(i);
         
       //} else if (yr_ar(i) >= 1) { LogR_Pred_ar(i) = logA_ar(stk_ar(i)) + log(S_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i) + rho(stk_ar(i))*err(i-1);
-    } else if (yr_ar(i) >= 1) { LogRS_Pred_ar(i) = logA_ar(stk_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i) + rho(stk_ar(i))*err(i-1);
+    } else if (yr_ar(i) >= 1) { LogRS_Pred_ar(i) = logA_ar(stk_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i) + rho_bounded(stk_ar(i))*err(i-1);
 
         //err(i) = logR_ar(i) - LogR_Pred_ar(i);
         err(i) = logRS_ar(i) - LogRS_Pred_ar(i);
@@ -226,6 +234,7 @@ Type objective_function<Type>:: operator() ()
   //ADREPORT(logA_);
   //ADREPORT(logAadj_);
   //ADREPORT(SMSYadj);
+  REPORT(rho_bounded);
   ADREPORT(SMSY_std);
   ADREPORT(SREP_std);
   ADREPORT(SMSY_ar);

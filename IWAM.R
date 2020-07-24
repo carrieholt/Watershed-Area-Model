@@ -22,6 +22,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 # For SR plotting purposes, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
 source ("CheckAR1.r")
+source ("PlotSR.r")
 
 #---------------------------------------------------------
 # 1. Read in data

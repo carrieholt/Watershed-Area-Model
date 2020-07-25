@@ -48,7 +48,9 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(logRS);
   DATA_IVECTOR(stk);
   DATA_IVECTOR(yr);
-  DATA_IVECTOR(model);
+  DATA_SCALAR(N_Stks);
+  
+  //DATA_IVECTOR(model);
   //DATA_SCALAR(Sgen_sig);
   
 
@@ -64,6 +66,7 @@ Type objective_function<Type>:: operator() ()
   
   Type ans=0.0;
   int N_Obs = S.size(); 
+  int N_stks = stk.size();
   //vector <Type> LogR_Pred_ar(N_Obs);
   //vector <Type> sigma_ar = exp(logSigma_ar);
   //vector <Type> A_ar = exp(logA_ar);
@@ -86,15 +89,16 @@ Type objective_function<Type>:: operator() ()
   vector <Type> LogRS_Pred_std(N_Obs);
   vector <Type> sigma_std = exp(logSigma_std);
   vector <Type> A_std = exp(logA_std);
+  vector <Type> nLL(N_Stks);
   
   // Standard Ricker model
   for (int i = 0; i<N_Obs; i++){
     
     //LogR_Pred_std(i) = logA_std(stk(i)) + log(S(i)) - exp(logB_std(stk(i))) * S(i);
     LogRS_Pred_std(i) = logA_std(stk(i)) - exp(logB_std(stk(i))) * S(i);
-    
     //ans += -dnorm(LogR_Pred_std(i), logR(i),  sigma_std(stk(i)), true);
     ans += -dnorm(LogRS_Pred_std(i), logRS(i),  sigma_std(stk(i)), true);    
+    nLL(stk(i)) += -dnorm(LogRS_Pred_std(i), logRS(i),  sigma_std(stk(i)), true);
   }
 
   //Compile parameters
@@ -145,7 +149,7 @@ Type objective_function<Type>:: operator() ()
   //ans += -sum(dnorm(Diff, 0, Sgen_sig, true ));
   
   // Code for SMSY SREP without AR model
-  int N_stks = model.size(); 
+  //int N_stks = model.size(); 
   vector <Type> logAadj_(N_stks);
   vector <Type> SMSYadj(N_stks);  
   vector <Type> SMSY(N_stks);  
@@ -159,18 +163,13 @@ Type objective_function<Type>:: operator() ()
   }
   SREPadj = logAadj_ / B;
   
-  //ADREPORT(A_ar);
   ADREPORT(A_std);
-  //ADREPORT(logA_);
   ADREPORT(logAadj_);
   ADREPORT(SMSYadj);
   ADREPORT(SMSY);
   ADREPORT(SREPadj);
-  
-  //ADREPORT(LogR_Pred_ar);
-  //ADREPORT(LogR_Pred_std);
+  REPORT(nLL);
   ADREPORT(LogRS_Pred_std);
-  //ADREPORT(Sgen);
   return ans;
   
 }

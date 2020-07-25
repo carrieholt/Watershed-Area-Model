@@ -49,9 +49,10 @@ data$S <- SRDat$Sp/Scale
 #data$logR <- log(SRDat$Rec/Scale)
 data$logRS <- log( (SRDat$Rec/Scale) / (SRDat$Sp/Scale) )
 data$stk <- as.numeric(SRDat$Stocknumber)
-N_Stocks <- length(unique(SRDat$Name))
 data$yr <- SRDat$yr_num
-data$model <- rep(0,N_Stocks)
+N_Stks <- length(unique(SRDat$Name))
+data$N_Stks <- N_Stks
+#data$model <- rep(0,N_Stocks)
 
 
 # Parameters
@@ -93,5 +94,6 @@ ac # 6 stocks have significant lag-1 autocorrelation: Chikamin, Keta, Blossom, S
 A_std <- All_Ests %>% filter(Param=="logA_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(A=exp(Estimate))
 B_std <- All_Ests %>% filter(Param=="logB_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(B=exp(Estimate)/Scale.stock) 
 SMSY_std <- All_Ests %>% filter(Param=="SMSY") %>% add_column(Stocknumber=unique(data$stk)) 
+nLL_std <- All_Ests %>% filter(Param=="nLL") %>% add_column(Stocknumber=unique(data$stk)) 
 
-
+aic_std <- 2*3-2*nLL_std # correct?

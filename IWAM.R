@@ -55,11 +55,6 @@ SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1))
 
 stks_ar <- c("Chikamin", "Keta", "Blossom", "Situk", "Siletz", "Columbia Sp")#Cowichan, stk-23, not included here becuase modelled as per Tompkins with a surival covariate
 stksNum_ar <- c(4,5,6,10,11,16)
-stks_ar <- c( "Harrison", "Stikine", "Taku", "Unuk", "Chikamin", "Keta", "Blossom", 
-              "KSR", "Andrew Cr", "Siuslaw", "Situk", "Siletz", "Niehalem", "Lewis", 
-              "Klukshu", "Kitsumkalem", "Columbia Sp", "Salcha","Chena", "Chehalis", 
-              "Humptulips", "Queets", "Skagit", "Cowichan", "Quillayute")
-stksNum_ar <- c(0:16,19:24)
 
 # Cowichan modeled with Ricker with a surival co-variate. 
 # Harrison was modeled with survival co-variate, but gives very poor fit with very high gamma and so excluded 
@@ -162,15 +157,15 @@ param$gamma <- rep (0, N_Stocks_surv)
 # 3. Estimate SR parameters from synoptic data set and SMSY and SREPs
 
 # Compile model if changed:
-#dyn.unload(dynlib("TMB_Files/Ricker_ar1"))
-#compile("TMB_Files/Ricker_ar1.cpp")
+#dyn.unload(dynlib("TMB_Files/Ricker_AllMod"))
+#compile("TMB_Files/Ricker_AllMod.cpp")
 
-#dyn.load(dynlib("TMB_Files/Ricker_ar1"))
+#dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
 
 # For Phase 1, fix Sgen
 #map <- list(logSgen=factor(rep(NA, N_Stocks))) # Determine which parameters to fix
 #obj <- MakeADFun(data, param, DLL="Ricker_ar1", silent=TRUE, map=map)
-obj <- MakeADFun(data, param, DLL="Ricker_ar1", silent=TRUE)
+obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
 pl <- obj$env$parList(opt$par) 

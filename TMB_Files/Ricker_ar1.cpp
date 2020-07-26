@@ -50,27 +50,14 @@ vector <Type> minus_one_to_one(vector <Type> x)
 template<class Type>
 Type objective_function<Type>:: operator() ()
 {
-  DATA_VECTOR(S_std);
-  //DATA_VECTOR(logR_std);
-  DATA_VECTOR(logRS_std);
+  DATA_VECTOR(S);
+  DATA_VECTOR(logRS);
   
   // I need to include both ind_std and stk_std, and use ind_stk in the estimation step for loops, but stk_std in the model compilation step at bottom.
-  DATA_IVECTOR(stk_std);
-  DATA_IVECTOR(yr_std);
-  DATA_VECTOR(S_ar);
-  //DATA_VECTOR(logR_ar);
-  DATA_VECTOR(logRS_ar);
-  DATA_IVECTOR(stk_ar);
-  DATA_IVECTOR(yr_ar);
-  DATA_VECTOR(S_surv);
-  //DATA_VECTOR(logR_surv);
-  DATA_VECTOR(logRS_surv);
-  DATA_IVECTOR(stk_surv);
-  DATA_IVECTOR(yr_surv);
-  DATA_IVECTOR(Surv_surv);
-  //DATA_IVECTOR(model);
-  //DATA_SCALAR(Sgen_sig);
-  
+  DATA_IVECTOR(stk);
+  DATA_IVECTOR(yr);
+  DATA_SCALAR(N_Stks);
+
 
   PARAMETER_VECTOR(logA_std);
   PARAMETER_VECTOR(logB_std);

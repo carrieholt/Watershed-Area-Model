@@ -48,7 +48,7 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(logRS);
   DATA_IVECTOR(stk);
   DATA_IVECTOR(yr);
-  DATA_SCALAR(N_Stks);
+  DATA_INTEGER(N_Stks);
   
   //DATA_IVECTOR(model);
   //DATA_SCALAR(Sgen_sig);
@@ -66,7 +66,7 @@ Type objective_function<Type>:: operator() ()
   
   Type ans=0.0;
   int N_Obs = S.size(); 
-  int N_stks = stk.size();
+  //int N_stks = stk.size();
   //vector <Type> LogR_Pred_ar(N_Obs);
   //vector <Type> sigma_ar = exp(logSigma_ar);
   //vector <Type> A_ar = exp(logA_ar);
@@ -89,7 +89,8 @@ Type objective_function<Type>:: operator() ()
   vector <Type> LogRS_Pred_std(N_Obs);
   vector <Type> sigma_std = exp(logSigma_std);
   vector <Type> A_std = exp(logA_std);
-  vector <Type> nLL(N_Stks);
+  //vector <Type> nLL(N_Stks);
+  vector <Type> nLL(N_Obs);
   
   // Standard Ricker model
   for (int i = 0; i<N_Obs; i++){
@@ -98,19 +99,19 @@ Type objective_function<Type>:: operator() ()
     LogRS_Pred_std(i) = logA_std(stk(i)) - exp(logB_std(stk(i))) * S(i);
     //ans += -dnorm(LogR_Pred_std(i), logR(i),  sigma_std(stk(i)), true);
     ans += -dnorm(LogRS_Pred_std(i), logRS(i),  sigma_std(stk(i)), true);    
-    nLL(stk(i)) += -dnorm(LogRS_Pred_std(i), logRS(i),  sigma_std(stk(i)), true);
+    nLL(i) = -dnorm(LogRS_Pred_std(i), logRS(i),  sigma_std(stk(i)), true);
+    
   }
 
   //Compile parameters
- // int N_stks = model.size(); 
- // vector <Type> logA_(N_stks);
-//  vector <Type> logAadj_(N_stks);
-  //vector <Type> logB_(N_stks);
-  //vector <Type> logSigma_(N_stks);
-  //vector <Type> SMSYadj(N_stks);  
- // vector <Type> SMSY(N_stks);  
+ // vector <Type> logA_(N_Stks);
+//  vector <Type> logAadj_(N_Stks);
+  //vector <Type> logB_(N_Stks);
+  //vector <Type> logSigma_(N_Stks);
+  //vector <Type> SMSYadj(N_Stks);  
+ // vector <Type> SMSY(N_Stks);  
   
-  //for (int i = 0; i<N_stks; i++){
+  //for (int i = 0; i<N_Stks; i++){
   //  if(model(i) == 0) {
   //    logA_(i) = logA_std(i);
   //    logB_(i) = logB_std(i);
@@ -150,13 +151,13 @@ Type objective_function<Type>:: operator() ()
   
   // Code for SMSY SREP without AR model
   //int N_stks = model.size(); 
-  vector <Type> logAadj_(N_stks);
-  vector <Type> SMSYadj(N_stks);  
-  vector <Type> SMSY(N_stks);  
+  vector <Type> logAadj_(N_Stks);
+  vector <Type> SMSYadj(N_Stks);  
+  vector <Type> SMSY(N_Stks);  
   vector <Type> B = exp(logB_std);
-  vector <Type> SREPadj(N_stks);
+  vector <Type> SREPadj(N_Stks);
   
-  for(int i=0; i<N_stks; i++){
+  for(int i=0; i<N_Stks; i++){
     logAadj_(i) = logA_std(i) + pow( exp( logSigma_std(i) ), 2) /2;
     SMSYadj(i) =  (1 - LambertW(exp(1-logAadj_(i))) ) / B(i) ;
     SMSY(i) =  (1 - LambertW(exp(1-logA_std(i))) ) / B(i) ;
@@ -168,8 +169,9 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(SMSYadj);
   ADREPORT(SMSY);
   ADREPORT(SREPadj);
-  REPORT(nLL);
   ADREPORT(LogRS_Pred_std);
+  REPORT(nLL);
+  REPORT(ans);
   return ans;
   
 }

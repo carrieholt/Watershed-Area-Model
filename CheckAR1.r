@@ -61,7 +61,7 @@ Scale.stock <- 10^(digits$maxDigits-1)
 param$logA_std <- ( SRDat %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
 B_std <- SRDat %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
 param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock ))#log(B_std$m/Scale.stock)
-param$logSigma_std <- rep(-2, N_Stocks)
+param$logSigma_std <- rep(-2, N_Stks)
 
 
 # Compile model if changed:
@@ -94,6 +94,6 @@ ac # 6 stocks have significant lag-1 autocorrelation: Chikamin, Keta, Blossom, S
 A_std <- All_Ests %>% filter(Param=="logA_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(A=exp(Estimate))
 B_std <- All_Ests %>% filter(Param=="logB_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(B=exp(Estimate)/Scale.stock) 
 SMSY_std <- All_Ests %>% filter(Param=="SMSY") %>% add_column(Stocknumber=unique(data$stk)) 
-nLL_std <- All_Ests %>% filter(Param=="nLL") %>% add_column(Stocknumber=unique(data$stk)) 
+nLL_std <- data.frame(nLL=obj$report()$nLL) %>% add_column(Stocknumber=data$stk) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL))
 
-aic_std <- 2*3-2*nLL_std # correct?
+aic_std <- 2*3-2*nLL_std$CnLL # 

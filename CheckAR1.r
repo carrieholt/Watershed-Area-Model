@@ -94,6 +94,6 @@ ac # 6 stocks have significant lag-1 autocorrelation: Chikamin, Keta, Blossom, S
 A_std <- All_Ests %>% filter(Param=="logA_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(A=exp(Estimate))
 B_std <- All_Ests %>% filter(Param=="logB_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(B=exp(Estimate)/Scale.stock) 
 SMSY_std <- All_Ests %>% filter(Param=="SMSY") %>% add_column(Stocknumber=unique(data$stk)) 
-nLL_std <- data.frame(nLL=obj$report()$nLL) %>% add_column(Stocknumber=data$stk) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL))
+nLL_All_std <- data.frame(nLL=obj$report()$nLL) %>% add_column(Stocknumber=data$stk) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL))
 
-aic_std <- 2*3-2*nLL_std$CnLL # 
+aic_All_std <- nLL_All_std %>% mutate(CnLL = 2 * 3 - 2 *CnLL) 

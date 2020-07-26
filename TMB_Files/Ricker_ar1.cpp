@@ -96,6 +96,7 @@ Type objective_function<Type>:: operator() ()
   vector <Type> sigma_ar = exp(logSigma_ar);
   vector <Type> err(N_Obs_ar);
   vector <Type> rho_bounded = minus_one_to_one(rho);
+  vector <Type> nLL_ar(N_Obs_ar);
 
   
   // Ricker AR1 likelihood
@@ -116,12 +117,13 @@ Type objective_function<Type>:: operator() ()
     
     //ans += -dnorm(LogR_Pred_ar(i), logR_ar(i),  sigma_ar(stk_ar(i)), true);
     ans += -dnorm(LogRS_Pred_ar(i), logRS_ar(i),  sigma_ar(stk_ar(i)), true);
-    
+    nLL_ar(i) = -dnorm(LogRS_Pred_ar(i), logRS_ar(i),  sigma_ar(stk_ar(i)), true);
   }
   
   //vector <Type> LogR_Pred_std(N_Obs_std);
   vector <Type> LogRS_Pred_std(N_Obs_std);
   vector <Type> sigma_std = exp(logSigma_std);
+  vector <Type> nLL_std(N_Obs_std);
   
   // Standard Ricker model
   for (int i = 0; i<N_Obs_std; i++){
@@ -131,14 +133,14 @@ Type objective_function<Type>:: operator() ()
     
     //ans += -dnorm(LogR_Pred_std(i), logR_std(i),  sigma_std(stk_std(i)), true);
     ans += -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);
-    
+    nLL_std(i) = -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);
     
   }
 
   //vector <Type> LogR_Pred_surv(N_Obs_surv);
   vector <Type> LogRS_Pred_surv(N_Obs_surv);
   Type sigma_surv = exp(logSigma_surv);
-
+  vector <Type> nLL_surv(N_Obs_surv);
   
   // Ricker likelihood with survival covariate
   for (int i = 0; i<N_Obs_surv; i++){
@@ -147,7 +149,7 @@ Type objective_function<Type>:: operator() ()
     
     //ans += -dnorm(LogR_Pred_surv(i), logR_surv(i),  sigma_surv, true);
     ans += -dnorm(LogRS_Pred_surv(i), logRS_surv(i),  sigma_surv, true);
-    
+    nLL_surv(i) = -dnorm(LogRS_Pred_surv(i), logRS_surv(i),  sigma_surv, true);
   }
   
   
@@ -247,7 +249,10 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(LogRS_Pred_ar);
   ADREPORT(LogRS_Pred_std);
   ADREPORT(LogRS_Pred_surv);
-  
+  REPORT(nLL_std);
+  REPORT(nLL_ar);
+  REPORT(nLL_surv);
+  REPORT(ans);
   //ADREPORT(Sgen);
   return ans;
   

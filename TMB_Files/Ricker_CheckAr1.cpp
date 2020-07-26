@@ -171,7 +171,7 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(SREPadj);
   ADREPORT(LogRS_Pred_std);
   REPORT(nLL);
-  REPORT(ans);
+  //REPORT(ans);
   return ans;
   
 }

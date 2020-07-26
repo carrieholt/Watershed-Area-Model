@@ -203,6 +203,14 @@ All_Est <- bind_rows(All_Ests_std, All_Ests_ar, All_Ests_surv)
 All_Est$ar <- All_Est$Stocknumber %in% stksNum_ar
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
 
+# Calculate AIC
+
+nLL_std <- data.frame(nLL_std=obj$report()$nLL_std) %>% add_column(Stocknumber=SRDat_std$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_std))
+aic_std <- nLL_std %>% mutate(aic = 2 * 3 - 2*CnLL) # 
+nLL_ar <- data.frame(nLL_ar=obj$report()$nLL_ar) %>% add_column(Stocknumber=SRDat_ar$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_ar))
+aic_ar <- nLL_ar %>% mutate(aic = 2 * 4 - 2*CnLL)
+nLL_surv <- data.frame(nLL_surv=obj$report()$nLL_surv) %>% add_column(Stocknumber=SRDat_surv$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_surv))
+aic_surv <- nLL_surv %>% mutate(aic = 2 * 4 - 2*CnLL)
 
 # Get predicted values
 Pred_std <- data.frame()

@@ -48,7 +48,7 @@ Scale <- SRDat$Scale # Scale <- TMB_Inputs$Scale
 data$S <- SRDat$Sp/Scale 
 #data$logR <- log(SRDat$Rec/Scale)
 data$logRS <- log( (SRDat$Rec/Scale) / (SRDat$Sp/Scale) )
-data$stk <- as.numeric(SRDat$Stocknumber)
+data$stk <- as.numeric(SRDat$Stocknumber)#All stocks are included, so no need to index stock numbers
 data$yr <- SRDat$yr_num
 N_Stks <- length(unique(SRDat$Name))
 data$N_Stks <- N_Stks
@@ -74,7 +74,7 @@ obj <- MakeADFun(data, param, DLL="Ricker_CheckAr1", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
 pl <- obj$env$parList(opt$par) 
-summary(sdreport(obj))
+#summary(sdreport(obj))
 
 All_Ests <- data.frame(summary(sdreport(obj)))
 All_Ests$Param <- row.names(All_Ests)
@@ -94,9 +94,9 @@ ac # 6 stocks have significant lag-1 autocorrelation: Chikamin, Keta, Blossom, S
 A_std <- All_Ests %>% filter(Param=="logA_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(A=exp(Estimate))
 B_std <- All_Ests %>% filter(Param=="logB_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(B=exp(Estimate)/Scale.stock) 
 SMSY_std <- All_Ests %>% filter(Param=="SMSY") %>% add_column(Stocknumber=unique(data$stk)) 
-nLL_All_std <- data.frame(nLL=obj$report()$nLL) %>% add_column(Stocknumber=data$stk) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL))
+nLL_All_std <- data.frame(nLL=obj$report()$nLL) %>% add_column(Stocknumber=data$stk) %>% group_by(Stocknumber) %>% summarize(CnLL_std=sum(nLL))
 
-aic_All_std <- nLL_All_std %>% mutate(CnLL = 2 * 3 - 2 *CnLL) 
+aic_All_std <- nLL_All_std %>% mutate(CnLL_std = 2 * 3 - 2 *CnLL_std) 
 
 #------------------------------------------------------------------------------------
 # WHat is AIC of AR1 model (for those stocks that converge)
@@ -117,8 +117,6 @@ if( max(SRDat$Stocknumber) >= stockwNA[1]) {
   }
 }
 test <- SRDat %>% filter(Stocknumber == stockwNA[1]| Stocknumber == stockwNA[2])
-
-
 
 
 #Choose only those stocks for which AR1 model converges (Not Salcha or Chena)
@@ -144,13 +142,13 @@ TMB_Inputs <- list(logA_Start = 2, rho_Start = 0.1, Sgen_sig = 1) #Scale = 1000,
 # Data 
 data <- list()
 Scale <- SRDat_ar$Scale # Scale <- TMB_Inputs$Scale
-data$S <- SRDat_ar$Sp/Scale 
+data$S_ar <- SRDat_ar$Sp/Scale 
 #data$logR <- log(SRDat$Rec/Scale)
-data$logRS <- log( (SRDat_ar$Rec/Scale) / (SRDat_ar$Sp/Scale) )
-data$stk <- as.numeric(SRDat_ar$Stocknumber)
-data$yr <- SRDat_ar$yr_num
+data$logRS_ar <- log( (SRDat_ar$Rec/Scale) / (SRDat_ar$Sp/Scale) )
+data$stk_ar <- as.numeric(SRDat_ar$ind_ar)#as.numeric(SRDat_ar$Stocknumber)
+data$yr_ar <- SRDat_ar$yr_num
 N_Stks <- length(unique(SRDat_ar$Name))
-data$N_Stks <- N_Stks
+#data$N_Stks <- N_Stks
 #data$model <- rep(0,N_Stocks)
 
 
@@ -174,7 +172,7 @@ obj <- MakeADFun(data, param, DLL="Ricker_ar1", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
 pl <- obj$env$parList(opt$par) 
-summary(sdreport(obj))
+#summary(sdreport(obj))
 
 All_Ests <- data.frame(summary(sdreport(obj)))
 All_Ests$Param <- row.names(All_Ests)
@@ -182,18 +180,23 @@ All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))
 #Preds <- All_Ests %>% filter(Param == "LogR_Pred_ar")
 Preds <- All_Ests %>% filter(Param == "LogRS_Pred_ar")
 #Preds <- Preds %>% add_column(yr=data$yr, Stocknumber=data$stk, logR=data$logR) %>% mutate(Resid=Estimate-logR) 
+
+
+#my indexing is wrong here. I need to math up indices 0:22 with stocks 0:24 (missing Chena and Salhca)
 Preds <- Preds %>% add_column(yr=data$yr, Stocknumber=data$stk, logRS=data$logRS) %>% mutate(Resid=Estimate-logRS) 
 ac <- Preds %>% group_by(Stocknumber) %>% summarise (autocorr=acf(Resid, plot=F)$acf[2])# provides AR(1) autocorrelation
 len <- Preds %>% group_by(Stocknumber) %>% summarise (count=length(Resid))
 ac.CI <- function(n) {qnorm((1 + 0.95)/2)/sqrt(n)} #95% CI for acf assuming white noise, see https://stackoverflow.com/questions/14266333/extract-confidence-interval-values-from-acf-correlogram
 len <- len %>% mutate (CI=ac.CI(count))
 ac <- ac %>% left_join(len) %>% left_join(unique(SRDat[, c("Stocknumber", "Name")])) %>% filter(abs(autocorr)>CI)
-ac # 6 stocks have significant lag-1 autocorrelation: Chikamin, Keta, Blossom, Situk, Siletz, and Columbia Sp
+ac # 6 stocks have significant lag-1 autocorrelation in Ricker resids: Chikamin, Keta, Blossom, Situk, Siletz, and Columbia Sp
 
 
 A_ar <- All_Ests %>% filter(Param=="logA_ar") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(A=exp(Estimate))
 B_ar <- All_Ests %>% filter(Param=="logB_ar") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(B=exp(Estimate)/Scale.stock) 
-SMSY_ar <- All_Ests %>% filter(Param=="SMSY") %>% add_column(Stocknumber=unique(data$stk)) 
-nLL_All_ar <- data.frame(nLL=obj$report()$nLL) %>% add_column(Stocknumber=data$stk) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL))
+SMSY_ar <- All_Ests %>% filter(Param=="SMSY_ar") %>% add_column(Stocknumber=unique(data$stk)) 
+nLL_All_ar <- data.frame(nLL=obj$report()$nLL) %>% add_column(Stocknumber=data$stk) %>% group_by(Stocknumber) %>% summarize(CnLL_ar=sum(nLL))
 
-aic_All_ar <- nLL_All_ar %>% mutate(CnLL = 2 * 3 - 2 *CnLL) 
+aic_All_ar <- nLL_All_ar %>% mutate(CnLL_ar = 2 * 4 - 2 *CnLL_ar) 
+aic_All_ar %>% full_join(aic_All_std) %>% filter (CnLL_ar <= CnLL_std)
+#stksNum_ar <- c(4,5,6,10,11,16)

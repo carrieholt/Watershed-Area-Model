@@ -21,6 +21,15 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2) 
     b <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logB") %>% 
       summarise(B=exp(Estimate)/Sc) %>% as.numeric()
     
+    if (i %in% stksNum_surv) {    
+      surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Stocknumber==i) 
+      if(i==23) { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
+      mean.log.surv <- surv.dat %>% summarize(mean = mean(log(Surv)))
+      gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% select(Estimate)
+      a <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
+        summarise(A=exp(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
+    }
+    
     #Parken values for skagit
     skagit_alpha <- 7.74
     skagit_beta <- 0.0000657
@@ -90,8 +99,10 @@ PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2)
     
     # what is the scale of Ricker b estimate?
     Sc <- SRDat %>% filter (Stocknumber==i) %>% select(Scale) %>% distinct() %>% as.numeric()
-    if(i !=22) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
+    if(i !=22 & i!=0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
     if(i ==22) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(LogRS) ) )
+    if(i ==0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(min(LogRS),max(LogRS) ) )
+    
     name <- All_Est %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
     mtext(name$Name, side=3)
     
@@ -102,6 +113,15 @@ PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2)
     B <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logB") %>% 
       summarise(B=exp(Estimate)/Sc) %>% as.numeric()
 
+    if (i %in% stksNum_surv) {    
+      surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Stocknumber==i) 
+      if(i==23) { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
+      mean.log.surv <- surv.dat %>% summarize(mean = mean(log(Surv)))
+      gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% select(Estimate)
+      LogA <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
+        summarise(LogA.adj=(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
+    }
+    
     if (i %in% stksNum_ar) col.use <- "red"
     if (i %in% stksNum_surv) col.use <- "blue"
     if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"

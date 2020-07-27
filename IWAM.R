@@ -84,8 +84,7 @@ SRDat_surv <- SRDat_surv %>% left_join(ind_surv) %>% left_join(Surv)
 SRDat_surv_Cow <- SRDat_surv %>% filter(Name == "Cowichan" & Yr >= 1985 & Yr !=1986 & Yr != 1987) 
 n_surv_Cow <- length(SRDat_surv_Cow$Yr)
 SRDat_surv_Cow$yr_num <- 0:(n_surv_Cow-1)
-#SRDat_surv_Har <- SRDat_surv %>% filter(Name == "Harrison") 
-SRDat_surv <- SRDat_surv_Cow#bind_rows(SRDat_surv_Har, SRDat_surv_Cow)
+if(stksNum_surv == 23) SRDat_surv <- SRDat_surv_Cow
 
 
 # 2. Create data and parameter lists for TMB
@@ -118,7 +117,7 @@ data$stk_surv <- as.numeric(SRDat_surv$ind_surv)
 N_Stocks_surv <- length(unique(SRDat_surv$Name))
 data$yr_surv <- SRDat_surv$yr_num
 data$Surv_surv <- log(SRDat_surv$Surv) #Tompkins et al. used Ln(Surv+1)
-
+data$MeanSurv_surv <- mean(data$Surv_surv)
 #data$model <- rep(0,N_Stocks)
 #data$Sgen_sig <- TMB_Inputs$Sgen_sig
 
@@ -160,7 +159,7 @@ param$gamma <- rep (0, N_Stocks_surv)
 #dyn.unload(dynlib("TMB_Files/Ricker_AllMod"))
 #compile("TMB_Files/Ricker_AllMod.cpp")
 
-#dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
+dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
 
 # For Phase 1, fix Sgen
 #map <- list(logSgen=factor(rep(NA, N_Stocks))) # Determine which parameters to fix
@@ -193,7 +192,7 @@ All_Ests_ar$Stocknumber <- rep(SN_ar)
 All_Ests_ar <- left_join(All_Ests_ar, unique(SRDat_ar[, c("Stocknumber", "Name")]))
 
 All_Ests_surv <- data.frame()
-All_Ests_surv<- All_Ests %>% filter (Param %in% c("logA_surv", "logB_surv", "gamma",  "logSigma_surv", "SMSY_surv", "SREP_surv" ))
+All_Ests_surv<- All_Ests %>% filter (Param %in% c("logA_surv", "logB_surv", "gamma", "logSigma_surv", "SMSY_surv", "SREP_surv" ))#"gamma"
 SN_surv <- unique(SRDat_surv[, c("Stocknumber")])
 All_Ests_surv$Stocknumber <- rep(SN_surv)
 All_Ests_surv <- left_join(All_Ests_surv, unique(SRDat_surv[, c("Stocknumber", "Name")]))
@@ -206,11 +205,11 @@ All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[
 # Calculate AIC
 
 nLL_std <- data.frame(nLL_std=obj$report()$nLL_std) %>% add_column(Stocknumber=SRDat_std$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_std))
-aic_std <- nLL_std %>% mutate(aic = 2 * 3 - 2*CnLL) # 
+aic_std <- nLL_std %>% mutate(aic = 2 * 3 + 2*CnLL) # 
 nLL_ar <- data.frame(nLL_ar=obj$report()$nLL_ar) %>% add_column(Stocknumber=SRDat_ar$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_ar))
-aic_ar <- nLL_ar %>% mutate(aic = 2 * 4 - 2*CnLL)
+aic_ar <- nLL_ar %>% mutate(aic = 2 * 4 + 2*CnLL)
 nLL_surv <- data.frame(nLL_surv=obj$report()$nLL_surv) %>% add_column(Stocknumber=SRDat_surv$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_surv))
-aic_surv <- nLL_surv %>% mutate(aic = 2 * 4 - 2*CnLL)
+aic_surv <- nLL_surv %>% mutate(aic = 2 * 4 + 2*CnLL)
 
 # Get predicted values
 Pred_std <- data.frame()

@@ -52,7 +52,7 @@ Type objective_function<Type>:: operator() ()
 {
   DATA_VECTOR(S_ar);
   DATA_VECTOR(logRS_ar);
-  DATA_IVECTOR(stk_ar);//This is an sequential index
+  DATA_IVECTOR(stkInd_ar);//This is an sequential index
   DATA_IVECTOR(yr_ar);
   //DATA_SCALAR(N_Stks);
 
@@ -77,13 +77,13 @@ Type objective_function<Type>:: operator() ()
   // Ricker AR1 likelihood
   for (int i = 0; i<N_Obs_ar; i++){
     //if (yr_ar(i) == 0) {LogR_Pred_ar(i) = logA_ar(stk_ar(i)) + log(S_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i);
-    if (yr_ar(i) == 0) {LogRS_Pred_ar(i) = logA_ar(stk_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i);
+    if (yr_ar(i) == 0) {LogRS_Pred_ar(i) = logA_ar(stkInd_ar(i)) - exp(logB_ar(stkInd_ar(i))) * S_ar(i);
       
         //err(i) = logR_ar(i) - LogR_Pred_ar(i);
         err(i) = logRS_ar(i) - LogRS_Pred_ar(i);
         
       //} else if (yr_ar(i) >= 1) { LogR_Pred_ar(i) = logA_ar(stk_ar(i)) + log(S_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i) + rho(stk_ar(i))*err(i-1);
-    } else if (yr_ar(i) >= 1) { LogRS_Pred_ar(i) = logA_ar(stk_ar(i)) - exp(logB_ar(stk_ar(i))) * S_ar(i) + rho_bounded(stk_ar(i))*err(i-1);
+    } else if (yr_ar(i) >= 1) { LogRS_Pred_ar(i) = logA_ar(stkInd_ar(i)) - exp(logB_ar(stkInd_ar(i))) * S_ar(i) + rho_bounded(stkInd_ar(i))*err(i-1);
 
         //err(i) = logR_ar(i) - LogR_Pred_ar(i);
         err(i) = logRS_ar(i) - LogRS_Pred_ar(i);
@@ -91,8 +91,8 @@ Type objective_function<Type>:: operator() ()
         }
     
     //ans += -dnorm(LogR_Pred_ar(i), logR_ar(i),  sigma_ar(stk_ar(i)), true);
-    ans += -dnorm(LogRS_Pred_ar(i), logRS_ar(i),  sigma_ar(stk_ar(i)), true);
-    nLL_ar(i) = -dnorm(LogRS_Pred_ar(i), logRS_ar(i),  sigma_ar(stk_ar(i)), true);
+    ans += -dnorm(LogRS_Pred_ar(i), logRS_ar(i),  sigma_ar(stkInd_ar(i)), true);
+    nLL_ar(i) = -dnorm(LogRS_Pred_ar(i), logRS_ar(i),  sigma_ar(stkInd_ar(i)), true);
   }
   
 

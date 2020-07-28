@@ -91,8 +91,8 @@ Type objective_function<Type>:: operator() ()
         }
     
     //ans += -dnorm(LogR_Pred_ar(i), logR_ar(i),  sigma_ar(stk_ar(i)), true);
-    ans += -dnorm(LogRS_Pred_ar(i), logRS_ar(i),  sigma_ar(stkInd_ar(i)), true);
-    nLL_ar(i) = -dnorm(LogRS_Pred_ar(i), logRS_ar(i),  sigma_ar(stkInd_ar(i)), true);
+    ans += -dnorm(LogRS_Pred_ar(i), logRS_ar(i), pow (1 - pow( rho_bounded(stkInd_ar(i)),2), 0.5) * sigma_ar(stkInd_ar(i)), true);
+    nLL_ar(i) = -dnorm(LogRS_Pred_ar(i), logRS_ar(i), pow (1 - pow( rho_bounded(stkInd_ar(i)),2), 0.5) * sigma_ar(stkInd_ar(i)), true);
   }
   
 
@@ -107,6 +107,7 @@ Type objective_function<Type>:: operator() ()
   SREP_ar = logA_ar / B_ar;
 
   REPORT(rho_bounded);
+  ADREPORT(rho_bounded);
   ADREPORT(SMSY_ar);
   ADREPORT(SREP_ar);
   ADREPORT(LogRS_Pred_ar);

@@ -20,9 +20,9 @@ library(zoo)
 count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
-# For SR plotting purposes, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
-source ("CheckAR1.r")
-source ("PlotSR.r")
+source ("PlotSR.r")# Plotting functions
+source ("CheckAR1.r")# For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
+
 
 #---------------------------------------------------------
 # 1. Read in data
@@ -181,7 +181,7 @@ All_Ests$Param <- row.names(All_Ests)
 # Put together readable data frame of values
 All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))[[1]]))
 
-# By first spliting out stocks modelled with standard Ricker and those with aR(1)
+# By first spliting out stocks modelled with standard Ricker, RickerAR(1), and Ricker-survival models
 All_Ests_std <- data.frame()
 All_Ests_std <- All_Ests %>% filter (Param %in% c("logA_std", "logB_std", "logSigma_std",  "SMSY_std", "SREP_std"))
 SN_std <- unique(SRDat_std[, c("Stocknumber")])

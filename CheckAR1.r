@@ -79,17 +79,19 @@ pl <- obj$env$parList(opt$par)
 All_Ests <- data.frame(summary(sdreport(obj)))
 All_Ests$Param <- row.names(All_Ests)
 All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))[[1]]))
+
+
 #Preds <- All_Ests %>% filter(Param == "LogR_Pred_std")
 Preds <- All_Ests %>% filter(Param == "LogRS_Pred_std")
 #Preds <- Preds %>% add_column(yr=data$yr, Stocknumber=data$stk, logR=data$logR) %>% mutate(Resid=Estimate-logR) 
-Preds <- Preds %>% add_column(yr=data$yr, Stocknumber=data$stk, logRS=data$logRS) %>% mutate(Resid=Estimate-logRS) 
-ac <- Preds %>% group_by(Stocknumber) %>% summarise (autocorr=acf(Resid, plot=F)$acf[2])# provides AR(1) autocorrelation
-len <- Preds %>% group_by(Stocknumber) %>% summarise (count=length(Resid))
+Preds <- Preds %>% add_column(yr=data$yr, Stocknumber=data$stk, logRS=data$logRS, Name=SRDat$Name) %>% mutate(Res=Estimate-logRS) 
+ac <- Preds %>% group_by(Stocknumber) %>% summarise (autocorr=acf(Res, plot=F)$acf[2])# provides AR(1) autocorrelation
+len <- Preds %>% group_by(Stocknumber) %>% summarise (count=length(Res))
 ac.CI <- function(n) {qnorm((1 + 0.95)/2)/sqrt(n)} #95% CI for acf assuming white noise, see https://stackoverflow.com/questions/14266333/extract-confidence-interval-values-from-acf-correlogram
 len <- len %>% mutate (CI=ac.CI(count))
 ac <- ac %>% left_join(len) %>% left_join(unique(SRDat[, c("Stocknumber", "Name")])) %>% filter(abs(autocorr)>CI)
 ac # 6 stocks have significant lag-1 autocorrelation: Chikamin, Keta, Blossom, Situk, Siletz, and Columbia Sp
-
+Plotacf(Preds)
 
 A_std <- All_Ests %>% filter(Param=="logA_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(A=exp(Estimate))
 B_std <- All_Ests %>% filter(Param=="logB_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(B=exp(Estimate)/Scale.stock) 
@@ -97,6 +99,16 @@ SMSY_std <- All_Ests %>% filter(Param=="SMSY") %>% add_column(Stocknumber=unique
 nLL_All_std <- data.frame(nLL=obj$report()$nLL) %>% add_column(Stocknumber=data$stk) %>% group_by(Stocknumber) %>% summarize(CnLL_std=sum(nLL))
 
 aic_All_std <- nLL_All_std %>% mutate(aic_std = 2 * 3 + 2 *CnLL_std) 
+
+#Create data frame for plotting SR curves
+All_Est <- All_Ests %>% filter (Param %in% c("logA_std", "logB_std", "logSigma_std",  "SMSY"))
+All_Est$ParamShort <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "_"))[1]))
+All_Est <- All_Est %>% select(Estimate, Std..Error, ParamShort) %>% rename(Param=ParamShort)
+SN_std <- unique(SRDat[, c("Stocknumber")])
+All_Est$Stocknumber <- rep(SN_std)
+All_Est <- left_join(All_Est, unique(SRDat[, c("Stocknumber", "Name")]))
+PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar=NA, stksNum_surv=NA, r2=NA) 
+
 
 #------------------------------------------------------------------------------------
 # WHat is AIC of AR1 model (for those stocks that converge)

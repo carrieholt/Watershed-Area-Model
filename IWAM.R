@@ -58,7 +58,7 @@ stksNum_ar <- c(4,5,6,10,11,16)
 
 # Cowichan modeled with Ricker with a surival co-variate. 
 # Harrison was modeled with survival co-variate, but gives very poor fit with very high gamma and so excluded 
-stksNum_surv <- 23#c(0,23)
+stksNum_surv <- c(0,23)
 
 SRDat_std <- SRDat %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) 
 SRDat_ar <- SRDat %>% filter(Stocknumber %in% stksNum_ar) 
@@ -80,11 +80,12 @@ Surv <- as.data.frame(read.csv("DataIn/Surv.csv")) #%>% filter(Yr<=1999)
 SRDat_surv <- SRDat_surv %>% left_join(ind_surv) %>% left_join(Surv)
 
 
-#remove years 1981-1984, 1986-1987  from Cowichan as per Tompkins et al. 2005
-SRDat_surv_Cow <- SRDat_surv %>% filter(Name == "Cowichan" & Yr >= 1985 & Yr !=1986 & Yr != 1987) 
+#remove years 1981-1984, 1986-1987  from Cowichan (Stocknumber 23) as per Tompkins et al. 2005
+SRDat_surv_Cow <- SRDat_surv %>% filter(Name == "Cowichan" & Yr >= 1984 & Yr !=1986 & Yr != 1987) 
 n_surv_Cow <- length(SRDat_surv_Cow$Yr)
 SRDat_surv_Cow$yr_num <- 0:(n_surv_Cow-1)
-if(stksNum_surv == 23) SRDat_surv <- SRDat_surv_Cow
+#if(stksNum_surv == 23) SRDat_surv <- SRDat_surv_Cow
+if(23 %in% stksNum_surv) SRDat_surv <- SRDat_surv %>% filter(Name != "Cowichan") %>% bind_rows(SRDat_surv_Cow)
 
 
 # 2. Create data and parameter lists for TMB
@@ -117,7 +118,9 @@ data$stk_surv <- as.numeric(SRDat_surv$ind_surv)
 N_Stocks_surv <- length(unique(SRDat_surv$Name))
 data$yr_surv <- SRDat_surv$yr_num
 data$Surv_surv <- log(SRDat_surv$Surv) #Tompkins et al. used Ln(Surv+1)
-data$MeanSurv_surv <- mean(data$Surv_surv)
+meanLogSurv <- SRDat_surv %>% group_by(Stocknumber) %>% summarize(meanLogSurv = mean(log(Surv))) %>% 
+  select(meanLogSurv) 
+data$MeanSurv_surv <- meanLogSurv$meanLogSurv
 #data$model <- rep(0,N_Stocks)
 #data$Sgen_sig <- TMB_Inputs$Sgen_sig
 
@@ -168,7 +171,7 @@ obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
 pl <- obj$env$parList(opt$par) 
-summary(sdreport(obj), p.value=TRUE)
+#summary(sdreport(obj), p.value=TRUE)
 
 # Create Table of outputs
 All_Ests <- data.frame(summary(sdreport(obj)))
@@ -200,6 +203,7 @@ All_Ests_surv <- left_join(All_Ests_surv, unique(SRDat_surv[, c("Stocknumber", "
 # Combine again
 All_Est <- bind_rows(All_Ests_std, All_Ests_ar, All_Ests_surv) 
 All_Est$ar <- All_Est$Stocknumber %in% stksNum_ar
+All_Est$surv <- All_Est$Stocknumber %in% stksNum_surv
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
 
 # Calculate AIC
@@ -216,7 +220,7 @@ Pred_std <- data.frame()
 #Pred_std <- All_Ests %>% filter (Param %in% c("LogR_Pred_std"))
 Pred_std <- All_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
 #Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_std$Estimate)
-Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale") %>% add_column(Pred=Pred_std$Estimate)
+Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_std$Estimate)
 #Preds_std <- Preds_std %>% mutate(ObsLogR = log (Rec / Scale)) 
 Preds_std <- Preds_std %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp/Scale) ) )
 #r2_std <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
@@ -226,7 +230,7 @@ Pred_ar <- data.frame()
 #Pred_ar <- All_Ests %>% filter (Param %in% c("LogR_Pred_ar"))
 Pred_ar <- All_Ests %>% filter (Param %in% c("LogRS_Pred_ar"))
 #Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_ar$Estimate)
-Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale") %>% add_column(Pred=Pred_ar$Estimate)
+Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_ar$Estimate)
 #Preds_ar <- Preds_ar %>% mutate(ObsLogR = log (Rec / Scale)) 
 Preds_ar <- Preds_ar %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
 #r2_ar <- Preds_ar %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
@@ -236,15 +240,22 @@ Pred_surv <- data.frame()
 #Pred_surv <- All_Ests %>% filter (Param %in% c("LogR_Pred_surv"))
 Pred_surv <- All_Ests %>% filter (Param %in% c("LogRS_Pred_surv"))
 #Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_surv$Estimate)
-Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale") %>% add_column(Pred=Pred_surv$Estimate)
+Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_surv$Estimate)
 #Preds_surv <- Preds_surv %>% mutate(ObsLogR = log (Rec / Scale)) 
 Preds_surv <- Preds_surv %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
 #r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
 r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
+SRes <- bind_rows(Preds_std, Preds_ar, Preds_surv) %>% arrange (Stocknumber)
+SRes <- SRes %>% mutate ( Res = ObsLogRS- Pred) #%>% mutate (StdRes = Res/??)
+sigma <- All_Est %>% filter(Param=="logSigma") %>% select(Stocknumber, Estimate, Name)
+SRes <- SRes %>% left_join(sigma) %>% rename(logSig = Estimate)
+SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
+
 r2 <- bind_rows(r2_std, r2_ar, r2_surv) %>% arrange(Stocknumber)
 
-#Plot SR curves and linearized model for synoptic data set
+#Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
 PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2)
 PlotSRLinear(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2) 
-  
+PlotStdResid(SRes)
+Plotacf(SRes)

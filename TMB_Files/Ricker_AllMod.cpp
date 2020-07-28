@@ -68,7 +68,8 @@ Type objective_function<Type>:: operator() ()
   DATA_IVECTOR(stk_surv);
   DATA_IVECTOR(yr_surv);
   DATA_VECTOR(Surv_surv);
-  DATA_SCALAR(MeanSurv_surv);
+  DATA_VECTOR(MeanSurv_surv);
+  //DATA_SCALAR(MeanSurv_surv);
   //DATA_IVECTOR(model);
   //DATA_SCALAR(Sgen_sig);
   
@@ -80,10 +81,10 @@ Type objective_function<Type>:: operator() ()
   PARAMETER_VECTOR(logB_ar);
   PARAMETER_VECTOR(rho);
   PARAMETER_VECTOR(logSigma_ar);
-  PARAMETER(logA_surv);
-  PARAMETER(logB_surv);
-  PARAMETER(logSigma_surv);
-  PARAMETER(gamma);
+  PARAMETER_VECTOR(logA_surv);
+  PARAMETER_VECTOR(logB_surv);
+  PARAMETER_VECTOR(logSigma_surv);
+  PARAMETER_VECTOR(gamma);
   //PARAMETER_VECTOR(logSgen);
   
   
@@ -140,17 +141,20 @@ Type objective_function<Type>:: operator() ()
 
   //vector <Type> LogR_Pred_surv(N_Obs_surv);
   vector <Type> LogRS_Pred_surv(N_Obs_surv);
-  Type sigma_surv = exp(logSigma_surv);
+  vector <Type> sigma_surv = exp(logSigma_surv);
+  //Type sigma_surv = exp(logSigma_surv);
   vector <Type> nLL_surv(N_Obs_surv);
   
   // Ricker likelihood with survival covariate
   for (int i = 0; i<N_Obs_surv; i++){
     //LogR_Pred_surv(i) = logA_surv + log(S_surv(i)) - exp(logB_surv) * S_surv(i) + gamma * Surv_surv(i);
-    LogRS_Pred_surv(i) = logA_surv - exp(logB_surv) * S_surv(i) + gamma * Surv_surv(i);
+    //LogRS_Pred_surv(i) = logA_surv - exp(logB_surv) * S_surv(i) + gamma * Surv_surv(i);
+    LogRS_Pred_surv(i) = logA_surv(stk_surv(i)) - exp(logB_surv(stk_surv(i))) * S_surv(i) + gamma(stk_surv(i)) * Surv_surv(i);
+    
     
     //ans += -dnorm(LogR_Pred_surv(i), logR_surv(i),  sigma_surv, true);
-    ans += -dnorm(LogRS_Pred_surv(i), logRS_surv(i),  sigma_surv, true);
-    nLL_surv(i) = -dnorm(LogRS_Pred_surv(i), logRS_surv(i),  sigma_surv, true);
+    ans += -dnorm(LogRS_Pred_surv(i), logRS_surv(i),  sigma_surv(stk_surv(i)), true);
+    nLL_surv(i) = -dnorm(LogRS_Pred_surv(i), logRS_surv(i),  sigma_surv(stk_surv(i)), true);
   }
   
   
@@ -204,6 +208,7 @@ Type objective_function<Type>:: operator() ()
   // Code for SMSY SREP without AR model
   int N_stks_std = logA_std.size(); 
   int N_stks_ar = logA_ar.size(); 
+  int N_stks_surv = logA_surv.size(); 
   //int N_stks_surv = logA_surv.size(); 
   //vector <Type> logAadj_(N_stks_std);
   //vector <Type> SMSYadj(N_stks_std);  
@@ -213,9 +218,12 @@ Type objective_function<Type>:: operator() ()
   vector <Type> SMSY_ar(N_stks_ar);  
   vector <Type> B_ar = exp(logB_ar);
   vector <Type> SREP_ar(N_stks_ar);
-  Type SMSY_surv;  
-  Type B_surv = exp(logB_surv);
-  Type SREP_surv;
+  //Type SMSY_surv;  
+  //Type B_surv = exp(logB_surv);
+  //Type SREP_surv;
+  vector <Type> SMSY_surv(N_stks_surv);  
+  vector <Type> B_surv = exp(logB_surv);
+  vector <Type> SREP_surv(N_stks_surv);
   
   for(int i=0; i<N_stks_std; i++){
     SMSY_std(i) =  (1 - LambertW(exp(1-logA_std(i))) ) / B_std(i) ;
@@ -227,9 +235,9 @@ Type objective_function<Type>:: operator() ()
   }
   SREP_ar = logA_ar / B_ar;
   
-  //for(int i=0; i<N_stks_surv; i++){
-    SMSY_surv =  (1 - LambertW(exp(1 - (logA_surv + gamma * MeanSurv_surv))) )/ B_surv ;
-  //}
+  for(int i=0; i<N_stks_surv; i++){
+    SMSY_surv(i) =  (1 - LambertW(exp(1 - (logA_surv(i) + gamma(i) * MeanSurv_surv(i)))) )/ B_surv(i) ;
+  }
   SREP_surv = logA_surv / B_surv;
   
   //ADREPORT(A_ar);

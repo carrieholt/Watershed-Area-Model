@@ -78,8 +78,10 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2) 
     ParkenSMSY <- as.tibble(read.csv("DataIn/ParkenSMSY.csv"))
     ParkenSMSY <- ParkenSMSY %>% filter(Stocknumber==i) %>% select (SMSY) %>% as.numeric()
     abline(v=ParkenSMSY, lty="dashed")
-    lab <-  r2 %>% filter(Stocknumber==i) %>% select(r2) %>% as.numeric() %>% round(2)
-    legend("topright", legend = "", title= paste0("r2=",lab), bty="n")
+    if(is.na(r2)==FALSE) {
+      lab <-  r2 %>% filter(Stocknumber==i) %>% select(r2) %>% as.numeric() %>% round(2)
+      legend("topright", legend = "", title= paste0("r2=",lab), bty="n")
+    }
   }
   
 }
@@ -142,7 +144,41 @@ PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2)
   
 }
 
+#-------------------------------------------------------------------------------------------------
+#Plot standardized residuals
 
+PlotStdResid <- function(SRes){
+  
+  Stks <- unique(SRes$Stocknumber)
+  NStks <- length(Stks)
+  par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
+  
+  for (i in Stks){
+    SR <- SRes %>% filter (Stocknumber==i) %>% select(Res) 
+    plot(x=1:length(SR$Res), y=SR$Res, xlab="", ylab="", pch=20, ylim=c(min(-4, min(SR$Res)),max(4, max(SR$Res)) ) ) 
+    abline(h=c(3,-3), col="red")
+    abline(h=0, col="black")
+    name <- SRes %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
+    mtext(name$Name, side=3)
+  }
+}
+
+Plotacf <- function(Preds){
+  Stks <- unique(Preds$Stocknumber)
+  NStks <- length(Stks)
+  par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
+  for (i in Stks){
+    Res <- Preds %>% filter (Stocknumber==i) %>% select(Res)
+    acf(Res$Res, plot=T)
+    acf1 <- acf(Res$Res, plot=F)$acf[2]
+    len <- length(Res$Res)
+    acf1.ci <- qnorm((1 + 0.95)/2)/sqrt(len)
+    if (abs(acf1)>acf1.ci) col="red" else col="black"
+    name <- Preds %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
+    mtext(name$Name, side=3, col=col)
+  }
+  
+}
 # What are the upper and lower bounds of KSR, Stikine and Cowichan?
 
 # KSR.SMSY <- All_Est %>% filter(Name=="KSR") %>% filter(Param=="SMSY") %>% select(Estimate) %>% as.numeric()

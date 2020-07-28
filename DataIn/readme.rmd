@@ -13,3 +13,9 @@ output: html_document
 -I renamed SRinput.csv
 17 July 2020.
 -SRinput.csv, I replaced Cowichan Data with the data reported in Tompkins et. 2005.
+28 July 2020
+-SRinput.csv "Nehalem" is the correct spelling of that stock (not "Niehalem")
+-SRinput.csv "Kitsumkalum" is the correct spelling of that stock (not "Kitsumkalem")
+-SRinput.csv "Chickamin" is the correct spelling of that stock (not "Chikamin")
+
+

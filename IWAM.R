@@ -1,9 +1,11 @@
 #---------------------------------------------------------
 # Integrated Watershed Area Model
 # Steps
-# 1. Read in data
+# 1. Read in stock-recruitment data
 # 2. Create data and parameter lists for TMB
-# 3. Estimate SR parameters and SMSY & SREP for synoptic data sets
+# 3. Estimate SR parameters and SMSY & SREP for synoptic data sets in TMB
+# 4. Caldulate diagnostics for SR models and plot SR curves, etc.
+# 5. Read in watershed areas
 
 #---------------------------------------------------------
 # Libaries
@@ -87,6 +89,9 @@ SRDat_surv_Cow$yr_num <- 0:(n_surv_Cow-1)
 #if(stksNum_surv == 23) SRDat_surv <- SRDat_surv_Cow
 if(23 %in% stksNum_surv) SRDat_surv <- SRDat_surv %>% filter(Name != "Cowichan") %>% bind_rows(SRDat_surv_Cow)
 
+# Read in watershed area data and life-history type (stream vs ocean)
+WA <- read.csv("DataIn/WatershedArea.csv")
+Stream <- SRDat %>% select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% summarize(lh=max(Stream))
 
 # 2. Create data and parameter lists for TMB
 
@@ -123,6 +128,10 @@ meanLogSurv <- SRDat_surv %>% group_by(Stocknumber) %>% summarize(meanLogSurv = 
 data$MeanSurv_surv <- meanLogSurv$meanLogSurv
 #data$model <- rep(0,N_Stocks)
 #data$Sgen_sig <- TMB_Inputs$Sgen_sig
+
+
+# Read in wateshed area data and life-history type....
+
 
 # Parameters
 param <- list()
@@ -206,6 +215,8 @@ All_Est$ar <- All_Est$Stocknumber %in% stksNum_ar
 All_Est$surv <- All_Est$Stocknumber %in% stksNum_surv
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
 
+# 4. Calculate diagnostics and plot SR curves, etc.
+
 # Calculate AIC
 
 nLL_std <- data.frame(nLL_std=obj$report()$nLL_std) %>% add_column(Stocknumber=SRDat_std$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_std))
@@ -215,7 +226,7 @@ aic_ar <- nLL_ar %>% mutate(aic = 2 * 4 + 2*CnLL)
 nLL_surv <- data.frame(nLL_surv=obj$report()$nLL_surv) %>% add_column(Stocknumber=SRDat_surv$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_surv))
 aic_surv <- nLL_surv %>% mutate(aic = 2 * 4 + 2*CnLL)
 
-# Get predicted values
+# Get predicted values and calculate r2
 Pred_std <- data.frame()
 #Pred_std <- All_Ests %>% filter (Param %in% c("LogR_Pred_std"))
 Pred_std <- All_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
@@ -246,16 +257,19 @@ Preds_surv <- Preds_surv %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale
 #r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
 r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
+r2 <- bind_rows(r2_std, r2_ar, r2_surv) %>% arrange(Stocknumber)
+
+# Calculate standardized residuals
 SRes <- bind_rows(Preds_std, Preds_ar, Preds_surv) %>% arrange (Stocknumber)
 SRes <- SRes %>% mutate ( Res = ObsLogRS- Pred) #%>% mutate (StdRes = Res/??)
 sigma <- All_Est %>% filter(Param=="logSigma") %>% select(Stocknumber, Estimate, Name)
 SRes <- SRes %>% left_join(sigma) %>% rename(logSig = Estimate)
 SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 
-r2 <- bind_rows(r2_std, r2_ar, r2_surv) %>% arrange(Stocknumber)
 
 #Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
 PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2)
 PlotSRLinear(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2) 
 PlotStdResid(SRes)
 Plotacf(SRes)
+

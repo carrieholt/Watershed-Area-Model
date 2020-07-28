@@ -73,7 +73,10 @@ Type objective_function<Type>:: operator() ()
   //DATA_IVECTOR(model);
   //DATA_SCALAR(Sgen_sig);
   
-
+  DATA_VECTOR(WA);
+  //DATA_VECTOR(Stream);
+  
+  
   PARAMETER_VECTOR(logA_std);
   PARAMETER_VECTOR(logB_std);
   PARAMETER_VECTOR(logSigma_std);
@@ -85,6 +88,9 @@ Type objective_function<Type>:: operator() ()
   PARAMETER_VECTOR(logB_surv);
   PARAMETER_VECTOR(logSigma_surv);
   PARAMETER_VECTOR(gamma);
+  PARAMETER(logDelta1);
+  PARAMETER(logDelta2);
+  PARAMETER(logDeltaSigma);
   //PARAMETER_VECTOR(logSgen);
   
   
@@ -150,7 +156,6 @@ Type objective_function<Type>:: operator() ()
     //LogR_Pred_surv(i) = logA_surv + log(S_surv(i)) - exp(logB_surv) * S_surv(i) + gamma * Surv_surv(i);
     //LogRS_Pred_surv(i) = logA_surv - exp(logB_surv) * S_surv(i) + gamma * Surv_surv(i);
     LogRS_Pred_surv(i) = logA_surv(stk_surv(i)) - exp(logB_surv(stk_surv(i))) * S_surv(i) + gamma(stk_surv(i)) * Surv_surv(i);
-    
     
     //ans += -dnorm(LogR_Pred_surv(i), logR_surv(i),  sigma_surv, true);
     ans += -dnorm(LogRS_Pred_surv(i), logRS_surv(i),  sigma_surv(stk_surv(i)), true);
@@ -240,6 +245,40 @@ Type objective_function<Type>:: operator() ()
   }
   SREP_surv = logA_surv / B_surv;
   
+  
+  // Phase 2: estimate watershed-area regression.
+  // First aggregate SMSY and SREP in model order
+  int N_stks = N_stks_std + N_stks_ar + N_stks_surv;
+  vector <Type> SMSY(N_stks);
+  vector <Type> SREP(N_stks);
+  
+  for(int i=0; i < N_stks_std; i++){
+    SMSY[i] = SMSY_std[i];
+    SREP[i] = SREP_std[i];
+  }
+  for(int i=0; i < N_stks_ar; i++){
+    SMSY[N_stks_std + i] = SMSY_ar[i];
+    SREP[N_stks_std + i] = SREP_ar[i];
+  }
+  for(int i=0; i < N_stks_surv; i++){
+    SMSY[N_stks_std + N_stks_ar + i] = SMSY_surv[i];
+    SREP[N_stks_std + N_stks_ar + i] = SREP_surv[i];
+  }
+  
+  vector <Type> PredSMSY(N_stks);
+  //Type Delta2 = exp(logDelta2);
+  Type sigma_delta = exp(logDeltaSigma);
+    
+  //vector <Type> PredSREP(N_stks);
+  
+  for (int i=0; i<N_stks; i++){
+    PredSMSY(i) = logDelta1 + exp(logDelta2) * WA(i);
+    //PredSREP(i) = omega1(i) + omega2(i)*WA(i)
+    ans += -dnorm(PredSMSY(i), SMSY(i),  sigma_delta, true);
+    
+  }
+
+  
   //ADREPORT(A_ar);
   //ADREPORT(A_std);
   //ADREPORT(logA_);
@@ -252,6 +291,11 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(SREP_ar);
   ADREPORT(SMSY_surv);
   ADREPORT(SREP_surv);
+  ADREPORT(SMSY);
+  ADREPORT(SREP);
+  ADREPORT(logDelta1)
+  ADREPORT(logDelta2)
+  ADREPORT(sigma_delta)
   //ADREPORT(gamma);
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);

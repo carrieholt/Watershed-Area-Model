@@ -22,9 +22,12 @@ library(zoo)
 count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
-source ("PlotSR.r")# Plotting functions
-source ("CheckAR1.r")# For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
+plot <- FALSE
 
+if( plot== TRUE) {
+  source ("PlotSR.r")# Plotting functions
+  source ("CheckAR1.r")# For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
+}
 
 #---------------------------------------------------------
 # 1. Read in data
@@ -62,6 +65,11 @@ stksNum_ar <- c(4,5,6,10,11,16)
 # Harrison was modeled with survival co-variate, but gives very poor fit with very high gamma and so excluded 
 stksNum_surv <- c(0,23)
 
+stksNum_std <- which(0:24 %not in%c(stksNum_ar, stksNum_surv)==TRUE)-1 # Assuming there are only 25 stocks (0:24 StockNumber)
+
+# When aggregated standard, ar1, surv, this is the order of stocks
+stksOrder <- data.frame(Stocknumber =  c(stksNum_std, stksNum_ar, stksNum_surv), ModelOrder = 0:24)
+
 SRDat_std <- SRDat %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) 
 SRDat_ar <- SRDat %>% filter(Stocknumber %in% stksNum_ar) 
 SRDat_surv <- SRDat %>% filter(Stocknumber %in% stksNum_surv) 
@@ -91,7 +99,10 @@ if(23 %in% stksNum_surv) SRDat_surv <- SRDat_surv %>% filter(Name != "Cowichan")
 
 # Read in watershed area data and life-history type (stream vs ocean)
 WA <- read.csv("DataIn/WatershedArea.csv")
+names <- SRDat %>% select (Stocknumber, Name) %>% distinct() 
+WA <- WA %>% full_join(names, by="Name") %>% full_join (stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
 Stream <- SRDat %>% select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% summarize(lh=max(Stream))
+Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
 
 # 2. Create data and parameter lists for TMB
 
@@ -131,6 +142,8 @@ data$MeanSurv_surv <- meanLogSurv$meanLogSurv
 
 
 # Read in wateshed area data and life-history type....
+#data$WA <- WA$WA
+#data$Stream <- Stream$lh
 
 
 # Parameters
@@ -268,8 +281,11 @@ SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 
 
 #Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
-PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2)
-PlotSRLinear(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2) 
-PlotStdResid(SRes)
-Plotacf(SRes)
+if (plot==TRUE){
+  PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2)
+  PlotSRLinear(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2) 
+  PlotStdResid(SRes)
+  Plotacf(SRes)
+  
+}
 

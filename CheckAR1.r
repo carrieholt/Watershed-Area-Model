@@ -91,7 +91,9 @@ ac.CI <- function(n) {qnorm((1 + 0.95)/2)/sqrt(n)} #95% CI for acf assuming whit
 len <- len %>% mutate (CI=ac.CI(count))
 ac <- ac %>% left_join(len) %>% left_join(unique(SRDat[, c("Stocknumber", "Name")])) %>% filter(abs(autocorr)>CI)
 ac # 6 stocks have significant lag-1 autocorrelation: Chikamin, Keta, Blossom, Situk, Siletz, and Columbia Sp
-Plotacf(Preds)
+
+# Plot acfs: 
+#Plotacf(Preds)
 
 A_std <- All_Ests %>% filter(Param=="logA_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(A=exp(Estimate))
 B_std <- All_Ests %>% filter(Param=="logB_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(B=exp(Estimate)/Scale.stock) 
@@ -107,7 +109,10 @@ All_Est <- All_Est %>% select(Estimate, Std..Error, ParamShort) %>% rename(Param
 SN_std <- unique(SRDat[, c("Stocknumber")])
 All_Est$Stocknumber <- rep(SN_std)
 All_Est <- left_join(All_Est, unique(SRDat[, c("Stocknumber", "Name")]))
-PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar=NA, stksNum_surv=NA, r2=NA) 
+
+# Plot SR curves:
+
+#PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar=NA, stksNum_surv=NA, r2=NA) 
 
 
 #------------------------------------------------------------------------------------

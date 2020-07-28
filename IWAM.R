@@ -142,7 +142,7 @@ data$MeanSurv_surv <- meanLogSurv$meanLogSurv
 
 
 # Read in wateshed area data and life-history type....
-data$WA <- WA$WA
+#data$WA <- WA$WA
 #data$Stream <- Stream$lh
 
 
@@ -178,9 +178,9 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
-param$logDelta1 <- 1
-param$logDelta2 <- 0
-param$logDeltaSigma <- 0.5
+#param$logDelta1 <- 1
+#param$logDelta2 <- 0
+#param$logDeltaSigma <- 0.5
 
 # 3. Estimate SR parameters from synoptic data set and SMSY and SREPs
 
@@ -190,13 +190,14 @@ param$logDeltaSigma <- 0.5
 
 dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
 
-# For Phase 1, fix Sgen
-#map <- list(logSgen=factor(rep(NA, N_Stocks))) # Determine which parameters to fix
-#obj <- MakeADFun(data, param, DLL="Ricker_ar1", silent=TRUE, map=map)
+# For Phase 1, fix Delta parameters
+
+#map <- list(logDelta1=factor(NA), logDelta2=factor(NA), logDeltaSigma=factor(NA)) 
+#obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
-pl <- obj$env$parList(opt$par) 
+pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
 #summary(sdreport(obj), p.value=TRUE)
 
 # Create Table of outputs

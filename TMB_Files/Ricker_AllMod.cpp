@@ -73,7 +73,7 @@ Type objective_function<Type>:: operator() ()
   //DATA_IVECTOR(model);
   //DATA_SCALAR(Sgen_sig);
   
-  DATA_VECTOR(WA);
+  //DATA_VECTOR(WA);
   //DATA_VECTOR(Stream);
   
   
@@ -88,9 +88,9 @@ Type objective_function<Type>:: operator() ()
   PARAMETER_VECTOR(logB_surv);
   PARAMETER_VECTOR(logSigma_surv);
   PARAMETER_VECTOR(gamma);
-  PARAMETER(logDelta1);
-  PARAMETER(logDelta2);
-  PARAMETER(logDeltaSigma);
+  //PARAMETER(logDelta1);
+  //PARAMETER(logDelta2);
+  //PARAMETER(logDeltaSigma);
   //PARAMETER_VECTOR(logSgen);
   
   
@@ -265,18 +265,13 @@ Type objective_function<Type>:: operator() ()
     SREP[N_stks_std + N_stks_ar + i] = SREP_surv[i];
   }
   
-  vector <Type> PredSMSY(N_stks);
-  //Type Delta2 = exp(logDelta2);
-  Type sigma_delta = exp(logDeltaSigma);
+  //vector <Type> PredSMSY(N_stks);
+  //Type sigma_delta = exp(logDeltaSigma);
     
-  //vector <Type> PredSREP(N_stks);
-  
-  for (int i=0; i<N_stks; i++){
-    PredSMSY(i) = logDelta1 + exp(logDelta2) * WA(i);
-    //PredSREP(i) = omega1(i) + omega2(i)*WA(i)
-    ans += -dnorm(PredSMSY(i), SMSY(i),  sigma_delta, true);
-    
-  }
+  //for (int i=0; i<N_stks; i++){
+  //  PredSMSY(i) = logDelta1 + exp(logDelta2) * WA(i);
+  //  ans += -dnorm(PredSMSY(i), SMSY(i),  sigma_delta, true);
+ // }
 
   
   //ADREPORT(A_ar);
@@ -293,9 +288,9 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(SREP_surv);
   ADREPORT(SMSY);
   ADREPORT(SREP);
-  ADREPORT(logDelta1)
-  ADREPORT(logDelta2)
-  ADREPORT(sigma_delta)
+  //ADREPORT(logDelta1)
+  //ADREPORT(logDelta2)
+ // ADREPORT(sigma_delta)
   //ADREPORT(gamma);
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);

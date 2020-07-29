@@ -348,6 +348,30 @@ lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
 plot(y=lnSMSY, x=lnWA)
 plot(y=exp(lnSMSY), x=exp(lnWA))
 
+#Watereshed-Area Regression with data inputs
+SMSY <- read.csv("DataIn/SMSY_3mods.csv")
+
+data <- list()
+data$SMSY <- SMSY$Estimate
+data$lnWA <- exp(lnWA)
+data$Scale <- SMSY$Scale
+data$Tau_dist <- 0.1
+
+param <- list()
+param$logDelta1 <- 3.00# with skagit 2.881
+param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+
+#dyn.unload(dynlib("TMB_Files/WAregression"))
+#compile("TMB_Files/WAregression.cpp")
+
+dyn.load(dynlib("TMB_Files/WAregression"))
+obj <- MakeADFun(data, param, DLL="WAregression", silent=TRUE)
+
+opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
+#summary(sdreport(obj), p.value=TRUE)
+
+
 #pdf("ParkenSMSYWA.pdf", width=4)
 #  par(mfcol=c(2,1))
 #  plot(y=exp(lnPSMSY), x=exp(lnWA), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")

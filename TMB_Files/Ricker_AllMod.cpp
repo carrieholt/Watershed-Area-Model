@@ -270,7 +270,7 @@ Type objective_function<Type>:: operator() ()
   //Type sigma_delta = exp(logDeltaSigma);
   
   //for (int i=0; i<N_stks; i++){
-  //  PredlnSMSY(i) = logDelta1 + exp(logDelta2) * WA(i);
+  //  PredlnSMSY(i) = logDelta1 + exp(logDelta2) * log(WA(i));
   //  ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
   //}
   //// Add Inverse gamma prior on sigma_delta^2

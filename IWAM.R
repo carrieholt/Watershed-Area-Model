@@ -216,8 +216,8 @@ dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
 
 # For Phase 1, fix Delta parameters
 
-#map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
-#obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
+map <- list(logDelta1=factor(NA), logDelta2=factor(NA), logDeltaSigma=factor(NA)) 
+obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
 #upper <- c(rep(Inf, 80), 5.00, rep(Inf,2))
 

@@ -23,6 +23,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
 plot <- FALSE
+removeSkagit <- TRUE
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -34,9 +35,15 @@ if( plot== TRUE) {
 
 SRDatwNA <- read.csv("DataIn/SRinputfile.csv")
 SRDatwNA <- SRDatwNA %>% filter(Name != "Hoko" & Name != "Hoh") #remove two stocks not used in Parken et al, and not documented in Liermann et al.
+if (removeSkagit==TRUE) {
+  SRDatwNA <- SRDatwNA %>% filter(Name != "Skagit")#Stocknumber=22. Need to re-align stock numbers of last two stocks, 23 and 24
+  SRDatwNA [which(SRDatwNA$Stocknumber==23),2] = 22
+  SRDatwNA [which(SRDatwNA$Stocknumber==24),2] = 23
+}
 
 # Which stocks have NAs?
-stockwNA <- SRDatwNA %>% filter (is.na(Rec) == TRUE) %>% select (Stocknumber) %>% unique() %>% unlist() #Do not use AR(1) model on 3  stocks with NAs
+stockwNA <- SRDatwNA %>% filter (is.na(Rec) == TRUE) %>% select (Stocknumber) %>% unique() %>% unlist() 
+#Do not use AR(1) model on  stocks with NAs, Humptulips and Queets (20 and 21)
 
 # Remove years with NAs
 SRDat <- SRDatwNA %>% filter(Rec != "NA") #%>% filter(Stocknumber <= 24)
@@ -64,11 +71,14 @@ stksNum_ar <- c(4,5,6,10,11,16)
 # Cowichan modeled with Ricker with a surival co-variate. 
 # Harrison was modeled with survival co-variate, but gives very poor fit with very high gamma and so excluded 
 stksNum_surv <- c(0,23)
+stks_surv <- c("Harrison", "Cowichan")
+if (removeSkagit==TRUE) {stksNum_surv <- c(0,22)}
 
-stksNum_std <- which(0:24 %not in%c(stksNum_ar, stksNum_surv)==TRUE)-1 # Assuming there are only 25 stocks (0:24 StockNumber)
+len_stk <- length(unique(SRDat$Stocknumber))
+stksNum_std <- which(0:(len_stk-1) %not in%c(stksNum_ar, stksNum_surv)==TRUE)-1 # Assuming there are only 25 stocks (0:24 StockNumber)
 
 # When aggregated standard, ar1, surv, this is the order of stocks
-stksOrder <- data.frame(Stocknumber =  c(stksNum_std, stksNum_ar, stksNum_surv), ModelOrder = 0:24)
+stksOrder <- data.frame(Stocknumber =  c(stksNum_std, stksNum_ar, stksNum_surv), ModelOrder = 0:(len_stk-1))
 
 # What is the scale of S,R and SMSY,SREP data, ordered when aggregated by std, AR1, surv
 SRDat_Scale <- SRDat %>% select(Stocknumber, Scale) %>% distinct() 
@@ -90,9 +100,10 @@ ind_ar <- add_column(ind_ar, Stocknumber = (unique(SRDat_ar$Stocknumber)))
 SRDat_ar <- SRDat_ar %>% left_join(ind_ar)
 
 ind_surv <- tibble(ind_surv= 0:(length(unique(SRDat_surv$Name))-1))
-ind_surv <- add_column(ind_surv, Stocknumber = (unique(SRDat_surv$Stocknumber)))
+#ind_surv <- add_column(ind_surv, Stocknumber = (unique(SRDat_surv$Stocknumber)))
+ind_surv <- add_column(ind_surv, Name = (unique(SRDat_surv$Name)))
 Surv <- as.data.frame(read.csv("DataIn/Surv.csv")) #%>% filter(Yr<=1999)
-SRDat_surv <- SRDat_surv %>% left_join(ind_surv) %>% left_join(Surv)
+SRDat_surv <- SRDat_surv %>% left_join(ind_surv, by="Name") %>% left_join(Surv)
 
 
 #remove years 1981-1984, 1986-1987  from Cowichan (Stocknumber 23) as per Tompkins et al. 2005
@@ -100,12 +111,13 @@ SRDat_surv_Cow <- SRDat_surv %>% filter(Name == "Cowichan" & Yr >= 1984 & Yr !=1
 n_surv_Cow <- length(SRDat_surv_Cow$Yr)
 SRDat_surv_Cow$yr_num <- 0:(n_surv_Cow-1)
 #if(stksNum_surv == 23) SRDat_surv <- SRDat_surv_Cow
-if(23 %in% stksNum_surv) SRDat_surv <- SRDat_surv %>% filter(Name != "Cowichan") %>% bind_rows(SRDat_surv_Cow)
+if("Cowichan" %in% stks_surv) SRDat_surv <- SRDat_surv %>% filter(Name != "Cowichan") %>% bind_rows(SRDat_surv_Cow)
 
 # Read in watershed area data and life-history type (stream vs ocean)
 WA <- read.csv("DataIn/WatershedArea.csv")
 names <- SRDat %>% select (Stocknumber, Name) %>% distinct() 
 WA <- WA %>% full_join(names, by="Name") %>% full_join (stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
+if (removeSkagit==TRUE) {WA <- WA %>% filter(Name !="Skagit")}
 Stream <- SRDat %>% select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% summarize(lh=max(Stream))
 Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
 
@@ -141,7 +153,7 @@ data$yr_surv <- SRDat_surv$yr_num
 data$Surv_surv <- log(SRDat_surv$Surv) #Tompkins et al. used Ln(Surv+1)
 meanLogSurv <- SRDat_surv %>% group_by(Stocknumber) %>% summarize(meanLogSurv = mean(log(Surv))) %>% 
   select(meanLogSurv) 
-data$MeanSurv_surv <- meanLogSurv$meanLogSurv
+data$MeanLogSurv_surv <- meanLogSurv$meanLogSurv
 #data$model <- rep(0,N_Stocks)
 #data$Sgen_sig <- TMB_Inputs$Sgen_sig
 

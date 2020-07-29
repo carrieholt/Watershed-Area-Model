@@ -68,11 +68,8 @@ Type objective_function<Type>:: operator() ()
   DATA_IVECTOR(stk_surv);
   DATA_IVECTOR(yr_surv);
   DATA_VECTOR(Surv_surv);
-  DATA_VECTOR(MeanSurv_surv);
-  //DATA_SCALAR(MeanSurv_surv);
-  //DATA_IVECTOR(model);
-  //DATA_SCALAR(Sgen_sig);
-  
+  DATA_VECTOR(MeanLogSurv_surv);
+
   DATA_VECTOR(WA);
   DATA_VECTOR(Stream);
   DATA_VECTOR(Scale);
@@ -242,7 +239,7 @@ Type objective_function<Type>:: operator() ()
   SREP_ar = logA_ar / B_ar;
   
   for(int i=0; i<N_stks_surv; i++){
-    SMSY_surv(i) =  (1 - LambertW(exp(1 - (logA_surv(i) + gamma(i) * MeanSurv_surv(i)))) )/ B_surv(i) ;
+    SMSY_surv(i) =  (1 - LambertW(exp(1 - (logA_surv(i) + gamma(i) * MeanLogSurv_surv(i)))) )/ B_surv(i) ;
   }
   SREP_surv = logA_surv / B_surv;
   

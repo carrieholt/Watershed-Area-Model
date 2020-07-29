@@ -330,3 +330,10 @@ lnDelta1_start <- coef(lm(lnSMSY ~ lnWA))[1]
 lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
 
 plot(y=lnSMSY, x=lnWA)
+plot(y=exp(lnPSMSY), x=exp(lnWA))
+
+#pdf("ParkenSMSYWA.pdf", width=4)
+#  par(mfcol=c(2,1))
+#  plot(y=exp(lnPSMSY), x=exp(lnWA), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")
+#  plot(y=exp(lnPSMSY), x=exp(lnWA), xlim=c(0,2000), ylim=c(0,6000), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")
+#dev.off()

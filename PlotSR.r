@@ -37,13 +37,21 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2) 
     SS <- RR<- NA
     #RR_std <- NA
     
-    for (j in 1:100){
-      if (i!=22) SS[j] <- j*(max(S$Sp)/100)
-      if (i==22) SS[j] <- j*(max(S$Sp*3)/100)
-      RR[j] <- a * SS[j] * exp(-b * SS[j])
-      if(i==22) {RR_skagit[j] <- skagit_alpha * SS[j] * exp(-skagit_beta * SS[j])}
-      #if (i %in% stks_ar) {RR_std[j] <- A_std$A[which(A_std$Stocknumber==i)] * SS[j] *  exp(-B_std$B[which(B_std$Stocknumber==i)] * SS[j])}
-    }
+    if(removeSkagit==FALSE){
+      for (j in 1:100){
+        if (i!=22) SS[j] <- j*(max(S$Sp)/100)
+        if (i==22) SS[j] <- j*(max(S$Sp*3)/100)
+        RR[j] <- a * SS[j] * exp(-b * SS[j])
+        if(i==22) {RR_skagit[j] <- skagit_alpha * SS[j] * exp(-skagit_beta * SS[j])}
+        #if (i %in% stks_ar) {RR_std[j] <- A_std$A[which(A_std$Stocknumber==i)] * SS[j] *  exp(-B_std$B[which(B_std$Stocknumber==i)] * SS[j])}
+      }
+    } 
+    if(removeSkagit==TRUE){
+      for (j in 1:100){
+        SS[j] <- j*(max(S$Sp)/100)
+        RR[j] <- a * SS[j] * exp(-b * SS[j])
+      }
+    } 
     
     if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
     if (i %in% stksNum_ar) col.use <- "red"

@@ -23,7 +23,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
 plot <- FALSE
-removeSkagit <- TRUE
+removeSkagit <- FALSE
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -159,9 +159,9 @@ data$MeanLogSurv_surv <- meanLogSurv$meanLogSurv
 
 
 # Read in wateshed area data and life-history type....
-data$WA <- WA$WA
-data$Stream <- Stream$lh
-data$Scale <- SRDat_Scale #ordered by std, AR1, surv
+#data$WA <- WA$WA
+#data$Stream <- Stream$lh
+#data$Scale <- SRDat_Scale #ordered by std, AR1, surv
 
 
 # Parameters
@@ -196,9 +196,9 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
-param$logDelta1 <- 2.881
-param$logDelta2 <- -0.288
-param$logDeltaSigma <- -0.412 #from Parken et al. 2006
+#param$logDelta1 <- 2.881
+#param$logDelta2 <- -0.288
+#param$logDeltaSigma <- -0.412 #from Parken et al. 2006
 
 # 3. Estimate SR parameters from synoptic data set and SMSY and SREPs
 

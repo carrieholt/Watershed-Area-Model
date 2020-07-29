@@ -23,7 +23,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
 plot <- FALSE
-removeSkagit <- FALSE
+removeSkagit <- TRUE
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -123,7 +123,7 @@ Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrd
 
 # 2. Create data and parameter lists for TMB
 
-TMB_Inputs <- list(logA_Start = 2, rho_Start = 0.1, Sgen_sig = 1) #Scale = 1000, 
+TMB_Inputs <- list(rho_Start = 0.0, Tau_dist=0.01, Tau2_dist=1) 
 
 # Data 
 data <- list()
@@ -159,9 +159,12 @@ data$MeanLogSurv_surv <- meanLogSurv$meanLogSurv
 
 
 # Read in wateshed area data and life-history type....
-#data$WA <- WA$WA
-#data$Stream <- Stream$lh
-#data$Scale <- SRDat_Scale #ordered by std, AR1, surv
+data$WA <- WA$WA
+data$Stream <- Stream$lh
+data$Scale <- SRDat_Scale #ordered by std, AR1, surv
+data$Tau_dist <- TMB_Inputs$Tau_dist
+
+# what does prior look like? library(invgamma); plot(x=seq(0,1,0.001), y=dinvgamma(seq(0,1,0.001),0.01,0.01), type="l")
 
 
 # Parameters
@@ -196,9 +199,12 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
-#param$logDelta1 <- 2.881
-#param$logDelta2 <- -0.288
-#param$logDeltaSigma <- -0.412 #from Parken et al. 2006
+param$logDelta1 <- 3.00# with skagit 2.881
+param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+
+# without Skagit lnDelta1_start <- 2.999911
+# without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
 
 # 3. Estimate SR parameters from synoptic data set and SMSY and SREPs
 
@@ -210,11 +216,13 @@ dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
 
 # For Phase 1, fix Delta parameters
 
-#map <- list(logDelta1=factor(NA), logDelta2=factor(NA), logDeltaSigma=factor(NA)) 
+#map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
 #obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
+#upper <- c(rep(Inf, 80), 5.00, rep(Inf,2))
 
-opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
+opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, 
+#              upper=upper)
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
 #summary(sdreport(obj), p.value=TRUE)
 
@@ -312,9 +320,10 @@ if (plot==TRUE){
   
 }
 
+
 # What initial values to use for WA model parameters?
 
-SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:24)
+SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
 # what is scale of SMSY?
 Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
 SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
@@ -328,9 +337,14 @@ lnPSMSY <- ParkenSMSY$lnSMSY
 # lm(lnPSMSY ~ lnWA) #Get same coefficients as Parken et al. Table 4 for pooled data
 lnDelta1_start <- coef(lm(lnSMSY ~ lnWA))[1]
 lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
+# without Skagit lnDelta1_start <- 2.999911
+# without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
+# With Skagit lnDelta1_start <- 2.881
+# with Skagit nDelta2_start <- -0.288
+
 
 plot(y=lnSMSY, x=lnWA)
-plot(y=exp(lnPSMSY), x=exp(lnWA))
+plot(y=exp(lnSMSY), x=exp(lnWA))
 
 #pdf("ParkenSMSYWA.pdf", width=4)
 #  par(mfcol=c(2,1))

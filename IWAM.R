@@ -186,7 +186,7 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 param$logDelta1 <- 2.881
 param$logDelta2 <- -0.288
-param$logDeltaSigma <- -0.5
+param$logDeltaSigma <- -0.412 #from Parken et al. 2006
 
 # 3. Estimate SR parameters from synoptic data set and SMSY and SREPs
 
@@ -198,9 +198,9 @@ dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
 
 # For Phase 1, fix Delta parameters
 
-map <- list(logDelta1=factor(NA), logDelta2=factor(NA), logDeltaSigma=factor(NA)) 
-obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
-#obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
+#map <- list(logDelta1=factor(NA), logDelta2=factor(NA), logDeltaSigma=factor(NA)) 
+#obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
+obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1

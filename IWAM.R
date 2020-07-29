@@ -70,6 +70,11 @@ stksNum_std <- which(0:24 %not in%c(stksNum_ar, stksNum_surv)==TRUE)-1 # Assumin
 # When aggregated standard, ar1, surv, this is the order of stocks
 stksOrder <- data.frame(Stocknumber =  c(stksNum_std, stksNum_ar, stksNum_surv), ModelOrder = 0:24)
 
+# What is the scale of S,R and SMSY,SREP data, ordered when aggregated by std, AR1, surv
+SRDat_Scale <- SRDat %>% select(Stocknumber, Scale) %>% distinct() 
+SRDat_Scale <- SRDat_Scale %>% left_join(stksOrder) %>% arrange(ModelOrder)
+SRDat_Scale <- SRDat_Scale$Scale
+
 SRDat_std <- SRDat %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) 
 SRDat_ar <- SRDat %>% filter(Stocknumber %in% stksNum_ar) 
 SRDat_surv <- SRDat %>% filter(Stocknumber %in% stksNum_surv) 
@@ -142,8 +147,9 @@ data$MeanSurv_surv <- meanLogSurv$meanLogSurv
 
 
 # Read in wateshed area data and life-history type....
-#data$WA <- WA$WA
-#data$Stream <- Stream$lh
+data$WA <- WA$WA
+data$Stream <- Stream$lh
+data$Scale <- SRDat_Scale #ordered by std, AR1, surv
 
 
 # Parameters
@@ -178,9 +184,9 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
-#param$logDelta1 <- 1
-#param$logDelta2 <- 0
-#param$logDeltaSigma <- 0.5
+param$logDelta1 <- 2.881
+param$logDelta2 <- -0.288
+param$logDeltaSigma <- 0.5
 
 # 3. Estimate SR parameters from synoptic data set and SMSY and SREPs
 
@@ -293,4 +299,22 @@ if (plot==TRUE){
   Plotacf(SRes)
   
 }
+
+# # What initial values to use for WA model parameters?
+# 
+# SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:24)
+# # what is scale of SMSY?
+# Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
+# SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
+# lnSMSY <- log(SMSY$rawSMSY)
+# lnWA <- log(WA$WA)
+# order <- SMSY %>% select(Stocknumber, ModelOrder)
+# ParkenSMSY <- as.data.frame(read.csv("DataIn/ParkenSMSY.csv"))
+# ParkenSMSY <- ParkenSMSY %>% left_join(order) %>% arrange(ModelOrder) %>% mutate(lnSMSY=log(SMSY))
+# lnPSMSY <- ParkenSMSY$lnSMSY
+# 
+# # lm(lnPSMSY ~ lnWA) #Get same coefficients as Parken et al. Table 4 for pooled data
+# lnDelta1_start <- coef(lm(lnSMSY ~ lnWA))[1]
+# lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
+
 

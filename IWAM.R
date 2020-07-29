@@ -186,7 +186,7 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 param$logDelta1 <- 2.881
 param$logDelta2 <- -0.288
-param$logDeltaSigma <- 0.5
+param$logDeltaSigma <- -0.5
 
 # 3. Estimate SR parameters from synoptic data set and SMSY and SREPs
 
@@ -198,9 +198,9 @@ dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
 
 # For Phase 1, fix Delta parameters
 
-#map <- list(logDelta1=factor(NA), logDelta2=factor(NA), logDeltaSigma=factor(NA)) 
-#obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
-obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
+map <- list(logDelta1=factor(NA), logDelta2=factor(NA), logDeltaSigma=factor(NA)) 
+obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
+#obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
@@ -300,21 +300,21 @@ if (plot==TRUE){
   
 }
 
-# # What initial values to use for WA model parameters?
-# 
-# SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:24)
-# # what is scale of SMSY?
-# Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
-# SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
-# lnSMSY <- log(SMSY$rawSMSY)
-# lnWA <- log(WA$WA)
-# order <- SMSY %>% select(Stocknumber, ModelOrder)
-# ParkenSMSY <- as.data.frame(read.csv("DataIn/ParkenSMSY.csv"))
-# ParkenSMSY <- ParkenSMSY %>% left_join(order) %>% arrange(ModelOrder) %>% mutate(lnSMSY=log(SMSY))
-# lnPSMSY <- ParkenSMSY$lnSMSY
-# 
-# # lm(lnPSMSY ~ lnWA) #Get same coefficients as Parken et al. Table 4 for pooled data
-# lnDelta1_start <- coef(lm(lnSMSY ~ lnWA))[1]
-# lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
+# What initial values to use for WA model parameters?
 
+SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:24)
+# what is scale of SMSY?
+Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
+SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
+lnSMSY <- log(SMSY$rawSMSY)
+lnWA <- log(WA$WA)
+order <- SMSY %>% select(Stocknumber, ModelOrder)
+ParkenSMSY <- as.data.frame(read.csv("DataIn/ParkenSMSY.csv"))
+ParkenSMSY <- ParkenSMSY %>% left_join(order) %>% arrange(ModelOrder) %>% mutate(lnSMSY=log(SMSY))
+lnPSMSY <- ParkenSMSY$lnSMSY
 
+# lm(lnPSMSY ~ lnWA) #Get same coefficients as Parken et al. Table 4 for pooled data
+lnDelta1_start <- coef(lm(lnSMSY ~ lnWA))[1]
+lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
+
+plot(y=lnSMSY, x=lnWA)

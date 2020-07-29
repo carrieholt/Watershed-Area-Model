@@ -159,10 +159,10 @@ data$MeanLogSurv_surv <- meanLogSurv$meanLogSurv
 
 
 # Read in wateshed area data and life-history type....
-#data$WA <- WA$WA
+data$WA <- WA$WA
 #data$Stream <- Stream$lh
-#data$Scale <- SRDat_Scale #ordered by std, AR1, surv
-#data$Tau_dist <- TMB_Inputs$Tau_dist
+data$Scale <- SRDat_Scale #ordered by std, AR1, surv
+data$Tau_dist <- TMB_Inputs$Tau_dist
 
 # what does prior look like? library(invgamma); plot(x=seq(0,1,0.001), y=dinvgamma(seq(0,1,0.001),0.01,0.01), type="l")
 
@@ -199,9 +199,9 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
-#param$logDelta1 <- 3.00# with skagit 2.881
-#param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-#param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+param$logDelta1 <- 3.00# with skagit 2.881
+param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 
 # without Skagit lnDelta1_start <- 2.999911
 # without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
@@ -344,11 +344,16 @@ lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
 # With Skagit lnDelta1_start <- 2.881
 # with Skagit nDelta2_start <- -0.288
 
-
 plot(y=lnSMSY, x=lnWA)
 plot(y=exp(lnSMSY), x=exp(lnWA))
+#pdf("ParkenSMSYWA.pdf", width=4)
+#  par(mfcol=c(2,1))
+#  plot(y=exp(lnPSMSY), x=exp(lnWA), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")
+#  plot(y=exp(lnPSMSY), x=exp(lnWA), xlim=c(0,2000), ylim=c(0,6000), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")
+#dev.off()
 
-#Watereshed-Area Regression with data inputs
+#-----------------------------------------------------------------------------------------
+#TEST: Watereshed-Area Regression with data inputs
 SMSY <- read.csv("DataIn/SMSY_3mods.csv")
 
 data <- list()
@@ -370,10 +375,7 @@ obj <- MakeADFun(data, param, DLL="WAregression", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
 #summary(sdreport(obj), p.value=TRUE)
+#-----------------------------------------------------------------------------------------
 
 
-#pdf("ParkenSMSYWA.pdf", width=4)
-#  par(mfcol=c(2,1))
-#  plot(y=exp(lnPSMSY), x=exp(lnWA), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")
-#  plot(y=exp(lnPSMSY), x=exp(lnWA), xlim=c(0,2000), ylim=c(0,6000), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")
-#dev.off()
+

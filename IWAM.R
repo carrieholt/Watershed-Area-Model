@@ -353,7 +353,7 @@ SMSY <- read.csv("DataIn/SMSY_3mods.csv")
 
 data <- list()
 data$SMSY <- SMSY$Estimate
-data$lnWA <- exp(lnWA)
+data$WA <- exp(lnWA)
 data$Scale <- SMSY$Scale
 data$Tau_dist <- 0.1
 

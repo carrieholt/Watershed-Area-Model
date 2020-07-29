@@ -59,7 +59,9 @@ Type objective_function<Type>:: operator() ()
   PARAMETER(logDelta2);
   PARAMETER(logDeltaSigma);
 
-  Type N_stks = SMSY.size();
+  
+  Type ans=0.0;
+  int N_stks = SMSY.size();
   vector <Type> PredlnSMSY(N_stks);
   //Type Delta2_bounded = invlogit(Delta2);
   Type sigma_delta = exp(logDeltaSigma);

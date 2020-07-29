@@ -70,10 +70,10 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(Surv_surv);
   DATA_VECTOR(MeanLogSurv_surv);
 
-  DATA_VECTOR(WA);
-  DATA_VECTOR(Stream);
-  DATA_VECTOR(Scale);
-  DATA_SCALAR(Tau_dist);
+  //DATA_VECTOR(WA);
+  //DATA_VECTOR(Stream);
+  //DATA_VECTOR(Scale);
+  //DATA_SCALAR(Tau_dist);
 
   
   
@@ -88,9 +88,9 @@ Type objective_function<Type>:: operator() ()
   PARAMETER_VECTOR(logB_surv);
   PARAMETER_VECTOR(logSigma_surv);
   PARAMETER_VECTOR(gamma);
-  PARAMETER(logDelta1);
-  PARAMETER(logDelta2);
-  PARAMETER(logDeltaSigma);
+  //PARAMETER(logDelta1);
+  //PARAMETER(logDelta2);
+  //PARAMETER(logDeltaSigma);
   //PARAMETER_VECTOR(logSgen);
   
   
@@ -265,16 +265,16 @@ Type objective_function<Type>:: operator() ()
     SREP[N_stks_std + N_stks_ar + i] = SREP_surv[i];
   }
   
-  vector <Type> PredlnSMSY(N_stks);
-  //Type Delta2_bounded = invlogit(Delta2);
-  Type sigma_delta = exp(logDeltaSigma);
+  //vector <Type> PredlnSMSY(N_stks);
+  ////Type Delta2_bounded = invlogit(Delta2);
+  //Type sigma_delta = exp(logDeltaSigma);
   
-  for (int i=0; i<N_stks; i++){
-    PredlnSMSY(i) = logDelta1 + exp(logDelta2) * WA(i);
-    ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
-  }
-  // Add Inverse gamma prior on sigma_delta^2
-  ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
+  //for (int i=0; i<N_stks; i++){
+  //  PredlnSMSY(i) = logDelta1 + exp(logDelta2) * WA(i);
+  //  ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
+  //}
+  //// Add Inverse gamma prior on sigma_delta^2
+  //ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
   
   
   //ADREPORT(A_ar);
@@ -291,10 +291,9 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(SREP_surv);
   ADREPORT(SMSY);
   ADREPORT(SREP);
-  ADREPORT(logDelta1)
-  //ADREPORT(Delta2_bounded)
-  ADREPORT(logDelta2)
-  ADREPORT(sigma_delta)
+  //ADREPORT(logDelta1)
+  //ADREPORT(logDelta2)
+  //ADREPORT(sigma_delta)
   //ADREPORT(gamma);
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);

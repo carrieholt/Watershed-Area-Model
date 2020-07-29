@@ -159,10 +159,10 @@ data$MeanLogSurv_surv <- meanLogSurv$meanLogSurv
 
 
 # Read in wateshed area data and life-history type....
-data$WA <- WA$WA
-data$Stream <- Stream$lh
-data$Scale <- SRDat_Scale #ordered by std, AR1, surv
-data$Tau_dist <- TMB_Inputs$Tau_dist
+#data$WA <- WA$WA
+#data$Stream <- Stream$lh
+#data$Scale <- SRDat_Scale #ordered by std, AR1, surv
+#data$Tau_dist <- TMB_Inputs$Tau_dist
 
 # what does prior look like? library(invgamma); plot(x=seq(0,1,0.001), y=dinvgamma(seq(0,1,0.001),0.01,0.01), type="l")
 
@@ -199,9 +199,9 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
-param$logDelta1 <- 3.00# with skagit 2.881
-param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+#param$logDelta1 <- 3.00# with skagit 2.881
+#param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+#param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 
 # without Skagit lnDelta1_start <- 2.999911
 # without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
@@ -221,10 +221,12 @@ dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
 obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
 #upper <- c(rep(Inf, 80), 5.00, rep(Inf,2))
 
-opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, 
-#              upper=upper)
+opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
 #summary(sdreport(obj), p.value=TRUE)
+
+#library(tmbstan)
+#fitmcmc <- tmbstan(obj, chains=3, iter=1000, init=list(opt$par), control = list(adapt_delta = 0.95))
 
 # Create Table of outputs
 All_Ests <- data.frame(summary(sdreport(obj)))

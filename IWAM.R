@@ -160,10 +160,11 @@ data$MeanLogSurv_surv <- meanLogSurv$meanLogSurv
 
 # Read in wateshed area data and life-history type....
 data$WA <- WA$WA
-#data$Stream <- Stream$lh
 data$Scale <- SRDat_Scale #ordered by std, AR1, surv
 data$Tau_dist <- TMB_Inputs$Tau_dist
-
+data$Stream <- Stream$lh
+data$N_stream <-length(which(data$Stream==1))
+data$N_ocean <- length(which(data$Stream==2))
 # what does prior look like? library(invgamma); plot(x=seq(0,1,0.001), y=dinvgamma(seq(0,1,0.001),0.01,0.01), type="l")
 
 
@@ -200,7 +201,8 @@ param$gamma <- rep (0, N_Stocks_surv)
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
 param$logDelta1 <- 3.00# with skagit 2.881
-param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+#param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
 param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 
 # without Skagit lnDelta1_start <- 2.999911
@@ -214,13 +216,12 @@ param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 
 dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
 
-# For Phase 1, fix Delta parameters
+# For Phase 1, fix Delta parameters. Do not need to fix Delta's beccause initlal values are lm fits, so very close
+#map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
+#obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 
-map <- list(logDelta1=factor(NA), logDelta2=factor(NA), logDeltaSigma=factor(NA)) 
-obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
 #upper <- c(rep(Inf, 80), 5.00, rep(Inf,2))
-
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
 #summary(sdreport(obj), p.value=TRUE)

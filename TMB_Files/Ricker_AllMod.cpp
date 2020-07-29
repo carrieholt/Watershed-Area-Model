@@ -71,11 +71,12 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(MeanLogSurv_surv);
 
   DATA_VECTOR(WA);
-  //DATA_VECTOR(Stream);
   DATA_VECTOR(Scale);
   DATA_SCALAR(Tau_dist);
+  DATA_VECTOR(Stream);
+  DATA_INTEGER(N_stream);
+  DATA_INTEGER(N_ocean);
 
-  
   
   PARAMETER_VECTOR(logA_std);
   PARAMETER_VECTOR(logB_std);
@@ -89,7 +90,7 @@ Type objective_function<Type>:: operator() ()
   PARAMETER_VECTOR(logSigma_surv);
   PARAMETER_VECTOR(gamma);
   PARAMETER(logDelta1);
-  PARAMETER(logDelta2);
+  PARAMETER(Delta2);
   PARAMETER(logDeltaSigma);
   //PARAMETER_VECTOR(logSgen);
   
@@ -246,7 +247,7 @@ Type objective_function<Type>:: operator() ()
   SREP_surv = logA_surv / B_surv;
   
   
-  // Phase 2: estimate watershed-area regression.
+  // Estimate watershed-area regression.
   // First aggregate SMSY and SREP in model order
   int N_stks = N_stks_std + N_stks_ar + N_stks_surv;
   vector <Type> SMSY(N_stks);
@@ -265,12 +266,43 @@ Type objective_function<Type>:: operator() ()
     SREP[N_stks_std + N_stks_ar + i] = SREP_surv[i];
   }
   
+//Separate into stream and ocean type stocks
+
+  vector <Type> SMSY_stream(N_stream);
+  vector <Type> SREP_stream(N_stream);
+  vector <Type> WA_stream(N_stream);
+  vector <Type> SMSY_ocean(N_ocean);
+  vector <Type> SREP_ocean(N_ocean);
+  vector <Type> WA_ocean(N_ocean);
+  
+
+  int j = 0;
+  int k = 0;
+  
+  for(int ii=0; ii < N_stks; ii++){
+    if(Stream[ii]==1){
+      SMSY_stream[j] = SMSY[ii];
+      SREP_stream[j] = SREP[ii];
+      WA_stream[j] = WA[ii];
+      j += 1;
+    }
+    if(Stream[ii]==2){
+      SMSY_ocean[k] = SMSY[ii];
+      SREP_ocean[k] = SREP[ii];
+      WA_ocean[k] = WA[ii];
+      k += 1;
+    }
+    
+  }
+
+
   vector <Type> PredlnSMSY(N_stks);
-  //Type Delta2_bounded = invlogit(Delta2);
+  Type Delta2_bounded = invlogit(Delta2);
   Type sigma_delta = exp(logDeltaSigma);
   
   for (int i=0; i<N_stks; i++){
-    PredlnSMSY(i) = logDelta1 + exp(logDelta2) * log(WA(i));
+    //PredlnSMSY(i) = logDelta1 + exp(logDelta2) * log(WA(i));
+    PredlnSMSY(i) = logDelta1 + Delta2_bounded * log(WA(i));
     ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
   }
   // Add Inverse gamma prior on sigma_delta^2
@@ -290,9 +322,12 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(SMSY_surv);
   ADREPORT(SREP_surv);
   ADREPORT(SMSY);
-  ADREPORT(SREP);
+  ADREPORT(SMSY_stream)
+  ADREPORT(SREP_stream)
+  ADREPORT(WA_stream)
   ADREPORT(logDelta1)
-  ADREPORT(logDelta2)
+  //ADREPORT(logDelta2)
+  ADREPORT(Delta2_bounded)
   ADREPORT(sigma_delta)
   //ADREPORT(gamma);
   //ADREPORT(LogR_Pred_ar);

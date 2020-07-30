@@ -72,7 +72,7 @@ Type objective_function<Type>:: operator() ()
 
   DATA_VECTOR(WA);
   DATA_VECTOR(Scale);
-  DATA_SCALAR(Tau_dist);
+  //DATA_SCALAR(Tau_dist);
   DATA_VECTOR(Stream);
   DATA_INTEGER(N_stream);
   DATA_INTEGER(N_ocean);
@@ -92,6 +92,9 @@ Type objective_function<Type>:: operator() ()
   PARAMETER(logDelta1);
   PARAMETER(Delta2);
   PARAMETER(logDeltaSigma);
+  PARAMETER(slogDelta1);
+  PARAMETER(sDelta2);
+  PARAMETER(slogDeltaSigma);
   //PARAMETER_VECTOR(logSgen);
   
   
@@ -271,9 +274,11 @@ Type objective_function<Type>:: operator() ()
   vector <Type> SMSY_stream(N_stream);
   vector <Type> SREP_stream(N_stream);
   vector <Type> WA_stream(N_stream);
+  vector <Type> Scale_stream(N_stream);
   vector <Type> SMSY_ocean(N_ocean);
   vector <Type> SREP_ocean(N_ocean);
   vector <Type> WA_ocean(N_ocean);
+  vector <Type> Scale_ocean(N_ocean);
   
 
   int j = 0;
@@ -284,12 +289,14 @@ Type objective_function<Type>:: operator() ()
       SMSY_stream[j] = SMSY[ii];
       SREP_stream[j] = SREP[ii];
       WA_stream[j] = WA[ii];
+      Scale_stream[j] = Scale[ii];
       j += 1;
     }
     if(Stream[ii]==2){
       SMSY_ocean[k] = SMSY[ii];
       SREP_ocean[k] = SREP[ii];
       WA_ocean[k] = WA[ii];
+      Scale_ocean[k] = Scale[ii];
       k += 1;
     }
     
@@ -306,7 +313,17 @@ Type objective_function<Type>:: operator() ()
     ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
   }
   // Add Inverse gamma prior on sigma_delta^2
-  ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
+  //ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
+
+  vector <Type> sPredlnSMSY(N_stream);
+  Type sDelta2_bounded = invlogit(sDelta2);
+  Type ssigma_delta = exp(slogDeltaSigma);
+  
+  for (int i=0; i<N_stream; i++){
+    //PredlnSMSY(i) = logDelta1 + exp(logDelta2) * log(WA(i));
+    sPredlnSMSY(i) = slogDelta1 + sDelta2_bounded * log(WA_stream(i));
+    ans += -dnorm(sPredlnSMSY(i), log(SMSY_stream(i)*Scale_stream(i)),  ssigma_delta, true);
+  }
   
   
   //ADREPORT(A_ar);
@@ -329,6 +346,9 @@ Type objective_function<Type>:: operator() ()
   //ADREPORT(logDelta2)
   ADREPORT(Delta2_bounded)
   ADREPORT(sigma_delta)
+  ADREPORT(slogDelta1)
+  ADREPORT(sDelta2_bounded)
+  ADREPORT(ssigma_delta)
   //ADREPORT(gamma);
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);

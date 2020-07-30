@@ -22,7 +22,7 @@ library(zoo)
 count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
-plot <- FALSE
+plot <- TRUE
 removeSkagit <- TRUE
 
 if( plot== TRUE) {
@@ -159,9 +159,9 @@ data$MeanLogSurv_surv <- meanLogSurv$meanLogSurv
 
 
 # Read in wateshed area data and life-history type....
-data$WA <- WA$WA
+#data$WA <- WA$WA
 data$Scale <- SRDat_Scale #ordered by std, AR1, surv
-#data$Tau_dist <- TMB_Inputs$Tau_dist
+##data$Tau_dist <- TMB_Inputs$Tau_dist
 data$Stream <- Stream$lh
 data$N_stream <-length(which(data$Stream==1))
 data$N_ocean <- length(which(data$Stream==2))
@@ -200,18 +200,18 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
-param$logDelta1 <- 3.00# with skagit 2.881
-#param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+#param$logDelta1 <- 3.00# with skagit 2.881
+##param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+#param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+#param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 
-param$slogDelta1 <- 2.744 #best estimates from run of stream-specific WAregression TMB model run
-param$sDelta2 <- 0.857 
-param$slogDeltaSigma <- -0.709 
+#param$slogDelta1 <- 2.744 #best estimates from run of stream-specific WAregression TMB model run
+#param$sDelta2 <- 0.857 
+#param$slogDeltaSigma <- -0.709 
 
-param$ologDelta1 <- 3.00#1.519 #best estimates from run of stream-specific WAregression TMB model run
-param$ologDelta2 <- log(0.94)#0#21.2 
-param$ologDeltaSigma <-  -0.412#-0.94 
+#param$ologDelta1 <- 3.00#1.519 #best estimates from run of stream-specific WAregression TMB model run
+#param$ologDelta2 <- log(0.94)#0#21.2 
+#param$ologDeltaSigma <-  -0.412#-0.94 
 # without Skagit lnDelta1_start <- 2.999911
 # without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
 

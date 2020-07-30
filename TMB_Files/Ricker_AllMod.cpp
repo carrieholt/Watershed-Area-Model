@@ -70,7 +70,7 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(Surv_surv);
   DATA_VECTOR(MeanLogSurv_surv);
 
-  DATA_VECTOR(WA);
+  //DATA_VECTOR(WA);
   DATA_VECTOR(Scale);
   //DATA_SCALAR(Tau_dist);
   DATA_VECTOR(Stream);
@@ -89,15 +89,15 @@ Type objective_function<Type>:: operator() ()
   PARAMETER_VECTOR(logB_surv);
   PARAMETER_VECTOR(logSigma_surv);
   PARAMETER_VECTOR(gamma);
-  PARAMETER(logDelta1);
-  PARAMETER(Delta2);
-  PARAMETER(logDeltaSigma);
-  PARAMETER(slogDelta1);
-  PARAMETER(sDelta2);
-  PARAMETER(slogDeltaSigma);
-  PARAMETER(ologDelta1);
-  PARAMETER(ologDelta2);
-  PARAMETER(ologDeltaSigma);
+  //PARAMETER(logDelta1);
+  //PARAMETER(Delta2);
+  //PARAMETER(logDeltaSigma);
+  //PARAMETER(slogDelta1);
+  //PARAMETER(sDelta2);
+  //PARAMETER(slogDeltaSigma);
+  //PARAMETER(ologDelta1);
+  //PARAMETER(ologDelta2);
+  //PARAMETER(ologDeltaSigma);
   //PARAMETER_VECTOR(logSgen);
   
   
@@ -268,11 +268,11 @@ Type objective_function<Type>:: operator() ()
 
   vector <Type> SMSY_stream(N_stream);
   vector <Type> SREP_stream(N_stream);
-  vector <Type> WA_stream(N_stream);
+  //vector <Type> WA_stream(N_stream);
   vector <Type> Scale_stream(N_stream);
   vector <Type> SMSY_ocean(N_ocean);
   vector <Type> SREP_ocean(N_ocean);
-  vector <Type> WA_ocean(N_ocean);
+  //vector <Type> WA_ocean(N_ocean);
   vector <Type> Scale_ocean(N_ocean);
   
 
@@ -283,14 +283,14 @@ Type objective_function<Type>:: operator() ()
     if(Stream[ii]==1){
       SMSY_stream[j] = SMSY[ii];
       SREP_stream[j] = SREP[ii];
-      WA_stream[j] = WA[ii];
+      //WA_stream[j] = WA[ii];
       Scale_stream[j] = Scale[ii];
       j += 1;
     }
     if(Stream[ii]==2){
       SMSY_ocean[k] = SMSY[ii];
       SREP_ocean[k] = SREP[ii];
-      WA_ocean[k] = WA[ii];
+      //WA_ocean[k] = WA[ii];
       Scale_ocean[k] = Scale[ii];
       k += 1;
     }
@@ -298,36 +298,36 @@ Type objective_function<Type>:: operator() ()
   }
 
 
-  vector <Type> PredlnSMSY(N_stks);
-  Type Delta2_bounded = invlogit(Delta2);
-  Type sigma_delta = exp(logDeltaSigma);
+  //vector <Type> PredlnSMSY(N_stks);
+  //Type Delta2_bounded = invlogit(Delta2);
+  //Type sigma_delta = exp(logDeltaSigma);
   
-  for (int i=0; i<N_stks; i++){
-    //PredlnSMSY(i) = logDelta1 + exp(logDelta2) * log(WA(i));
-    PredlnSMSY(i) = logDelta1 + Delta2_bounded * log(WA(i));
-    ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
-  }
+  //for (int i=0; i<N_stks; i++){
+  //  //PredlnSMSY(i) = logDelta1 + exp(logDelta2) * log(WA(i));
+  //  PredlnSMSY(i) = logDelta1 + Delta2_bounded * log(WA(i));
+  //  ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
+  //}
 
   // Add Inverse gamma prior on sigma_delta^2
   //ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
 
-  vector <Type> sPredlnSMSY(N_stream);
-  Type sDelta2_bounded = invlogit(sDelta2);
-  Type ssigma_delta = exp(slogDeltaSigma);
+  //vector <Type> sPredlnSMSY(N_stream);
+  //Type sDelta2_bounded = invlogit(sDelta2);
+  //Type ssigma_delta = exp(slogDeltaSigma);
   
-  for (int i=0; i<N_stream; i++){
-    sPredlnSMSY(i) = slogDelta1 + sDelta2_bounded * log(WA_stream(i));
-    ans += -dnorm(sPredlnSMSY(i), log(SMSY_stream(i)*Scale_stream(i)),  ssigma_delta, true);
-  }
+  //for (int i=0; i<N_stream; i++){
+  //  sPredlnSMSY(i) = slogDelta1 + sDelta2_bounded * log(WA_stream(i));
+  //  ans += -dnorm(sPredlnSMSY(i), log(SMSY_stream(i)*Scale_stream(i)),  ssigma_delta, true);
+  //}
   
-  vector <Type> oPredlnSMSY(N_ocean);
-  //Type oDelta2_bounded = invlogit(oDelta2);
-  Type osigma_delta = exp(ologDeltaSigma);
+  //vector <Type> oPredlnSMSY(N_ocean);
+  ////Type oDelta2_bounded = invlogit(oDelta2);
+  //Type osigma_delta = exp(ologDeltaSigma);
   
-  for (int i=0; i<N_ocean; i++){
-    oPredlnSMSY(i) = ologDelta1 + exp(ologDelta2) * log(WA_ocean(i));
-    ans += -dnorm(oPredlnSMSY(i), log(SMSY_ocean(i)*Scale_ocean(i)),  osigma_delta, true);
-  }
+  //for (int i=0; i<N_ocean; i++){
+  //  oPredlnSMSY(i) = ologDelta1 + exp(ologDelta2) * log(WA_ocean(i));
+  //  ans += -dnorm(oPredlnSMSY(i), log(SMSY_ocean(i)*Scale_ocean(i)),  osigma_delta, true);
+  //}
   
   //ADREPORT(A_ar);
   //ADREPORT(A_std);
@@ -343,20 +343,20 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(SREP_surv);
   ADREPORT(SMSY);
   ADREPORT(SMSY_stream)
-  ADREPORT(SREP_stream)
-  ADREPORT(WA_stream)
+  //ADREPORT(SREP_stream)
+  //ADREPORT(WA_stream)
   ADREPORT(SMSY_ocean*Scale_ocean)
-  ADREPORT(WA_ocean)
-  ADREPORT(logDelta1)
-  //ADREPORT(logDelta2)
-  ADREPORT(Delta2_bounded)
-  ADREPORT(sigma_delta)
-  ADREPORT(slogDelta1)
-  ADREPORT(sDelta2_bounded)
-  ADREPORT(ssigma_delta)
-  ADREPORT(ologDelta1)
-  ADREPORT(ologDelta2)
-  ADREPORT(osigma_delta)
+  //ADREPORT(WA_ocean)
+  //ADREPORT(logDelta1)
+  ////ADREPORT(exp(logDelta2))
+  //ADREPORT(Delta2_bounded)
+  //ADREPORT(sigma_delta)
+  //ADREPORT(slogDelta1)
+  //ADREPORT(sDelta2_bounded)
+  //ADREPORT(ssigma_delta)
+  //ADREPORT(ologDelta1)
+  //ADREPORT(ologDelta2)
+  //ADREPORT(osigma_delta)
   //ADREPORT(gamma);
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);

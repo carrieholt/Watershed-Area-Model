@@ -92,9 +92,9 @@ Type objective_function<Type>:: operator() ()
   PARAMETER(logDelta1);
   PARAMETER(Delta2);
   PARAMETER(logDeltaSigma);
-  PARAMETER(slogDelta1);
-  PARAMETER(sDelta2);
-  PARAMETER(slogDeltaSigma);
+  //PARAMETER(slogDelta1);
+  //PARAMETER(sDelta2);
+  //PARAMETER(slogDeltaSigma);
   //PARAMETER_VECTOR(logSgen);
   
   
@@ -315,15 +315,14 @@ Type objective_function<Type>:: operator() ()
   // Add Inverse gamma prior on sigma_delta^2
   //ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
 
-  vector <Type> sPredlnSMSY(N_stream);
-  Type sDelta2_bounded = invlogit(sDelta2);
-  Type ssigma_delta = exp(slogDeltaSigma);
+  //vector <Type> sPredlnSMSY(N_stream);
+  //Type sDelta2_bounded = invlogit(sDelta2);
+  //Type ssigma_delta = exp(slogDeltaSigma);
   
-  for (int i=0; i<N_stream; i++){
-    //PredlnSMSY(i) = logDelta1 + exp(logDelta2) * log(WA(i));
-    sPredlnSMSY(i) = slogDelta1 + sDelta2_bounded * log(WA_stream(i));
-    ans += -dnorm(sPredlnSMSY(i), log(SMSY_stream(i)*Scale_stream(i)),  ssigma_delta, true);
-  }
+  //for (int i=0; i<N_stream; i++){
+    //sPredlnSMSY(i) = slogDelta1 + sDelta2_bounded * log(WA_stream(i));
+    //ans += -dnorm(sPredlnSMSY(i), log(SMSY_stream(i)*Scale_stream(i)),  ssigma_delta, true);
+  //}
   
   
   //ADREPORT(A_ar);
@@ -346,9 +345,9 @@ Type objective_function<Type>:: operator() ()
   //ADREPORT(logDelta2)
   ADREPORT(Delta2_bounded)
   ADREPORT(sigma_delta)
-  ADREPORT(slogDelta1)
-  ADREPORT(sDelta2_bounded)
-  ADREPORT(ssigma_delta)
+  //ADREPORT(slogDelta1)
+  //ADREPORT(sDelta2_bounded)
+  //ADREPORT(ssigma_delta)
   //ADREPORT(gamma);
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);

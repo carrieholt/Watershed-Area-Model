@@ -204,9 +204,9 @@ param$logDelta1 <- 3.00# with skagit 2.881
 #param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
 param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
 param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
-param$slogDelta <- 3.00
-param$sDelta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-param$slogDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+#param$slogDelta1 <- 3.00
+#param$sDelta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+#param$slogDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 
 # without Skagit lnDelta1_start <- 2.999911
 # without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348

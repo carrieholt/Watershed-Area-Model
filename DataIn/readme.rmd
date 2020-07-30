@@ -18,4 +18,5 @@ output: html_document
 -SRinput.csv "Kitsumkalum" is the correct spelling of that stock (not "Kitsumkalem")
 -SRinput.csv "Chickamin" is the correct spelling of that stock (not "Chikamin")
 
-
+30 Jul 2020
+-SRinput.csv Situk is Ocean type not stream type. Change "1" to "2" for that stock under column "Stream"

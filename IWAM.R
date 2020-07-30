@@ -27,7 +27,7 @@ removeSkagit <- TRUE
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
-  source ("CheckAR1.r")# For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
+  if(removeSkagit==FALSE) source ("CheckAR1.r")# For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
 }
 
 #---------------------------------------------------------
@@ -204,10 +204,14 @@ param$logDelta1 <- 3.00# with skagit 2.881
 #param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
 param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
 param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
-#param$slogDelta1 <- 3.00
-#param$sDelta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-#param$slogDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 
+param$slogDelta1 <- 2.744 #best estimates from run of stream-specific WAregression TMB model run
+param$sDelta2 <- 0.857 
+param$slogDeltaSigma <- -0.709 
+
+param$ologDelta1 <- 3.00#1.519 #best estimates from run of stream-specific WAregression TMB model run
+param$ologDelta2 <- log(0.94)#0#21.2 
+param$ologDeltaSigma <-  -0.412#-0.94 
 # without Skagit lnDelta1_start <- 2.999911
 # without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
 
@@ -319,8 +323,8 @@ SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 
 #Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
 if (plot==TRUE){
-  PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2)
-  PlotSRLinear(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2) 
+  PlotSRCurve(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit)
+  PlotSRLinear(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit) 
   PlotStdResid(SRes)
   Plotacf(SRes)
   
@@ -359,26 +363,49 @@ plot(y=exp(lnSMSY), x=exp(lnWA))
 #-----------------------------------------------------------------------------------------
 #TEST: Watereshed-Area Regression with data inputs
 SMSY <- read.csv("DataIn/SMSY_3mods.csv")
+Sca <- SMSY %>% select(Name, Scale)
+SMSY <- SMSY %>% left_join(Stream) %>% left_join(WA)
+SMSY_stream <- SMSY %>% filter(lh==1)
+SMSY_ocean <- SMSY %>% filter(lh==2)
+
+ParkenSMSY_stream <- read.csv("DataIn/ParkenSMSY.csv") %>% right_join(Stream) %>% filter(lh==1) %>% mutate(Estimate=SMSY/SMSY_stream$Scale)
 
 data <- list()
-data$SMSY <- SMSY$Estimate
-data$WA <- exp(lnWA)
-data$Scale <- SMSY$Scale
-data$Tau_dist <- 0.1
+data$SMSY <- SMSY_ocean$Estimate#SMSY$Estimate
+data$WA <- SMSY_ocean$WA#SMSY$WA#exp(lnWA)
+data$Scale <- SMSY_ocean$Scale#SMSY$Scale
+#data$Tau_dist <- 0.1
 
 param <- list()
 param$logDelta1 <- 3.00# with skagit 2.881
-param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
 param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 
 #dyn.unload(dynlib("TMB_Files/WAregression"))
 #compile("TMB_Files/WAregression.cpp")
+plot(x=log(data$WA), y=log(data$SMSY*data$Scale), xlab="ln(WA)", ylab="ln(SMSY)")
+abline(lm(log(data$SMSY*data$Scale) ~ log(data$WA)))
+plot(x=(data$WA), y=(data$SMSY*data$Scale), xlab="WA, km2", ylab="SMSY")
 
 dyn.load(dynlib("TMB_Files/WAregression"))
 obj <- MakeADFun(data, param, DLL="WAregression", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
-#summary(sdreport(obj), p.value=TRUE)
+summary(sdreport(obj), p.value=TRUE)
+# I get same answers as Parken when I use his SMSY data, for streams (haven't checked ocean, as Skagit is ocean type and numbering is wonky)
+# For my SMSY_stream data slogDelta1 <- 2.744
+# For my SMSY_stream data sDelta2 <- 0.857
+# For my SMSY_stream data slogDeltaSigma <- -0.709
+
+# make sure my output from the TMB model SMSY_stream and WA_stream match the values from:
+#All_Est %>% filter(Param=="SMSY") %>% left_join(WA) %>% left_join(Stream) %>% filter(lh==2)
+# Yes, they match
+
+# WHen I run ocean and stream-type specific regressions, the SMSY values come out as a line! 
+test <- All_Est %>% left_join(Sca) %>% filter(Param=="SMSY") %>% left_join(WA) %>% left_join(Stream) %>% filter(lh==2)#switch to lh==1 for stream
+lm(log(test$Estimate*test$Scale) ~ log(test$WA))
+plot( y= log(test$Estimate*test$Scale), x=log(test$WA))
+
 #-----------------------------------------------------------------------------------------
 
 

@@ -92,9 +92,12 @@ Type objective_function<Type>:: operator() ()
   PARAMETER(logDelta1);
   PARAMETER(Delta2);
   PARAMETER(logDeltaSigma);
-  //PARAMETER(slogDelta1);
-  //PARAMETER(sDelta2);
-  //PARAMETER(slogDeltaSigma);
+  PARAMETER(slogDelta1);
+  PARAMETER(sDelta2);
+  PARAMETER(slogDeltaSigma);
+  PARAMETER(ologDelta1);
+  PARAMETER(ologDelta2);
+  PARAMETER(ologDeltaSigma);
   //PARAMETER_VECTOR(logSgen);
   
   
@@ -152,13 +155,11 @@ Type objective_function<Type>:: operator() ()
   //vector <Type> LogR_Pred_surv(N_Obs_surv);
   vector <Type> LogRS_Pred_surv(N_Obs_surv);
   vector <Type> sigma_surv = exp(logSigma_surv);
-  //Type sigma_surv = exp(logSigma_surv);
   vector <Type> nLL_surv(N_Obs_surv);
   
   // Ricker likelihood with survival covariate
   for (int i = 0; i<N_Obs_surv; i++){
     //LogR_Pred_surv(i) = logA_surv + log(S_surv(i)) - exp(logB_surv) * S_surv(i) + gamma * Surv_surv(i);
-    //LogRS_Pred_surv(i) = logA_surv - exp(logB_surv) * S_surv(i) + gamma * Surv_surv(i);
     LogRS_Pred_surv(i) = logA_surv(stk_surv(i)) - exp(logB_surv(stk_surv(i))) * S_surv(i) + gamma(stk_surv(i)) * Surv_surv(i);
     
     //ans += -dnorm(LogR_Pred_surv(i), logR_surv(i),  sigma_surv, true);
@@ -218,18 +219,12 @@ Type objective_function<Type>:: operator() ()
   int N_stks_std = logA_std.size(); 
   int N_stks_ar = logA_ar.size(); 
   int N_stks_surv = logA_surv.size(); 
-  //int N_stks_surv = logA_surv.size(); 
-  //vector <Type> logAadj_(N_stks_std);
-  //vector <Type> SMSYadj(N_stks_std);  
   vector <Type> SMSY_std(N_stks_std);  
   vector <Type> B_std = exp(logB_std);
   vector <Type> SREP_std(N_stks_std);
   vector <Type> SMSY_ar(N_stks_ar);  
   vector <Type> B_ar = exp(logB_ar);
   vector <Type> SREP_ar(N_stks_ar);
-  //Type SMSY_surv;  
-  //Type B_surv = exp(logB_surv);
-  //Type SREP_surv;
   vector <Type> SMSY_surv(N_stks_surv);  
   vector <Type> B_surv = exp(logB_surv);
   vector <Type> SREP_surv(N_stks_surv);
@@ -312,18 +307,27 @@ Type objective_function<Type>:: operator() ()
     PredlnSMSY(i) = logDelta1 + Delta2_bounded * log(WA(i));
     ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
   }
+
   // Add Inverse gamma prior on sigma_delta^2
   //ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
 
-  //vector <Type> sPredlnSMSY(N_stream);
-  //Type sDelta2_bounded = invlogit(sDelta2);
-  //Type ssigma_delta = exp(slogDeltaSigma);
+  vector <Type> sPredlnSMSY(N_stream);
+  Type sDelta2_bounded = invlogit(sDelta2);
+  Type ssigma_delta = exp(slogDeltaSigma);
   
-  //for (int i=0; i<N_stream; i++){
-    //sPredlnSMSY(i) = slogDelta1 + sDelta2_bounded * log(WA_stream(i));
-    //ans += -dnorm(sPredlnSMSY(i), log(SMSY_stream(i)*Scale_stream(i)),  ssigma_delta, true);
-  //}
+  for (int i=0; i<N_stream; i++){
+    sPredlnSMSY(i) = slogDelta1 + sDelta2_bounded * log(WA_stream(i));
+    ans += -dnorm(sPredlnSMSY(i), log(SMSY_stream(i)*Scale_stream(i)),  ssigma_delta, true);
+  }
   
+  vector <Type> oPredlnSMSY(N_ocean);
+  //Type oDelta2_bounded = invlogit(oDelta2);
+  Type osigma_delta = exp(ologDeltaSigma);
+  
+  for (int i=0; i<N_ocean; i++){
+    oPredlnSMSY(i) = ologDelta1 + exp(ologDelta2) * log(WA_ocean(i));
+    ans += -dnorm(oPredlnSMSY(i), log(SMSY_ocean(i)*Scale_ocean(i)),  osigma_delta, true);
+  }
   
   //ADREPORT(A_ar);
   //ADREPORT(A_std);
@@ -341,13 +345,18 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(SMSY_stream)
   ADREPORT(SREP_stream)
   ADREPORT(WA_stream)
+  ADREPORT(SMSY_ocean*Scale_ocean)
+  ADREPORT(WA_ocean)
   ADREPORT(logDelta1)
   //ADREPORT(logDelta2)
   ADREPORT(Delta2_bounded)
   ADREPORT(sigma_delta)
-  //ADREPORT(slogDelta1)
-  //ADREPORT(sDelta2_bounded)
-  //ADREPORT(ssigma_delta)
+  ADREPORT(slogDelta1)
+  ADREPORT(sDelta2_bounded)
+  ADREPORT(ssigma_delta)
+  ADREPORT(ologDelta1)
+  ADREPORT(ologDelta2)
+  ADREPORT(osigma_delta)
   //ADREPORT(gamma);
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);

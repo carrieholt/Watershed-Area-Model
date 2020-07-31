@@ -107,7 +107,7 @@ SRDat_surv <- SRDat_surv %>% left_join(ind_surv, by="Name") %>% left_join(Surv)
 
 
 #remove years 1981-1984, 1986-1987  from Cowichan (Stocknumber 23) as per Tompkins et al. 2005
-SRDat_surv_Cow <- SRDat_surv %>% filter(Name == "Cowichan" & Yr >= 1984 & Yr !=1986 & Yr != 1987) 
+SRDat_surv_Cow <- SRDat_surv %>% filter(Name == "Cowichan" & Yr >= 1985 & Yr !=1986 & Yr != 1987) 
 n_surv_Cow <- length(SRDat_surv_Cow$Yr)
 SRDat_surv_Cow$yr_num <- 0:(n_surv_Cow-1)
 #if(stksNum_surv == 23) SRDat_surv <- SRDat_surv_Cow
@@ -132,7 +132,6 @@ TMB_Inputs <- list(rho_Start = 0.0, logDelta1_start=3.00, logDelta2_start =log(0
 data <- list()
 Scale_std <- SRDat_std$Scale 
 data$S_std <- SRDat_std$Sp/Scale_std 
-#data$logR_std <- log(SRDat_std$Rec/Scale_std)
 data$logRS_std <- log( (SRDat_std$Rec/Scale_std) / (SRDat_std$Sp/Scale_std) )
 data$stk_std <- as.numeric(SRDat_std$ind_std)
 N_Stocks_std <- length(unique(SRDat_std$Name))
@@ -140,7 +139,6 @@ data$yr_std <- SRDat_std$yr_num
 
 Scale_ar <- SRDat_ar$Scale 
 data$S_ar <- SRDat_ar$Sp/Scale_ar 
-#data$logR_ar <- log(SRDat_ar$Rec/Scale_ar)
 data$logRS_ar <- log( (SRDat_ar$Rec/Scale_ar) / (SRDat_ar$Sp/Scale_ar) ) 
 data$stk_ar <- as.numeric(SRDat_ar$ind_ar)
 N_Stocks_ar <- length(unique(SRDat_ar$Name))
@@ -148,7 +146,6 @@ data$yr_ar <- SRDat_ar$yr_num
 
 Scale_surv <- SRDat_surv$Scale 
 data$S_surv <- SRDat_surv$Sp/Scale_surv
-#data$logR_surv <- log(SRDat_surv$Rec/Scale_surv)
 data$logRS_surv <- log( (SRDat_surv$Rec/Scale_surv) / (SRDat_surv$Sp/Scale_surv) )
 data$stk_surv <- as.numeric(SRDat_surv$ind_surv)
 N_Stocks_surv <- length(unique(SRDat_surv$Name))

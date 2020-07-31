@@ -47,7 +47,7 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(logRS);
   DATA_IVECTOR(stk);
   DATA_IVECTOR(yr);
-  DATA_INTEGER(N_Stks);
+  DATA_VECTOR(Scale);
   
   PARAMETER_VECTOR(logA);
   PARAMETER_VECTOR(logB);
@@ -56,6 +56,7 @@ Type objective_function<Type>:: operator() ()
   
   Type ans=0.0;
   int N_Obs = S.size(); 
+  int N_stks = Scale.size();
 
   vector <Type> LogRS_Pred(N_Obs);
   vector <Type> sigma = exp(logSigma);
@@ -69,13 +70,13 @@ Type objective_function<Type>:: operator() ()
     
   }
 
-  vector <Type> SMSY(N_Stks);  
-  vector <Type> SREP(N_Stks);  
+  vector <Type> SMSY(N_stks);  
+  vector <Type> SREP(N_stks);  
   
-  for(int i=0; i<N_Stks; i++){
-    SMSY(i) =  (1 - LambertW(exp(1-logA(i))) ) / exp(logB(i)) ;
+  for(int i=0; i<N_stks; i++){
+    SMSY(i) =  Scale(i) * (1 - LambertW(exp(1-logA(i))) ) / exp(logB(i)) ;
   }
-  SREP = logA / B;
+  SREP = Scale * logA / B;
   
   ADREPORT(logA);
   ADREPORT(SMSY);

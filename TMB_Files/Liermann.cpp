@@ -64,9 +64,9 @@ Type objective_function<Type>:: operator() ()
   
   // Standard Ricker model
   for (int i = 0; i<N_Obs; i++){
-    LogRS_Pred_std(i) = logA_std(stk(i)) - exp(logB_std(stk(i))) * S(i);
-    ans += -dnorm(LogRS_Pred_std(i), logRS(i),  sigma_std(stk(i)), true);    
-    nLL(i) = -dnorm(LogRS_Pred_std(i), logRS(i),  sigma_std(stk(i)), true);
+    LogRS_Pred(i) = logA(stk(i)) - exp(logB(stk(i))) * S(i);
+    ans += -dnorm(LogRS_Pred(i), logRS(i),  sigma(stk(i)), true);    
+    nLL(i) = -dnorm(LogRS_Pred(i), logRS(i),  sigma(stk(i)), true);
     
   }
 
@@ -76,7 +76,7 @@ Type objective_function<Type>:: operator() ()
   for(int i=0; i<N_stks; i++){
     SMSY(i) =  Scale(i) * (1 - LambertW(exp(1-logA(i))) ) / exp(logB(i)) ;
   }
-  SREP = Scale * logA / B;
+  SREP = Scale * logA / exp(logB);
   
   ADREPORT(logA);
   ADREPORT(SMSY);

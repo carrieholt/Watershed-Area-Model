@@ -22,7 +22,7 @@ library(zoo)
 count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
-plot <- TRUE
+plot <- FALSE
 removeSkagit <- TRUE
 
 if( plot== TRUE) {
@@ -123,7 +123,10 @@ Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrd
 
 # 2. Create data and parameter lists for TMB
 
-TMB_Inputs <- list(rho_Start = 0.0, Tau_dist=0.01, Tau2_dist=1) 
+TMB_Inputs <- list(rho_Start = 0.0, logDelta1_start=3.00, logDelta2_start =log(0.72), logDeltaSigma_start = -0.412, 
+                   logMuDelta1_mean= 5, logMuDelta1_sig= 10, logMuDelta2_mean=-0.5, logMuDelta2_sig= 10, 
+                   Tau_Delta1_dist= 0.1, Tau_Delta2_dist= 0.1) 
+
 
 # Data 
 data <- list()
@@ -159,15 +162,22 @@ data$MeanLogSurv_surv <- meanLogSurv$meanLogSurv
 
 
 # Read in wateshed area data and life-history type....
-#data$WA <- WA$WA
+data$WA <- WA$WA
 data$Scale <- SRDat_Scale #ordered by std, AR1, surv
 ##data$Tau_dist <- TMB_Inputs$Tau_dist
+# What does inv gamma prior look like? library(invgamma); plot(x=seq(0,1,0.001), y=dinvgamma(seq(0,1,0.001),0.01,0.01), type="l")
 data$Stream <- Stream$lh
-data$N_stream <-length(which(data$Stream==1))
-data$N_ocean <- length(which(data$Stream==2))
-# what does prior look like? library(invgamma); plot(x=seq(0,1,0.001), y=dinvgamma(seq(0,1,0.001),0.01,0.01), type="l")
+data$N_stream <-length(which(data$Stream==0))
+data$N_ocean <- length(which(data$Stream==1))
 
 
+#data$logMuDelta1_mean <- TMB_Inputs$logMuDelta1_mean
+#data$logMuDelta1_sig <- TMB_Inputs$logMuDelta1_sig
+data$logMuDelta2_mean <- TMB_Inputs$logMuDelta2_mean
+data$logMuDelta2_sig <- TMB_Inputs$logMuDelta2_sig
+#data$Tau_Delta1_dist <- TMB_Inputs$Tau_Delta1_dist
+data$Tau_Delta2_dist <- TMB_Inputs$Tau_Delta2_dist
+  
 # Parameters
 param <- list()
 Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) %>% 
@@ -204,7 +214,10 @@ param$gamma <- rep (0, N_Stocks_surv)
 ##param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
 #param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
 #param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+# without Skagit lnDelta1_start <- 2.999911
+# without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
 
+## Separate Stream and Ocean type models
 #param$slogDelta1 <- 2.744 #best estimates from run of stream-specific WAregression TMB model run
 #param$sDelta2 <- 0.857 
 #param$slogDeltaSigma <- -0.709 
@@ -212,8 +225,25 @@ param$gamma <- rep (0, N_Stocks_surv)
 #param$ologDelta1 <- 3.00#1.519 #best estimates from run of stream-specific WAregression TMB model run
 #param$ologDelta2 <- log(0.94)#0#21.2 
 #param$ologDeltaSigma <-  -0.412#-0.94 
-# without Skagit lnDelta1_start <- 2.999911
-# without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
+
+## Lierman model
+#param$logDelta1 <- 10# with skagit 2.881
+#param$logDelta1ocean <- 0# with skagit 2.881
+#param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+#param$logDelta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+#param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+
+## Hierarchcial model
+
+param$logDelta1 <- TMB_Inputs$logDelta1_start#rep(TMB_Inputs$logDelta1_start, 2)
+param$logDelta2 <- rep(TMB_Inputs$logDelta2_start, 2)
+param$logDeltaSigma <-TMB_Inputs$logDeltaSigma_start 
+#param$logMuDelta1 <- TMB_Inputs$logDelta1_start
+#param$SigmaDelta1 <- 10
+param$logMuDelta2 <- TMB_Inputs$logDelta2_start
+param$SigmaDelta2 <- 1
+
+
 
 # 3. Estimate SR parameters from synoptic data set and SMSY and SREPs
 
@@ -361,14 +391,17 @@ plot(y=exp(lnSMSY), x=exp(lnWA))
 #dev.off()
 
 #-----------------------------------------------------------------------------------------
+test <- FALSE
+if(test==TRUE){
+
 #TEST: Watereshed-Area Regression with data inputs
 SMSY <- read.csv("DataIn/SMSY_3mods.csv")
 Sca <- SMSY %>% select(Name, Scale)
 SMSY <- SMSY %>% left_join(Stream) %>% left_join(WA)
-SMSY_stream <- SMSY %>% filter(lh==1)
-SMSY_ocean <- SMSY %>% filter(lh==2)
+SMSY_stream <- SMSY %>% filter(lh==0)
+SMSY_ocean <- SMSY %>% filter(lh==1)
 
-ParkenSMSY_stream <- read.csv("DataIn/ParkenSMSY.csv") %>% right_join(Stream) %>% filter(lh==1) %>% mutate(Estimate=SMSY/SMSY_stream$Scale)
+ParkenSMSY_stream <- read.csv("DataIn/ParkenSMSY.csv") %>% right_join(Stream) %>% filter(lh==0) %>% mutate(Estimate=SMSY/SMSY_stream$Scale)
 
 data <- list()
 data$SMSY <- SMSY_ocean$Estimate#SMSY$Estimate
@@ -398,14 +431,15 @@ summary(sdreport(obj), p.value=TRUE)
 # For my SMSY_stream data slogDeltaSigma <- -0.709
 
 # make sure my output from the TMB model SMSY_stream and WA_stream match the values from:
-#All_Est %>% filter(Param=="SMSY") %>% left_join(WA) %>% left_join(Stream) %>% filter(lh==2)
+#All_Est %>% filter(Param=="SMSY") %>% left_join(WA) %>% left_join(Stream) %>% filter(lh==1)
 # Yes, they match
 
 # WHen I run ocean and stream-type specific regressions, the SMSY values come out as a line! 
-test <- All_Est %>% left_join(Sca) %>% filter(Param=="SMSY") %>% left_join(WA) %>% left_join(Stream) %>% filter(lh==2)#switch to lh==1 for stream
+test <- All_Est %>% left_join(Sca) %>% filter(Param=="SMSY") %>% left_join(WA) %>% left_join(Stream) %>% filter(lh==1)#switch to lh==0 for stream
 lm(log(test$Estimate*test$Scale) ~ log(test$WA))
 plot( y= log(test$Estimate*test$Scale), x=log(test$WA))
 
+}
 #-----------------------------------------------------------------------------------------
 
 

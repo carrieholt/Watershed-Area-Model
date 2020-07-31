@@ -20,3 +20,4 @@ output: html_document
 
 30 Jul 2020
 -SRinput.csv Situk is Ocean type not stream type. Change "1" to "2" for that stock under column "Stream"
+-SRinput.csv changed stream type from 1 to 0 and ocean from 2 to 1.

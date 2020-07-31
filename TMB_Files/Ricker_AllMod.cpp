@@ -70,13 +70,21 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(Surv_surv);
   DATA_VECTOR(MeanLogSurv_surv);
 
-  //DATA_VECTOR(WA);
+  DATA_VECTOR(WA);
   DATA_VECTOR(Scale);
   //DATA_SCALAR(Tau_dist);
-  DATA_VECTOR(Stream);
+  DATA_IVECTOR(Stream);
   DATA_INTEGER(N_stream);
   DATA_INTEGER(N_ocean);
 
+  //Hierarchical hyper pars
+  //DATA_SCALAR(logMuDelta1_mean);
+  //DATA_SCALAR(logMuDelta1_sig);
+  DATA_SCALAR(logMuDelta2_mean);
+  DATA_SCALAR(logMuDelta2_sig);
+  //DATA_SCALAR(Tau_Delta1_dist);
+  DATA_SCALAR(Tau_Delta2_dist);
+  
   
   PARAMETER_VECTOR(logA_std);
   PARAMETER_VECTOR(logB_std);
@@ -99,7 +107,22 @@ Type objective_function<Type>:: operator() ()
   //PARAMETER(ologDelta2);
   //PARAMETER(ologDeltaSigma);
   //PARAMETER_VECTOR(logSgen);
+  ////Lierman pars
+  //PARAMETER(logDelta1);
+  //PARAMETER(logDelta1ocean);
+  //PARAMETER(logDelta2);
+  //PARAMETER(logDelta2ocean);
+  //PARAMETER(logDeltaSigma);
   
+  ////Hierarchical pars
+  //PARAMETER_VECTOR(logDelta1);
+  PARAMETER(logDelta1);
+  PARAMETER_VECTOR(logDelta2);
+  PARAMETER(logDeltaSigma);
+  //PARAMETER(logMuDelta1);
+  //PARAMETER(SigmaDelta1);
+  PARAMETER(logMuDelta2);
+  PARAMETER(SigmaDelta2);
   
   Type ans=0.0;
   int N_Obs_std = S_std.size(); 
@@ -280,14 +303,14 @@ Type objective_function<Type>:: operator() ()
   int k = 0;
   
   for(int ii=0; ii < N_stks; ii++){
-    if(Stream[ii]==1){
+    if(Stream[ii]==0){
       SMSY_stream[j] = SMSY[ii];
       SREP_stream[j] = SREP[ii];
       //WA_stream[j] = WA[ii];
       Scale_stream[j] = Scale[ii];
       j += 1;
     }
-    if(Stream[ii]==2){
+    if(Stream[ii]==1){
       SMSY_ocean[k] = SMSY[ii];
       SREP_ocean[k] = SREP[ii];
       //WA_ocean[k] = WA[ii];
@@ -297,7 +320,7 @@ Type objective_function<Type>:: operator() ()
     
   }
 
-
+  // WA model with all data =============
   //vector <Type> PredlnSMSY(N_stks);
   //Type Delta2_bounded = invlogit(Delta2);
   //Type sigma_delta = exp(logDeltaSigma);
@@ -311,6 +334,7 @@ Type objective_function<Type>:: operator() ()
   // Add Inverse gamma prior on sigma_delta^2
   //ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
 
+  // WA model with only stream-type data =============
   //vector <Type> sPredlnSMSY(N_stream);
   //Type sDelta2_bounded = invlogit(sDelta2);
   //Type ssigma_delta = exp(slogDeltaSigma);
@@ -320,6 +344,7 @@ Type objective_function<Type>:: operator() ()
   //  ans += -dnorm(sPredlnSMSY(i), log(SMSY_stream(i)*Scale_stream(i)),  ssigma_delta, true);
   //}
   
+  // WA model with only ocean-type data =============
   //vector <Type> oPredlnSMSY(N_ocean);
   ////Type oDelta2_bounded = invlogit(oDelta2);
   //Type osigma_delta = exp(ologDeltaSigma);
@@ -328,6 +353,45 @@ Type objective_function<Type>:: operator() ()
   //  oPredlnSMSY(i) = ologDelta1 + exp(ologDelta2) * log(WA_ocean(i));
   //  ans += -dnorm(oPredlnSMSY(i), log(SMSY_ocean(i)*Scale_ocean(i)),  osigma_delta, true);
   //}
+  
+  //Liermann's model with both stream and ocean type=================
+  //vector <Type> PredlnSMSY(N_stks);
+  //Type sigma_delta = exp(logDeltaSigma);
+  
+  //for (int i=0; i<N_stks; i++){
+  //  PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + (exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i));
+  //  ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
+  //}
+  
+  //Model with both stream and ocean-types adnd random slope (logDelta1) and yi-intercept (Delta2) ==============
+  vector <Type> PredlnSMSY(N_stks);
+  Type sigma_delta = exp(logDeltaSigma);
+  
+  for (int i=0; i<N_stks; i++){
+    PredlnSMSY(i) = logDelta1 + exp(logDelta2(Stream(i))) * log(WA(i));
+    ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);//sigma_delta(Stream(i)), true);
+  }
+  
+  // Add hierarchical structure to logDelta1, logDelta2, sigmaDelta==============
+  int n_lh = 2;
+  for(int i=0; i< n_lh; i++){
+    //// add prior on logDelta1
+    //ans += -dnorm(logDelta1(i), logMuDelta1, SigmaDelta1, true );
+    // add prior on logDelta2
+    ans += -dnorm(logDelta2(i), logMuDelta2, SigmaDelta2, true );
+    // add prior on sigma
+    //ans += -dgamma(pow(sigmaDelta1(i),-2), Tau_dist, 1/Tau_dist, true);
+  }
+  
+  // Add priors for hyperpars ====================
+  //// MuDelta1 prior
+  //ans += -dnorm(logMuDelta1, logMuDelta1_mean, logMuDelta1_sig, true);
+  //// SigmaDelta1 prior
+  //ans += -dgamma(pow(SigmaDelta1,-2), Tau_Delta1_dist, 1/Tau_Delta1_dist, true);
+  //// MuDelta2 prior
+  ans += -dnorm(logMuDelta2, logMuDelta2_mean, logMuDelta2_sig, true);
+  // SigmaDelta2 prior
+  ans += -dgamma(pow(SigmaDelta2,-2), Tau_Delta2_dist, 1/Tau_Delta2_dist, true);
   
   //ADREPORT(A_ar);
   //ADREPORT(A_std);
@@ -350,7 +414,7 @@ Type objective_function<Type>:: operator() ()
   //ADREPORT(logDelta1)
   ////ADREPORT(exp(logDelta2))
   //ADREPORT(Delta2_bounded)
-  //ADREPORT(sigma_delta)
+  ADREPORT(sigma_delta)
   //ADREPORT(slogDelta1)
   //ADREPORT(sDelta2_bounded)
   //ADREPORT(ssigma_delta)
@@ -361,6 +425,15 @@ Type objective_function<Type>:: operator() ()
   //ADREPORT(LogR_Pred_ar);
   //ADREPORT(LogR_Pred_std);
   //ADREPORT(LogR_Pred_surv);
+  ////Lierman pars
+  //ADREPORT(logDelta1);
+  //ADREPORT(logDelta1ocean);
+  //ADREPORT(exp(logDelta2));
+  //ADREPORT(exp(logDelta1ocean));
+  ////Hierachical Pars
+  ADREPORT(logDelta1);
+  ADREPORT(exp(logDelta2));
+  
   ADREPORT(LogRS_Pred_ar);
   ADREPORT(LogRS_Pred_std);
   ADREPORT(LogRS_Pred_surv);

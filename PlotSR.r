@@ -8,6 +8,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
   par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
   
   for (i in Stks){
+    names <- All_Est %>% select ("Name", "Stocknumber") %>% distinct()
     name <- All_Est %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
     
     R <- SRDat %>% filter (Stocknumber==i) %>% select(Rec) 

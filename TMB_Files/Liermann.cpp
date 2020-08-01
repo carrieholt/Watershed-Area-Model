@@ -48,11 +48,18 @@ Type objective_function<Type>:: operator() ()
   DATA_IVECTOR(stk);
   DATA_IVECTOR(yr);
   DATA_VECTOR(Scale);
-  //DATA_INTEGER(N_stks);
+  DATA_SCALAR(Tau_dist);
+  DATA_SCALAR(logMuA_mean);
+  DATA_SCALAR(logMuA_sig);
+  DATA_SCALAR(Tau_A_dist);
   
+
   PARAMETER_VECTOR(logA);
   PARAMETER_VECTOR(logB);
   PARAMETER_VECTOR(logSigma);
+  PARAMETER(logMuA);
+  PARAMETER(logSigmaA);
+  
 
   
   Type ans=0.0;
@@ -61,6 +68,7 @@ Type objective_function<Type>:: operator() ()
   
   vector <Type> LogRS_Pred(N_Obs);
   vector <Type> sigma = exp(logSigma);
+  Type sigmaA = exp(logSigmaA);
   vector <Type> nLL(N_Obs);
   
   // Standard Ricker model
@@ -71,6 +79,21 @@ Type objective_function<Type>:: operator() ()
     
   }
 
+    // Add hierarchical structure to A ==============
+  for(int i=0; i<N_stks; i++){
+    // add prior on logA
+    ans += -dnorm(logA(i), logMuA, sigmaA, true );
+    // add prior on sigma
+    ans += -dgamma(pow(sigma(i),-2), Tau_dist, 1/Tau_dist, true);
+  }
+  
+  // Add priors for hyperpars ====================
+  // MuA prior
+  ans += -dnorm(logMuA, logMuA_mean, logMuA_sig, true);
+  // sigmaA prior
+  ans += -dgamma(pow(sigmaA,-2), Tau_A_dist, 1/Tau_A_dist, true);
+
+  //Calculate SMSY and SREP
   vector <Type> SMSY(N_stks);  
   vector <Type> SREP(N_stks);  
   

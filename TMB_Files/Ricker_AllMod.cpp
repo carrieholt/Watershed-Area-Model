@@ -51,19 +51,16 @@ template<class Type>
 Type objective_function<Type>:: operator() ()
 {
   DATA_VECTOR(S_std);
-  //DATA_VECTOR(logR_std);
   DATA_VECTOR(logRS_std);
   
   // I need to include both ind_std and stk_std, and use ind_stk in the estimation step for loops, but stk_std in the model compilation step at bottom.
   DATA_IVECTOR(stk_std);
   DATA_IVECTOR(yr_std);
   DATA_VECTOR(S_ar);
-  //DATA_VECTOR(logR_ar);
   DATA_VECTOR(logRS_ar);
   DATA_IVECTOR(stk_ar);
   DATA_IVECTOR(yr_ar);
   DATA_VECTOR(S_surv);
-  //DATA_VECTOR(logR_surv);
   DATA_VECTOR(logRS_surv);
   DATA_IVECTOR(stk_surv);
   DATA_IVECTOR(yr_surv);
@@ -84,7 +81,7 @@ Type objective_function<Type>:: operator() ()
   DATA_SCALAR(logMuDelta2_sig);
   //DATA_SCALAR(Tau_Delta1_dist);
   DATA_SCALAR(Tau_Delta2_dist);
-  
+  DATA_VECTOR(PredlnWA);
   
   PARAMETER_VECTOR(logA_std);
   PARAMETER_VECTOR(logB_std);
@@ -100,6 +97,8 @@ Type objective_function<Type>:: operator() ()
   //PARAMETER(logDelta1);
   //PARAMETER(Delta2);
   //PARAMETER(logDeltaSigma);
+
+  // Separate stream and ocean type Deltas- fixed effects
   //PARAMETER(slogDelta1);
   //PARAMETER(sDelta2);
   //PARAMETER(slogDeltaSigma);
@@ -107,7 +106,7 @@ Type objective_function<Type>:: operator() ()
   //PARAMETER(ologDelta2);
   //PARAMETER(ologDeltaSigma);
   //PARAMETER_VECTOR(logSgen);
-  ////Lierman pars
+  ////Lierman WA model pars (gives same resutls as above)
   //PARAMETER(logDelta1);
   //PARAMETER(logDelta1ocean);
   //PARAMETER(logDelta2);
@@ -129,7 +128,6 @@ Type objective_function<Type>:: operator() ()
   int N_Obs_ar = S_ar.size(); 
   int N_Obs_surv = S_surv.size(); 
   
-  //vector <Type> LogR_Pred_ar(N_Obs_ar);
   vector <Type> LogRS_Pred_ar(N_Obs_ar);
   vector <Type> sigma_ar = exp(logSigma_ar);
   vector <Type> err(N_Obs_ar);
@@ -218,18 +216,7 @@ Type objective_function<Type>:: operator() ()
  // }
   
 
-  // Calculate SMSY using Lambert's W function
-  // Approach from Scheurell 2016
-  //vector <Type> B = exp(logB_);
-  //for(int i=0; i<N_stks; i++){
-  //  SMSYadj[i] =  (1 - LambertW(exp(1-logAadj_[i])) ) / B[i] ;
-  //  SMSY[i] =  (1 - LambertW(exp(1-logA_[i])) ) / B[i] ;
-  //}
-  
-  // Calculate SREP
-  //vector <Type> SREPadj(N_stks);
-  //SREPadj = logAadj_ / B;
-  
+
   // Now estimate Sgen
   //vector <Type> LogSMSY(N_stks);
   //vector <Type> Sgen = exp(logSgen);
@@ -238,7 +225,7 @@ Type objective_function<Type>:: operator() ()
   //vector <Type> Diff = exp(LogSMSY)-SMSY;
   //ans += -sum(dnorm(Diff, 0, Sgen_sig, true ));
   
-  // Code for SMSY SREP without AR model
+  // Code for SMSY SREP 
   int N_stks_std = logA_std.size(); 
   int N_stks_ar = logA_ar.size(); 
   int N_stks_surv = logA_surv.size(); 
@@ -331,8 +318,8 @@ Type objective_function<Type>:: operator() ()
   //  ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
   //}
 
-  // Add Inverse gamma prior on sigma_delta^2
-  //ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
+  //// Add Inverse gamma prior on sigma_delta^2
+  ////ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
 
   // WA model with only stream-type data =============
   //vector <Type> sPredlnSMSY(N_stream);
@@ -368,6 +355,7 @@ Type objective_function<Type>:: operator() ()
   Type sigma_delta = exp(logDeltaSigma);
   
   for (int i=0; i<N_stks; i++){
+    //PredlnSMSY(i) = logDelta1(Stream(i)) + exp(logDelta2(Stream(i))) * log(WA(i));
     PredlnSMSY(i) = logDelta1 + exp(logDelta2(Stream(i))) * log(WA(i));
     ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);//sigma_delta(Stream(i)), true);
   }
@@ -379,8 +367,8 @@ Type objective_function<Type>:: operator() ()
     //ans += -dnorm(logDelta1(i), logMuDelta1, SigmaDelta1, true );
     // add prior on logDelta2
     ans += -dnorm(logDelta2(i), logMuDelta2, SigmaDelta2, true );
-    // add prior on sigma
-    //ans += -dgamma(pow(sigmaDelta1(i),-2), Tau_dist, 1/Tau_dist, true);
+    //// add prior on sigma
+    ////ans += -dgamma(pow(sigmaDelta1(i),-2), Tau_dist, 1/Tau_dist, true);
   }
   
   // Add priors for hyperpars ====================
@@ -388,10 +376,22 @@ Type objective_function<Type>:: operator() ()
   //ans += -dnorm(logMuDelta1, logMuDelta1_mean, logMuDelta1_sig, true);
   //// SigmaDelta1 prior
   //ans += -dgamma(pow(SigmaDelta1,-2), Tau_Delta1_dist, 1/Tau_Delta1_dist, true);
-  //// MuDelta2 prior
+  // MuDelta2 prior
   ans += -dnorm(logMuDelta2, logMuDelta2_mean, logMuDelta2_sig, true);
   // SigmaDelta2 prior
   ans += -dgamma(pow(SigmaDelta2,-2), Tau_Delta2_dist, 1/Tau_Delta2_dist, true);
+  
+  // Get predicted values for plotting  WA regresssion with CIs
+  int N_pred = PredlnWA.size();
+  vector <Type> PredlnSMSY_S(N_pred);
+  vector <Type> PredlnSMSY_O(N_pred);
+  
+  for (int i=0; i<N_pred; i++){
+    //PredlnSMSY_S(i) = logDelta1(0) + exp(logDelta2(0)) * PredlnWA(i);
+    //PredlnSMSY_O(i) = logDelta1(1) + exp(logDelta2(1)) * PredlnWA(i);
+    PredlnSMSY_S(i) = logDelta1 + exp(logDelta2(0)) * PredlnWA(i);
+    PredlnSMSY_O(i) = logDelta1 + exp(logDelta2(1)) * PredlnWA(i);
+  }
   
   //ADREPORT(A_ar);
   //ADREPORT(A_std);
@@ -428,15 +428,16 @@ Type objective_function<Type>:: operator() ()
   ////Lierman pars
   //ADREPORT(logDelta1);
   //ADREPORT(logDelta1ocean);
-  //ADREPORT(exp(logDelta2));
+  ADREPORT(exp(logDelta2));
   //ADREPORT(exp(logDelta1ocean));
   ////Hierachical Pars
-  ADREPORT(logDelta1);
-  ADREPORT(exp(logDelta2));
+  //ADREPORT(logDelta1);
   
   ADREPORT(LogRS_Pred_ar);
   ADREPORT(LogRS_Pred_std);
   ADREPORT(LogRS_Pred_surv);
+  ADREPORT(PredlnSMSY_O);
+  ADREPORT(PredlnSMSY_S);
   REPORT(nLL_std);
   REPORT(nLL_ar);
   REPORT(nLL_surv);

@@ -175,6 +175,8 @@ data$logMuDelta2_sig <- TMB_Inputs$logMuDelta2_sig
 #data$Tau_Delta1_dist <- TMB_Inputs$Tau_Delta1_dist
 data$Tau_Delta2_dist <- TMB_Inputs$Tau_Delta2_dist
   
+data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1) #predicated lnWA for plottig CIs
+
 # Parameters
 param <- list()
 Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) %>% 
@@ -232,7 +234,7 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 ## Hierarchcial model
 
-param$logDelta1 <- TMB_Inputs$logDelta1_start#rep(TMB_Inputs$logDelta1_start, 2)
+param$logDelta1 <- TMB_Inputs$logDelta1_start#rep(TMB_Inputs$logDelta1_start, 2)#rep(TMB_Inputs$logDelta1_start, 2)
 param$logDelta2 <- rep(TMB_Inputs$logDelta2_start, 2)
 param$logDeltaSigma <-TMB_Inputs$logDeltaSigma_start 
 #param$logMuDelta1 <- TMB_Inputs$logDelta1_start
@@ -254,7 +256,7 @@ dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
 #map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
 #obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 
-obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)
+obj <- MakeADFun(data, param, DLL="Ricker_AllMod", random = c( "logDelta2"), silent=TRUE)
 #upper <- c(rep(Inf, 80), 5.00, rep(Inf,2))
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
@@ -295,6 +297,10 @@ All_Est <- bind_rows(All_Ests_std, All_Ests_ar, All_Ests_surv)
 All_Est$ar <- All_Est$Stocknumber %in% stksNum_ar
 All_Est$surv <- All_Est$Stocknumber %in% stksNum_surv
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
+
+All_Deltas <- data.frame()
+All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta"))
+All_Deltas
 
 # 4. Calculate diagnostics and plot SR curves, etc.
 
@@ -364,6 +370,7 @@ SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique
 # what is scale of SMSY?
 Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
 SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
+SMSY <- SMSY %>% left_join(Stream, by="Stocknumber")
 lnSMSY <- log(SMSY$rawSMSY)
 lnWA <- log(WA$WA)
 order <- SMSY %>% select(Stocknumber, ModelOrder)
@@ -379,7 +386,14 @@ lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
 # With Skagit lnDelta1_start <- 2.881
 # with Skagit nDelta2_start <- -0.288
 
-plot(y=lnSMSY, x=lnWA)
+par(cex.pch=1.3)
+col.use <- NA
+for(i in 1:length(SMSY$lh)) {if (SMSY$lh[i]==0) col.use[i] <- "maroon" else col.use[i] <- "orange"}
+plot(y=lnSMSY, x=lnWA, pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
+logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
+logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% select(Estimate) %>% pull()
+abline(a=logD1[1], b=exp(logD2[1]), col="maroon")
+abline(a=logD1[2], b=exp(logD2[2]), col="orange")
 plot(y=exp(lnSMSY), x=exp(lnWA))
 #pdf("ParkenSMSYWA.pdf", width=4)
 #  par(mfcol=c(2,1))

@@ -315,36 +315,28 @@ aic_surv <- nLL_surv %>% mutate(aic = 2 * 4 + 2*CnLL)
 
 # Get predicted values and calculate r2
 Pred_std <- data.frame()
-#Pred_std <- All_Ests %>% filter (Param %in% c("LogR_Pred_std"))
 Pred_std <- All_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
-#Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_std$Estimate)
 Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_std$Estimate)
-#Preds_std <- Preds_std %>% mutate(ObsLogR = log (Rec / Scale)) 
 Preds_std <- Preds_std %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp/Scale) ) )
-#r2_std <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
 r2_std <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
 Pred_ar <- data.frame()
-#Pred_ar <- All_Ests %>% filter (Param %in% c("LogR_Pred_ar"))
 Pred_ar <- All_Ests %>% filter (Param %in% c("LogRS_Pred_ar"))
-#Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_ar$Estimate)
 Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_ar$Estimate)
-#Preds_ar <- Preds_ar %>% mutate(ObsLogR = log (Rec / Scale)) 
 Preds_ar <- Preds_ar %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
-#r2_ar <- Preds_ar %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
 r2_ar <- Preds_ar %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
 Pred_surv <- data.frame()
-#Pred_surv <- All_Ests %>% filter (Param %in% c("LogR_Pred_surv"))
 Pred_surv <- All_Ests %>% filter (Param %in% c("LogRS_Pred_surv"))
-#Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Rec", "Scale") %>% add_column(Pred=Pred_surv$Estimate)
 Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_surv$Estimate)
-#Preds_surv <- Preds_surv %>% mutate(ObsLogR = log (Rec / Scale)) 
 Preds_surv <- Preds_surv %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
-#r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogR,Pred)^2)
 r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
 r2 <- bind_rows(r2_std, r2_ar, r2_surv) %>% arrange(Stocknumber)
+
+# Get predicted values and their SEs to plot CIs
+PredlnSMSY <- data.frame() 
+PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O"))
 
 # Calculate standardized residuals
 SRes <- bind_rows(Preds_std, Preds_ar, Preds_surv) %>% arrange (Stocknumber)
@@ -370,7 +362,7 @@ SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique
 # what is scale of SMSY?
 Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
 SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
-SMSY <- SMSY %>% left_join(Stream, by="Stocknumber")
+SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
 lnSMSY <- log(SMSY$rawSMSY)
 lnWA <- log(WA$WA)
 order <- SMSY %>% select(Stocknumber, ModelOrder)
@@ -386,15 +378,14 @@ lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
 # With Skagit lnDelta1_start <- 2.881
 # with Skagit nDelta2_start <- -0.288
 
-par(cex.pch=1.3)
-col.use <- NA
-for(i in 1:length(SMSY$lh)) {if (SMSY$lh[i]==0) col.use[i] <- "maroon" else col.use[i] <- "orange"}
-plot(y=lnSMSY, x=lnWA, pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
-logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
-logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% select(Estimate) %>% pull()
-abline(a=logD1[1], b=exp(logD2[1]), col="maroon")
-abline(a=logD1[2], b=exp(logD2[2]), col="orange")
-plot(y=exp(lnSMSY), x=exp(lnWA))
+
+# Plot WA regression
+
+#plotWAregression (All_Est=All_Est, All_Deltas=All_Deltas, SRDat=SRDat, Stream=Stream, WA=WA, PredlnSMSY=PredlnSMSY, PredlnWA = data$PredlnWA, title="Common, fixed yi (logDelta2), \nRandom slope (Delta1)")
+plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Common, fixed yi (logDelta2), \nRandom slope (Delta1)")
+
+
+#plot(y=exp(lnSMSY), x=exp(lnWA))
 #pdf("ParkenSMSYWA.pdf", width=4)
 #  par(mfcol=c(2,1))
 #  plot(y=exp(lnPSMSY), x=exp(lnWA), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")

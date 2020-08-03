@@ -213,3 +213,66 @@ Plotacf <- function(Preds){
 # Cow.SMSY.ul <- Cow.SMSY.ul * SRDat %>% filter (Name=="Cowichan") %>% select(Scale) %>% distinct() %>% as.numeric()
 # Cow.SMSY.ll <- Cow.SMSY - 1.96 * (All_Est %>% filter(Name=="Cowichan") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
 # Cow.SMSY.ll <- Cow.SMSY.ll * SRDat %>% filter (Name=="Cowichan") %>% select(Scale) %>% distinct() %>% as.numeric()
+
+
+#------------------------------------------------------------------
+# Plot  WA regression
+
+plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMSY=NA, PredlnWA, title1) {
+
+  SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
+  # what is scale of SMSY?
+  Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
+  SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
+  SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
+  lnSMSY <- log(SMSY$rawSMSY)
+  lnWA <- log(WA$WA)
+  
+  par(cex=1.5)
+  col.use <- NA
+  for(i in 1:length(SMSY$lh)) {if (SMSY$lh[i]==0) col.use[i] <- "forestgreen" else col.use[i] <- "dodgerblue3"}
+  plot(y=lnSMSY, x=lnWA, pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
+  points(y=lnSMSY, x=lnWA, pch=20, col=col.use, cex=1.5)
+  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
+  logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% select(Estimate) %>% pull()
+  if(length(logD1)==1&length(logD2)==2){
+    abline(a=logD1[1], b=exp(logD2[1]), col="forestgreen", lwd=2)
+    abline(a=logD1[1], b=exp(logD2[2]), col="dodgerblue3", lwd=2)
+  }
+  if(length(logD2)==1&length(logD2)==2){
+    abline(a=logD1[1], b=exp(logD2[1]), col="forestgreen", lwd=2)
+    abline(a=logD1[2], b=exp(logD2[2]), col="dodgerblue3", lwd=2)
+  }
+  if(length(logD1)==1&length(logD2)==1){
+    abline(a=logD1, b=exp(logD2), col="maroon", lwd=2)
+  }
+  
+  if(exists("PredlnSMSY")){
+    PredlnSMSY <- PredlnSMSY %>% mutate (up = Estimate + 1.96 * Std..Error, lo=Estimate - 1.96*Std..Error) 
+    up_S <- PredlnSMSY %>% filter(Param== "PredlnSMSY_S") %>% select(up) %>% pull()
+    lo_S <- PredlnSMSY %>% filter(Param== "PredlnSMSY_S") %>% select(lo) %>% pull()
+    up_O <- PredlnSMSY %>% filter(Param== "PredlnSMSY_O") %>% select(up) %>% pull()
+    lo_O <- PredlnSMSY %>% filter(Param== "PredlnSMSY_O") %>% select(lo) %>% pull()
+    up <- PredlnSMSY %>% filter(Param== "PredlnSMSY") %>% select(up) %>% pull()
+    lo <- PredlnSMSY %>% filter(Param== "PredlnSMSY") %>% select(lo) %>% pull()
+    if(is.na(up_S[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_S, rev(lo_S)), col=rgb(0,0.4,0, alpha=0.2), border=NA)
+    if(is.na(up_O[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_O, rev(lo_O)), col=rgb(0,0.2,0.4, alpha=0.2), border=NA)
+    if(is.na(up[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_O, rev(lo_O)), col=rgb(0.6,0.2,0.4, alpha=0.2), border=NA)
+  }
+
+  if(length(logD1)==2&length(logD2)==2){
+    text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="dodgerblue3", cex=0.8)
+    text(x=9, y=6.5, labels= paste0("log(Delta1)=",round(logD1[3],2), ", \nDelta2=", round(exp(logD2[2]),2)), col="forestgreen", cex=0.8)
+  }
+  if(length(logD1)==1&length(logD2)==2){
+    text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="dodgerblue3", cex=0.8)
+    text(x=9, y=6.5, labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[2]),2)), col="forestgreen", cex=0.8)
+  }
+  if(length(logD2)==1){
+    text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="maroon", cex=0.8)
+  
+  }
+  
+  title(title1)
+  
+}

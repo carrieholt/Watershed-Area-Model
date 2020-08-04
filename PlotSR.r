@@ -261,8 +261,8 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
   }
 
   if(length(logD1)==2&length(logD2)==2){
-    text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="dodgerblue3", cex=0.8)
-    text(x=9, y=6.5, labels= paste0("log(Delta1)=",round(logD1[3],2), ", \nDelta2=", round(exp(logD2[2]),2)), col="forestgreen", cex=0.8)
+    text(x=6, y=10.5,labels= paste0("Ocean-type\nlog(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="dodgerblue3", cex=0.8)
+    text(x=9, y=6.5, labels= paste0("Stream-type\nlog(Delta1)=",round(logD1[3],2), ", \nDelta2=", round(exp(logD2[2]),2)), col="forestgreen", cex=0.8)
   }
   if(length(logD1)==1&length(logD2)==2){
     text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="dodgerblue3", cex=0.8)

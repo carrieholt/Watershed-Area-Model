@@ -22,12 +22,12 @@ library(zoo)
 count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
-plot <- FALSE
+plot <- TRUE
 removeSkagit <- TRUE
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
-  if(removeSkagit==FALSE) source ("CheckAR1.r")# For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
+  source ("CheckAR1.r")# For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
 }
 
 #---------------------------------------------------------
@@ -382,7 +382,8 @@ lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
 # Plot WA regression
 
 #plotWAregression (All_Est=All_Est, All_Deltas=All_Deltas, SRDat=SRDat, Stream=Stream, WA=WA, PredlnSMSY=PredlnSMSY, PredlnWA = data$PredlnWA, title="Common, fixed yi (logDelta2), \nRandom slope (Delta1)")
-plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Common, fixed yi (logDelta2), \nRandom slope (Delta1)")
+par(mfrow=c(1,1))
+plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Common, fixed yi (logDelta1), \nRandom slope (Delta2)")
 
 
 #plot(y=exp(lnSMSY), x=exp(lnWA))

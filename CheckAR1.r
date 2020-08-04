@@ -93,7 +93,15 @@ ac <- ac %>% left_join(len) %>% left_join(unique(SRDat[, c("Stocknumber", "Name"
 ac # 6 stocks have significant lag-1 autocorrelation: Chikamin, Keta, Blossom, Situk, Siletz, and Columbia Sp
 
 # Plot acfs: 
-if (plot==TRUE) Plotacf(Preds)
+if (plot==TRUE) {
+  png("DataOut/ACFstd.png", width=7, height=7, units="in", res=2000)
+  Plotacf(Preds)
+  dev.off()
+  
+}
+
+
+
 
 A_std <- All_Ests %>% filter(Param=="logA_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(A=exp(Estimate))
 B_std <- All_Ests %>% filter(Param=="logB_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(B=exp(Estimate)/Scale.stock) 
@@ -112,7 +120,12 @@ All_Est <- left_join(All_Est, unique(SRDat[, c("Stocknumber", "Name")]))
 
 # Plot SR curves:
 
-if(plot ==TRUE) PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar=NA, stksNum_surv=NA, r2=NA, removeSkagit=FALSE) 
+if(plot ==TRUE) {
+  png("DataOut/SRstd.png", width=7, height=7, units="in", res=2000)
+  PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar=NA, stksNum_surv=NA, r2=NA, removeSkagit=FALSE) 
+  dev.off()
+  
+}
 
 
 #------------------------------------------------------------------------------------

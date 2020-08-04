@@ -5,7 +5,7 @@
 PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks_surv, r2, removeSkagit) {
   Stks <- unique(SRDat$Stocknumber)
   NStks <- length(Stks)
-  par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
+  par(mfrow=c(5,5), mar=c(2, 2, 1, 0.1) + 0.1)
   
   for (i in Stks){
     names <- All_Est %>% select ("Name", "Stocknumber") %>% distinct()
@@ -69,7 +69,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
     #For Skagit, add Parken et al. 2006 model curve
     if(removeSkagit==FALSE){if(i==22) lines(x=SS, y=RR_skagit, lty="dashed")}
     
-    mtext(name$Name, side=3)
+    mtext(name$Name, side=3, cex=0.8)
     
     # Plot SMSYs (black for std, red for AR(1), and dashed for Parken et al. 2006)
     smsy <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
@@ -185,7 +185,7 @@ PlotStdResid <- function(SRes){
 Plotacf <- function(Preds){
   Stks <- unique(Preds$Stocknumber)
   NStks <- length(Stks)
-  par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
+  par(mfrow=c(5,5), mar=c(2, 2, 1.5, 1) + 0.1)
   for (i in Stks){
     Res <- Preds %>% filter (Stocknumber==i) %>% select(Res)
     acf(Res$Res, plot=T)
@@ -253,8 +253,8 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
     lo_S <- PredlnSMSY %>% filter(Param== "PredlnSMSY_S") %>% select(lo) %>% pull()
     up_O <- PredlnSMSY %>% filter(Param== "PredlnSMSY_O") %>% select(up) %>% pull()
     lo_O <- PredlnSMSY %>% filter(Param== "PredlnSMSY_O") %>% select(lo) %>% pull()
-    up <- PredlnSMSY %>% filter(Param== "PredlnSMSY") %>% select(up) %>% pull()
-    lo <- PredlnSMSY %>% filter(Param== "PredlnSMSY") %>% select(lo) %>% pull()
+    up <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% select(up) %>% pull()
+    lo <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% select(lo) %>% pull()
     if(is.na(up_S[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_S, rev(lo_S)), col=rgb(0,0.4,0, alpha=0.2), border=NA)
     if(is.na(up_O[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_O, rev(lo_O)), col=rgb(0,0.2,0.4, alpha=0.2), border=NA)
     if(is.na(up[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_O, rev(lo_O)), col=rgb(0.6,0.2,0.4, alpha=0.2), border=NA)

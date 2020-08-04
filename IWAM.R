@@ -170,10 +170,10 @@ data$N_ocean <- length(which(data$Stream==1))
 
 #data$logMuDelta1_mean <- TMB_Inputs$logMuDelta1_mean
 #data$logMuDelta1_sig <- TMB_Inputs$logMuDelta1_sig
-data$logMuDelta2_mean <- TMB_Inputs$logMuDelta2_mean
-data$logMuDelta2_sig <- TMB_Inputs$logMuDelta2_sig
+#data$logMuDelta2_mean <- TMB_Inputs$logMuDelta2_mean
+#data$logMuDelta2_sig <- TMB_Inputs$logMuDelta2_sig
 #data$Tau_Delta1_dist <- TMB_Inputs$Tau_Delta1_dist
-data$Tau_Delta2_dist <- TMB_Inputs$Tau_Delta2_dist
+#data$Tau_Delta2_dist <- TMB_Inputs$Tau_Delta2_dist
   
 data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1) #predicated lnWA for plottig CIs
 
@@ -209,10 +209,10 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
-#param$logDelta1 <- 3.00# with skagit 2.881
+param$logDelta1 <- 3.00# with skagit 2.881
 ##param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-#param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-#param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 # without Skagit lnDelta1_start <- 2.999911
 # without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
 
@@ -234,13 +234,13 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 ## Hierarchcial model
 
-param$logDelta1 <- TMB_Inputs$logDelta1_start#rep(TMB_Inputs$logDelta1_start, 2)#rep(TMB_Inputs$logDelta1_start, 2)
-param$logDelta2 <- rep(TMB_Inputs$logDelta2_start, 2)
-param$logDeltaSigma <-TMB_Inputs$logDeltaSigma_start 
+#param$logDelta1 <- TMB_Inputs$logDelta1_start#rep(TMB_Inputs$logDelta1_start, 2)#rep(TMB_Inputs$logDelta1_start, 2)
+#param$logDelta2 <- rep(TMB_Inputs$logDelta2_start, 2)
+#param$logDeltaSigma <-TMB_Inputs$logDeltaSigma_start 
 #param$logMuDelta1 <- TMB_Inputs$logDelta1_start
 #param$SigmaDelta1 <- 10
-param$logMuDelta2 <- TMB_Inputs$logDelta2_start
-param$SigmaDelta2 <- 1
+#param$logMuDelta2 <- TMB_Inputs$logDelta2_start
+#param$SigmaDelta2 <- 1
 
 
 
@@ -249,14 +249,18 @@ param$SigmaDelta2 <- 1
 # Compile model if changed:
 #dyn.unload(dynlib("TMB_Files/Ricker_AllMod"))
 #compile("TMB_Files/Ricker_AllMod.cpp")
+#dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
+#obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)#random = c( "logDelta2"), 
 
-dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
+#dyn.unload(dynlib("TMB_Files/IWAM_FixedCombined"))
+#compile("TMB_Files/IWAM_FixedCombined.cpp")
+#dyn.load(dynlib("TMB_Files/IWAM_FixedCombined"))
+obj <- MakeADFun(data, param, DLL="IWAM_FixedCombined", silent=TRUE)#random = c( "logDelta2"), 
 
 # For Phase 1, fix Delta parameters. Do not need to fix Delta's beccause initlal values are lm fits, so very close
 #map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
 #obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 
-obj <- MakeADFun(data, param, DLL="Ricker_AllMod", random = c( "logDelta2"), silent=TRUE)
 #upper <- c(rep(Inf, 80), 5.00, rep(Inf,2))
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
@@ -299,8 +303,7 @@ All_Est$surv <- All_Est$Stocknumber %in% stksNum_surv
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
 
 All_Deltas <- data.frame()
-All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta"))
-All_Deltas
+All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta", "Delta2_bounded"))
 
 # 4. Calculate diagnostics and plot SR curves, etc.
 
@@ -336,7 +339,7 @@ r2 <- bind_rows(r2_std, r2_ar, r2_surv) %>% arrange(Stocknumber)
 
 # Get predicted values and their SEs to plot CIs
 PredlnSMSY <- data.frame() 
-PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O"))
+PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O", "PredlnSMSY_CI"))
 
 # Calculate standardized residuals
 SRes <- bind_rows(Preds_std, Preds_ar, Preds_surv) %>% arrange (Stocknumber)
@@ -348,10 +351,18 @@ SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 
 #Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
 if (plot==TRUE){
+  png("DataOut/SRallmod.png", width=7, height=7, units="in", res=2000)
   PlotSRCurve(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit)
+  dev.off()
+  png("DataOut/SRLinallmod.png", width=7, height=7, units="in", res=2000)
   PlotSRLinear(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit) 
+  dev.off()
+  png("DataOut/StdResidallmod.png", width=7, height=7, units="in", res=2000)
   PlotStdResid(SRes)
+  dev.off()
+  png("DataOut/ACFallmod.png", width=7, height=7, units="in", res=2000)
   Plotacf(SRes)
+  dev.off()
   
 }
 
@@ -382,8 +393,14 @@ lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
 # Plot WA regression
 
 #plotWAregression (All_Est=All_Est, All_Deltas=All_Deltas, SRDat=SRDat, Stream=Stream, WA=WA, PredlnSMSY=PredlnSMSY, PredlnWA = data$PredlnWA, title="Common, fixed yi (logDelta2), \nRandom slope (Delta1)")
-par(mfrow=c(1,1))
-plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Common, fixed yi (logDelta1), \nRandom slope (Delta2)")
+if(plot==TRUE){
+  png("DataOut/WAreg_FixedCombined.png", width=7, height=7, units="in", res=1000)
+  par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
+  plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)")
+  dev.off()
+  #plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Common, fixed yi (logDelta1), \nRandom slope (Delta2)")
+  
+}
 
 
 #plot(y=exp(lnSMSY), x=exp(lnWA))

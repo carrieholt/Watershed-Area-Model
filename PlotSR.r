@@ -235,16 +235,17 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
   points(y=lnSMSY, x=lnWA, pch=20, col=col.use, cex=1.5)
   logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
   logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% select(Estimate) %>% pull()
+  if (is.na(logD2[1])==TRUE) logD2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% select(Estimate) %>% pull()
   if(length(logD1)==1&length(logD2)==2){
     abline(a=logD1[1], b=exp(logD2[1]), col="forestgreen", lwd=2)
     abline(a=logD1[1], b=exp(logD2[2]), col="dodgerblue3", lwd=2)
   }
-  if(length(logD2)==1&length(logD2)==2){
+  if(length(logD1)==2&length(logD2)==2){
     abline(a=logD1[1], b=exp(logD2[1]), col="forestgreen", lwd=2)
     abline(a=logD1[2], b=exp(logD2[2]), col="dodgerblue3", lwd=2)
   }
   if(length(logD1)==1&length(logD2)==1){
-    abline(a=logD1, b=exp(logD2), col="maroon", lwd=2)
+    abline(a=logD1, b=logD2, col="maroon", lwd=2)
   }
   
   if(exists("PredlnSMSY")){
@@ -257,7 +258,7 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
     lo <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% select(lo) %>% pull()
     if(is.na(up_S[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_S, rev(lo_S)), col=rgb(0,0.4,0, alpha=0.2), border=NA)
     if(is.na(up_O[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_O, rev(lo_O)), col=rgb(0,0.2,0.4, alpha=0.2), border=NA)
-    if(is.na(up[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_O, rev(lo_O)), col=rgb(0.6,0.2,0.4, alpha=0.2), border=NA)
+    if(is.na(up[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up, rev(lo)), col=rgb(0.6,0.2,0.4, alpha=0.2), border=NA)
   }
 
   if(length(logD1)==2&length(logD2)==2){
@@ -269,7 +270,7 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
     text(x=9, y=6.5, labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[2]),2)), col="forestgreen", cex=0.8)
   }
   if(length(logD2)==1){
-    text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="maroon", cex=0.8)
+    text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(logD2[1],2)), col="maroon", cex=0.8)
   
   }
   

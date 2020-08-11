@@ -23,7 +23,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
 plot <- TRUE
-removeSkagit <- TRUE
+removeSkagit <- FALSE
 mod <- "IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
@@ -430,10 +430,12 @@ SMSY_ocean <- SMSY %>% filter(lh==1)
 
 ParkenSMSY_stream <- read.csv("DataIn/ParkenSMSY.csv") %>% right_join(Stream) %>% filter(lh==0) %>% mutate(Estimate=SMSY/SMSY_stream$Scale)
 
+
 data <- list()
-data$SMSY <- SMSY_ocean$Estimate#SMSY$Estimate
-data$WA <- SMSY_ocean$WA#SMSY$WA#exp(lnWA)
-data$Scale <- SMSY_ocean$Scale#SMSY$Scale
+data$SMSY <- as.data.frame(read.csv("DataIn/WA_Parken.csv"))$SMSY / as.data.frame(read.csv("DataIn/WA_Parken.csv"))$Scale
+#SMSY_ocean$Scale#SMSY$Scale #SMSY_ocean$Estimate#SMSY$Estimate
+data$WA <- as.data.frame(read.csv("DataIn/WA_Parken.csv"))$WA #WA$WA#SMSY_ocean$WA#SMSY$WA#exp(lnWA)
+data$Scale <- as.data.frame(read.csv("DataIn/WA_Parken.csv"))$Scale#SMSY_ocean$Scale#SMSY$Scale
 #data$Tau_dist <- 0.1
 
 param <- list()
@@ -452,6 +454,18 @@ obj <- MakeADFun(data, param, DLL="WAregression", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
 summary(sdreport(obj), p.value=TRUE)
+
+All_Ests <- data.frame(summary(sdreport(obj)))
+All_Ests$Param <- row.names(All_Ests)
+
+# Put together readable data frame of values
+All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))[[1]]))
+
+All_Deltas <- data.frame()
+All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "Delta2_bounded"))
+
+plotWAregression_Parken(data, All_Deltas)
+
 # I get same answers as Parken when I use his SMSY data, for streams (haven't checked ocean, as Skagit is ocean type and numbering is wonky)
 # For my SMSY_stream data slogDelta1 <- 2.744
 # For my SMSY_stream data sDelta2 <- 0.857

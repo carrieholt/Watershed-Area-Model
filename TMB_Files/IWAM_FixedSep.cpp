@@ -56,6 +56,7 @@ Type objective_function<Type>:: operator() ()
   // I need to include both ind_std and stk_std, and use ind_stk in the estimation step for loops, but stk_std in the model compilation step at bottom.
   DATA_IVECTOR(stk_std);
   DATA_IVECTOR(yr_std);
+  //DATA_SCALAR(Tau_sig);
   DATA_VECTOR(S_ar);
   DATA_VECTOR(logRS_ar);
   DATA_IVECTOR(stk_ar);
@@ -73,6 +74,8 @@ Type objective_function<Type>:: operator() ()
   DATA_IVECTOR(Stream);
   DATA_INTEGER(N_stream);
   DATA_INTEGER(N_ocean);
+  //DATA_INTEGER(N_stks_short);
+  DATA_IVECTOR(order_noChick);
 
   //Hierarchical hyper pars
   //DATA_SCALAR(logMuDelta1_mean);
@@ -155,6 +158,8 @@ Type objective_function<Type>:: operator() ()
     
     //ans += -dnorm(LogR_Pred_ar(i), logR_ar(i),  sigma_ar(stk_ar(i)), true);
     ans += -dnorm(LogRS_Pred_ar(i), logRS_ar(i),  sigma_ar(stk_ar(i)), true);
+    // Add inverse gamma penalty/prior on sigma_ar
+    //ans += -dgamma(pow(sigma_ar(stk_ar(i)),-2), Tau_sig, 1/Tau_sig, true);
     nLL_ar(i) = -dnorm(LogRS_Pred_ar(i), logRS_ar(i),  sigma_ar(stk_ar(i)), true);
   }
   
@@ -171,6 +176,9 @@ Type objective_function<Type>:: operator() ()
     
     //ans += -dnorm(LogR_Pred_std(i), logR_std(i),  sigma_std(stk_std(i)), true);
     ans += -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);
+    // Add inverse gamma penalty/prior on sigma_std
+    //ans += -dgamma(pow(sigma_std(stk_std(i)),-2), Tau_sig, 1/Tau_sig, true);
+    
     nLL_std(i) = -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);
     
   }
@@ -187,6 +195,9 @@ Type objective_function<Type>:: operator() ()
     
     //ans += -dnorm(LogR_Pred_surv(i), logR_surv(i),  sigma_surv, true);
     ans += -dnorm(LogRS_Pred_surv(i), logRS_surv(i),  sigma_surv(stk_surv(i)), true);
+    // Add inverse gamma penalty/prior on sigma_surv
+    //ans += -dgamma(pow(sigma_surv(stk_surv(i)),-2), Tau_sig, 1/Tau_sig, true);
+    
     nLL_surv(i) = -dnorm(LogRS_Pred_surv(i), logRS_surv(i),  sigma_surv(stk_surv(i)), true);
   }
   
@@ -344,15 +355,15 @@ Type objective_function<Type>:: operator() ()
   //}
   
   //Liermann's model with both stream and ocean type=================
-  int N_stks_short = 17;
+  int N_stks_short = order_noChick.size();
   //vector <Type> PredlnSMSY(N_stks);
   vector <Type> PredlnSMSY(N_stks_short);
   Type sigma_delta = exp(logDeltaSigma);
   
   //for (int i=0; i<N_stks; i++){
   for (int i=0; i<N_stks_short; i++){
-      PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i)) ;
-    ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
+    PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(order_noChick(i)) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(order_noChick(i)) ) * log(WA(order_noChick(i))) ;
+    ans += -dnorm( PredlnSMSY(i), log(SMSY(order_noChick(i)) * Scale(order_noChick(i)) ),  sigma_delta, true);
   }
   
   ////Model with stream and ocean-types add random slope (logDelta1) and yi-intercept (Delta2) ==============
@@ -453,6 +464,8 @@ Type objective_function<Type>:: operator() ()
   REPORT(nLL_ar);
   REPORT(nLL_surv);
   REPORT(ans);
+  int ch = 16;
+  REPORT(log(SMSY(ch)*Scale(ch)));
   //ADREPORT(Sgen);
   return ans;
   

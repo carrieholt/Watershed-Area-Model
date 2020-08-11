@@ -126,7 +126,7 @@ Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrd
 
 TMB_Inputs <- list(rho_Start = 0.0, logDelta1_start=3.00, logDelta2_start =log(0.72), logDeltaSigma_start = -0.412, 
                    logMuDelta1_mean= 5, logMuDelta1_sig= 10, logMuDelta2_mean=-0.5, logMuDelta2_sig= 10, 
-                   Tau_Delta1_dist= 0.1, Tau_Delta2_dist= 0.1) 
+                   Tau_Delta1_dist= 0.1, Tau_Delta2_dist= 0.1, Tau_sigma = 0.01) 
 
 
 # Data 
@@ -137,6 +137,7 @@ data$logRS_std <- log( (SRDat_std$Rec/Scale_std) / (SRDat_std$Sp/Scale_std) )
 data$stk_std <- as.numeric(SRDat_std$ind_std)
 N_Stocks_std <- length(unique(SRDat_std$Name))
 data$yr_std <- SRDat_std$yr_num
+#data$Tau_sig <- TMB_Inputs$Tau_sigma
 
 Scale_ar <- SRDat_ar$Scale 
 data$S_ar <- SRDat_ar$Sp/Scale_ar 
@@ -167,7 +168,8 @@ data$Scale <- SRDat_Scale #ordered by std, AR1, surv
 data$Stream <- Stream$lh
 data$N_stream <-length(which(data$Stream==0))
 data$N_ocean <- length(which(data$Stream==1))
-
+#data$N_stks_short <- 17
+data$order_noChick <- c(0:15,19)#, 17:23)
 
 #data$logMuDelta1_mean <- TMB_Inputs$logMuDelta1_mean
 #data$logMuDelta1_sig <- TMB_Inputs$logMuDelta1_sig
@@ -403,6 +405,7 @@ if(plot==TRUE){
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
   dev.off()
   #plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Common, fixed yi (logDelta1), \nRandom slope (Delta2)")

@@ -209,12 +209,14 @@ param$gamma <- rep (0, N_Stocks_surv)
 
 #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
 
-param$logDelta1 <- 3.00# with skagit 2.881
-##param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
-# without Skagit lnDelta1_start <- 2.999911
-# without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
+if (mod=="IWAM_FixedCombined"){
+  param$logDelta1 <- 3.00# with skagit 2.881
+  ##param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+  # without Skagit lnDelta1_start <- 2.999911
+  # without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
+}
 
 ## Separate Stream and Ocean type models
 #param$slogDelta1 <- 2.744 #best estimates from run of stream-specific WAregression TMB model run
@@ -225,13 +227,15 @@ param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 #param$ologDelta2 <- log(0.94)#0#21.2 
 #param$ologDeltaSigma <-  -0.412#-0.94 
 
-## Lierman model
-#param$logDelta1 <- 10# with skagit 2.881
-#param$logDelta1ocean <- 0# with skagit 2.881
-#param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-#param$logDelta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-#param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
-
+if (mod=="IWAM_FixedSep"){
+  ## Lierman model
+  param$logDelta1 <- 3#10# with skagit 2.881
+  param$logDelta1ocean <- 0# with skagit 2.881
+  param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$logDelta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+  
+}
 ## Hierarchcial model
 
 #param$logDelta1 <- TMB_Inputs$logDelta1_start#rep(TMB_Inputs$logDelta1_start, 2)#rep(TMB_Inputs$logDelta1_start, 2)

@@ -23,7 +23,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
 plot <- TRUE
-removeSkagit <- FALSE
+removeSkagit <- TRUE
 mod <- "IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {

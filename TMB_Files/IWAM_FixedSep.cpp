@@ -344,11 +344,14 @@ Type objective_function<Type>:: operator() ()
   //}
   
   //Liermann's model with both stream and ocean type=================
-  vector <Type> PredlnSMSY(N_stks);
+  int N_stks_short = 17;
+  //vector <Type> PredlnSMSY(N_stks);
+  vector <Type> PredlnSMSY(N_stks_short);
   Type sigma_delta = exp(logDeltaSigma);
   
-  for (int i=0; i<N_stks; i++){
-    PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i)) ;
+  //for (int i=0; i<N_stks; i++){
+  for (int i=0; i<N_stks_short; i++){
+      PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i)) ;
     ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
   }
   

@@ -231,8 +231,8 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
   par(cex=1.5)
   col.use <- NA
   for(i in 1:length(SMSY$lh)) {if (SMSY$lh[i]==0) col.use[i] <- "forestgreen" else col.use[i] <- "dodgerblue3"}
-  plot(y=lnSMSY, x=lnWA, pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
-  points(y=lnSMSY, x=lnWA, pch=20, col=col.use, cex=1.5)
+  plot(y=lnSMSY[1:15], x=lnWA[1:15], pch=20, col=col.use[1:15], xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
+  points(y=lnSMSY[1:15], x=lnWA[1:15], pch=20, col=col.use[1:15], cex=1.5)
   logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
   logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% select(Estimate) %>% pull()
   if(mod=="IWAM_FixedSep") logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% select(Estimate) %>% pull() + logD1

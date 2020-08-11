@@ -417,6 +417,8 @@ if(plot==TRUE){
 #  plot(y=exp(lnPSMSY), x=exp(lnWA), xlim=c(0,2000), ylim=c(0,6000), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")
 #dev.off()
 
+
+
 #-----------------------------------------------------------------------------------------
 test <- FALSE
 if(test==TRUE){
@@ -436,13 +438,19 @@ data$SMSY <- as.data.frame(read.csv("DataIn/WA_Parken.csv"))$SMSY / as.data.fram
 #SMSY_ocean$Scale#SMSY$Scale #SMSY_ocean$Estimate#SMSY$Estimate
 data$WA <- as.data.frame(read.csv("DataIn/WA_Parken.csv"))$WA #WA$WA#SMSY_ocean$WA#SMSY$WA#exp(lnWA)
 data$Scale <- as.data.frame(read.csv("DataIn/WA_Parken.csv"))$Scale#SMSY_ocean$Scale#SMSY$Scale
+#data$Stream <- as.data.frame(read.csv("DataIn/WA_Parken.csv"))$lh
 #data$Tau_dist <- 0.1
 
 param <- list()
 param$logDelta1 <- 3.00# with skagit 2.881
+#param$logDelta1ocean <- 0
+#param$logDelta2 <- log(0.72)
+#param$logDelta2ocean <- 0
 param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
 param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 
+#dyn.unload(dynlib("TMB_Files/WAregression_sep"))
+#compile("TMB_Files/WAregression_sep.cpp")
 #dyn.unload(dynlib("TMB_Files/WAregression"))
 #compile("TMB_Files/WAregression.cpp")
 plot(x=log(data$WA), y=log(data$SMSY*data$Scale), xlab="ln(WA)", ylab="ln(SMSY)")
@@ -450,7 +458,9 @@ abline(lm(log(data$SMSY*data$Scale) ~ log(data$WA)))
 plot(x=(data$WA), y=(data$SMSY*data$Scale), xlab="WA, km2", ylab="SMSY")
 
 dyn.load(dynlib("TMB_Files/WAregression"))
+#dyn.load(dynlib("TMB_Files/WAregression_sep"))
 obj <- MakeADFun(data, param, DLL="WAregression", silent=TRUE)
+#obj <- MakeADFun(data, param, DLL="WAregression_sep", silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
 summary(sdreport(obj), p.value=TRUE)
@@ -462,9 +472,15 @@ All_Ests$Param <- row.names(All_Ests)
 All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))[[1]]))
 
 All_Deltas <- data.frame()
-All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "Delta2_bounded"))
+All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "Delta2_bounded", "logDelta1ocean", "logDelta2", "logDelta2ocean"))
 
+png(paste("DataOut/Parken_comb.png"), width=7, height=7, units="in", res=2000)
 plotWAregression_Parken(data, All_Deltas)
+dev.off()
+
+png(paste("DataOut/Parken_sep.png"), width=7, height=7, units="in", res=2000)
+plotWAregression_ParkenSep(data, All_Deltas)
+dev.off()
 
 # I get same answers as Parken when I use his SMSY data, for streams (haven't checked ocean, as Skagit is ocean type and numbering is wonky)
 # For my SMSY_stream data slogDelta1 <- 2.744

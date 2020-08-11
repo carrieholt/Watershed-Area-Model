@@ -95,7 +95,9 @@ Type objective_function<Type>:: operator() ()
   PARAMETER_VECTOR(logSigma_surv);
   PARAMETER_VECTOR(gamma);
   PARAMETER(logDelta1);
-  PARAMETER(Delta2);
+  PARAMETER(logDelta1ocean);
+  PARAMETER(logDelta2);
+  PARAMETER(logDelta2ocean);
   PARAMETER(logDeltaSigma);
 
   // Separate stream and ocean type Deltas- fixed effects
@@ -307,16 +309,16 @@ Type objective_function<Type>:: operator() ()
     
   }
 
-  // WA model with all data =============
-  vector <Type> PredlnSMSY(N_stks);
-  Type Delta2_bounded = invlogit(Delta2);
-  Type sigma_delta = exp(logDeltaSigma);
+  //// WA model with all data =============
+  //vector <Type> PredlnSMSY(N_stks);
+  //Type Delta2_bounded = invlogit(Delta2);
+  //Type sigma_delta = exp(logDeltaSigma);
   
-  for (int i=0; i<N_stks; i++){
-    //PredlnSMSY(i) = logDelta1 + exp(logDelta2) * log(WA(i));
-    PredlnSMSY(i) = logDelta1 + Delta2_bounded * log(WA(i));
-    ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
-  }
+//  for (int i=0; i<N_stks; i++){
+  //  //PredlnSMSY(i) = logDelta1 + exp(logDelta2) * log(WA(i));
+  //  PredlnSMSY(i) = logDelta1 + Delta2_bounded * log(WA(i));
+  //  ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
+//  }
 
   //// Add Inverse gamma prior on sigma_delta^2
   ////ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
@@ -342,13 +344,13 @@ Type objective_function<Type>:: operator() ()
   //}
   
   //Liermann's model with both stream and ocean type=================
-  //vector <Type> PredlnSMSY(N_stks);
-  //Type sigma_delta = exp(logDeltaSigma);
+  vector <Type> PredlnSMSY(N_stks);
+  Type sigma_delta = exp(logDeltaSigma);
   
-  //for (int i=0; i<N_stks; i++){
-  //  PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + (exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i));
-  //  ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
-  //}
+  for (int i=0; i<N_stks; i++){
+    PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i)) ;
+    ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
+  }
   
   ////Model with stream and ocean-types add random slope (logDelta1) and yi-intercept (Delta2) ==============
   //vector <Type> PredlnSMSY(N_stks);
@@ -388,7 +390,7 @@ Type objective_function<Type>:: operator() ()
   //vector <Type> PredlnSMSY_O(N_pred);
   
   for (int i=0; i<N_pred; i++){
-    PredlnSMSY_CI(i) = logDelta1 + Delta2_bounded * PredlnWA(i);
+    PredlnSMSY_CI(i) = logDelta1 + logDelta1ocean * Stream(i) + (exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * PredlnWA(i);
     //PredlnSMSY_S(i) = logDelta1(0) + exp(logDelta2(0)) * PredlnWA(i);
     //PredlnSMSY_O(i) = logDelta1(1) + exp(logDelta2(1)) * PredlnWA(i);
     //PredlnSMSY_S(i) = logDelta1 + exp(logDelta2(0)) * PredlnWA(i);
@@ -415,7 +417,7 @@ Type objective_function<Type>:: operator() ()
   //ADREPORT(WA_ocean)
   //ADREPORT(logDelta1)
   ////ADREPORT(exp(logDelta2))
-  ADREPORT(Delta2_bounded)
+  //ADREPORT(Delta2_bounded)
   //ADREPORT(sigma_delta)
   //ADREPORT(slogDelta1)
   //ADREPORT(sDelta2_bounded)

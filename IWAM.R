@@ -24,7 +24,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- TRUE
 removeSkagit <- TRUE
-mod <- "IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -139,25 +139,27 @@ N_Stocks_std <- length(unique(SRDat_std$Name))
 data$yr_std <- SRDat_std$yr_num
 #data$Tau_sig <- TMB_Inputs$Tau_sigma
 
-Scale_ar <- SRDat_ar$Scale 
-data$S_ar <- SRDat_ar$Sp/Scale_ar 
-data$logRS_ar <- log( (SRDat_ar$Rec/Scale_ar) / (SRDat_ar$Sp/Scale_ar) ) 
-data$stk_ar <- as.numeric(SRDat_ar$ind_ar)
-N_Stocks_ar <- length(unique(SRDat_ar$Name))
-data$yr_ar <- SRDat_ar$yr_num
-
-Scale_surv <- SRDat_surv$Scale 
-data$S_surv <- SRDat_surv$Sp/Scale_surv
-data$logRS_surv <- log( (SRDat_surv$Rec/Scale_surv) / (SRDat_surv$Sp/Scale_surv) )
-data$stk_surv <- as.numeric(SRDat_surv$ind_surv)
-N_Stocks_surv <- length(unique(SRDat_surv$Name))
-data$yr_surv <- SRDat_surv$yr_num
-data$Surv_surv <- log(SRDat_surv$Surv) #Tompkins et al. used Ln(Surv+1)
-meanLogSurv <- SRDat_surv %>% group_by(Stocknumber) %>% summarize(meanLogSurv = mean(log(Surv))) %>% 
-  select(meanLogSurv) 
-data$MeanLogSurv_surv <- meanLogSurv$meanLogSurv
-#data$model <- rep(0,N_Stocks)
-#data$Sgen_sig <- TMB_Inputs$Sgen_sig
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"){
+  Scale_ar <- SRDat_ar$Scale 
+  data$S_ar <- SRDat_ar$Sp/Scale_ar 
+  data$logRS_ar <- log( (SRDat_ar$Rec/Scale_ar) / (SRDat_ar$Sp/Scale_ar) ) 
+  data$stk_ar <- as.numeric(SRDat_ar$ind_ar)
+  N_Stocks_ar <- length(unique(SRDat_ar$Name))
+  data$yr_ar <- SRDat_ar$yr_num
+  
+  Scale_surv <- SRDat_surv$Scale 
+  data$S_surv <- SRDat_surv$Sp/Scale_surv
+  data$logRS_surv <- log( (SRDat_surv$Rec/Scale_surv) / (SRDat_surv$Sp/Scale_surv) )
+  data$stk_surv <- as.numeric(SRDat_surv$ind_surv)
+  N_Stocks_surv <- length(unique(SRDat_surv$Name))
+  data$yr_surv <- SRDat_surv$yr_num
+  data$Surv_surv <- log(SRDat_surv$Surv) #Tompkins et al. used Ln(Surv+1)
+  meanLogSurv <- SRDat_surv %>% group_by(Stocknumber) %>% summarize(meanLogSurv = mean(log(Surv))) %>% 
+    select(meanLogSurv) 
+  data$MeanLogSurv_surv <- meanLogSurv$meanLogSurv
+  #data$model <- rep(0,N_Stocks)
+  #data$Sgen_sig <- TMB_Inputs$Sgen_sig
+}
 
 
 # Read in wateshed area data and life-history type....
@@ -196,21 +198,25 @@ B_std <- SRDat_std %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / 
 param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std ))#log(B_std$m/Scale.stock)
 param$logSigma_std <- rep(-2, N_Stocks_std)
 
-# Parameters for stocks with AR1
-param$logA_ar <- ( SRDat_ar %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
-B_ar <- SRDat_ar %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
-param$logB_ar <- log ( 1/ ( (1/B_ar$m)/Scale.stock_ar ))#Take inverse of B (=Smax and apply scale), the take the inverse again and log to get logB of scaled Smax
-param$rho <- rep(TMB_Inputs$rho_Start, N_Stocks_ar)
-param$logSigma_ar <- rep (-2, N_Stocks_ar)
-
-# Parameters for stock with survival covariate
-param$logA_surv <- ( SRDat_surv %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
-B_surv <- SRDat_surv %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
-param$logB_surv <- log ( 1/ ( (1/B_surv$m)/Scale.stock_surv ))#Take inverse of B (=Smax and apply scale), the take the inverse again and log to get logB of scaled Smax
-param$logSigma_surv <- rep (-2, N_Stocks_surv)
-param$gamma <- rep (0, N_Stocks_surv)
-
-#param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"){
+  # Parameters for stocks with AR1
+  param$logA_ar <- ( SRDat_ar %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
+  B_ar <- SRDat_ar %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
+  param$logB_ar <- log ( 1/ ( (1/B_ar$m)/Scale.stock_ar ))#Take inverse of B (=Smax and apply scale), the take the inverse again and log to get logB of scaled Smax
+  param$rho <- rep(TMB_Inputs$rho_Start, N_Stocks_ar)
+  param$logSigma_ar <- rep (-2, N_Stocks_ar)
+  
+  # Parameters for stock with survival covariate
+  param$logA_surv <- ( SRDat_surv %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
+  B_surv <- SRDat_surv %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
+  param$logB_surv <- log ( 1/ ( (1/B_surv$m)/Scale.stock_surv ))#Take inverse of B (=Smax and apply scale), the take the inverse again and log to get logB of scaled Smax
+  param$logSigma_surv <- rep (-2, N_Stocks_surv)
+  param$gamma <- rep (0, N_Stocks_surv)
+  
+  #param$logSgen <- log((SRDat %>% group_by(CU_Name) %>%  summarise(x=quantile(Spawners, 0.5)))$x/Scale) 
+  
+}
+  
 
 if (mod=="IWAM_FixedCombined"){
   param$logDelta1 <- 3.00# with skagit 2.881
@@ -230,7 +236,7 @@ if (mod=="IWAM_FixedCombined"){
 #param$ologDelta2 <- log(0.94)#0#21.2 
 #param$ologDeltaSigma <-  -0.412#-0.94 
 
-if (mod=="IWAM_FixedSep"){
+if (mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"){
   ## Lierman model
   param$logDelta1 <- 3#10# with skagit 2.881
   param$logDelta1ocean <- 0# with skagit 2.881

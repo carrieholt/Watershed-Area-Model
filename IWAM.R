@@ -308,7 +308,7 @@ All_Est$surv <- All_Est$Stocknumber %in% stksNum_surv
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
 
 All_Deltas <- data.frame()
-All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta", "Delta2_bounded"))
+All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta", "Delta2_bounded", "logDelta1ocean", "logDelta2ocean"))
 
 # 4. Calculate diagnostics and plot SR curves, etc.
 
@@ -344,7 +344,7 @@ r2 <- bind_rows(r2_std, r2_ar, r2_surv) %>% arrange(Stocknumber)
 
 # Get predicted values and their SEs to plot CIs
 PredlnSMSY <- data.frame() 
-PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O", "PredlnSMSY_CI"))
+PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O", "PredlnSMSY_CI", "PredlnSMSYs_CI", "PredlnSMSYo_CI"))
 
 # Calculate standardized residuals
 SRes <- bind_rows(Preds_std, Preds_ar, Preds_surv) %>% arrange (Stocknumber)
@@ -356,16 +356,16 @@ SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 
 #Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
 if (plot==TRUE){
-  png("DataOut/SRallmod.png", width=7, height=7, units="in", res=2000)
+  png(paste("DataOut/SR_", mod, ".png", sep=""), width=7, height=7, units="in", res=2000)
   PlotSRCurve(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit)
   dev.off()
-  png("DataOut/SRLinallmod.png", width=7, height=7, units="in", res=2000)
+  png(paste("DataOut/SRLin_", mod, ".png", sep=""), width=7, height=7, units="in", res=2000)
   PlotSRLinear(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit) 
   dev.off()
-  png("DataOut/StdResidallmod.png", width=7, height=7, units="in", res=2000)
+  png(paste("DataOut/StdResid_", mod, ".png", sep=""), width=7, height=7, units="in", res=2000)
   PlotStdResid(SRes)
   dev.off()
-  png("DataOut/ACFallmod.png", width=7, height=7, units="in", res=2000)
+  png(paste("DataOut/ACF_", mod, ".png", sep=""), width=7, height=7, units="in", res=2000)
   Plotacf(SRes)
   dev.off()
   
@@ -399,9 +399,11 @@ lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
 
 #plotWAregression (All_Est=All_Est, All_Deltas=All_Deltas, SRDat=SRDat, Stream=Stream, WA=WA, PredlnSMSY=PredlnSMSY, PredlnWA = data$PredlnWA, title="Common, fixed yi (logDelta2), \nRandom slope (Delta1)")
 if(plot==TRUE){
-  png("DataOut/WAreg_FixedCombined.png", width=7, height=7, units="in", res=1000)
+  png(paste("DataOut/WAreg_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
-  plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)")
+  if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
   dev.off()
   #plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Common, fixed yi (logDelta1), \nRandom slope (Delta2)")
   

@@ -53,28 +53,33 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(SMSY);
   DATA_VECTOR(WA);
   DATA_VECTOR(Scale);
+  DATA_VECTOR(Stream);
   //DATA_SCALAR(Tau_dist);
 
   PARAMETER(logDelta1);
-  PARAMETER(Delta2);
+  PARAMETER(logDelta1ocean);
+  PARAMETER(logDelta2);
+  PARAMETER(logDelta2ocean);
   PARAMETER(logDeltaSigma);
 
   
   Type ans=0.0;
   int N_stks = SMSY.size();
   vector <Type> PredlnSMSY(N_stks);
-  Type Delta2_bounded = invlogit(Delta2);
+  //Type Delta2_bounded = invlogit(Delta2);
   Type sigma_delta = exp(logDeltaSigma);
 
   for (int i=0; i<N_stks; i++){
-    PredlnSMSY(i) = logDelta1 + Delta2_bounded * log(WA(i));
+    PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i)) ;
+    //PredlnSMSY(i) = logDelta1 + Delta2_bounded * log(WA(i));
     ans += -dnorm(PredlnSMSY(i), log(SMSY(i)*Scale(i)),  sigma_delta, true);
+    
   }
   // Add Inverse gamma prior on sigma_delta^2
   //ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
 
   //ADREPORT(logDelta1);
-  ADREPORT(Delta2_bounded);
+  //ADREPORT(Delta2_bounded);
   ADREPORT(sigma_delta);
   return ans;
   

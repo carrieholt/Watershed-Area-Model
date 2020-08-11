@@ -73,7 +73,7 @@ Type objective_function<Type>:: operator() ()
   // Add Inverse gamma prior on sigma_delta^2
   //ans += -dgamma(pow(sigma_delta,-2), Tau_dist, 1/Tau_dist, true);
 
-  ADREPORT(logDelta1);
+  //ADREPORT(logDelta1);
   ADREPORT(Delta2_bounded);
   ADREPORT(sigma_delta);
   return ans;

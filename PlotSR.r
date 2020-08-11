@@ -291,3 +291,21 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
   title(title1)
   
 }
+
+plotWAregression_Parken <- function(data, All_Deltas){
+  col.use <- NA
+  Parken_data <- as.data.frame(read.csv("DataIn/WA_Parken.csv"))
+  for(i in 1:length(Parken_data$lh)) {if (Parken_data$lh[i]==0) col.use[i] <- "forestgreen" else col.use[i] <- "dodgerblue3"}
+  plot(x=log(data$WA), y=log(data$SMSY*data$Scale),pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
+  points(x=log(data$WA), y=log(data$SMSY*data$Scale), pch=20, col=col.use, cex=1.5)
+  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
+  D2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% select(Estimate) %>% pull()
+  abline(a=logD1, b=D2, col="maroon", lwd=2)
+  
+  #abline(lm(log(data$SMSY*data$Scale) ~ log(data$WA)))
+  #text(x=9, y=8,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="forestgreen", cex=0.8)
+  text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(D2[1],2)), col="maroon", cex=0.8)
+  
+  title("Parken Data: Combined")
+  
+}

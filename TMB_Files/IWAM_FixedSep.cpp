@@ -385,12 +385,14 @@ Type objective_function<Type>:: operator() ()
   
   // Get predicted values for plotting  WA regresssion with CIs
   int N_pred = PredlnWA.size();
-  vector <Type> PredlnSMSY_CI(N_pred);
+  vector <Type> PredlnSMSYs_CI(N_pred);
+  vector <Type> PredlnSMSYo_CI(N_pred);
   //vector <Type> PredlnSMSY_S(N_pred);
   //vector <Type> PredlnSMSY_O(N_pred);
   
   for (int i=0; i<N_pred; i++){
-    PredlnSMSY_CI(i) = logDelta1 + logDelta1ocean * Stream(i) + (exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * PredlnWA(i);
+    PredlnSMSYs_CI(i) = logDelta1 + exp(logDelta2) * PredlnWA(i);
+    PredlnSMSYo_CI(i) = logDelta1 + logDelta1ocean + (exp(logDelta2) + exp(logDelta2ocean)) * PredlnWA(i);
     //PredlnSMSY_S(i) = logDelta1(0) + exp(logDelta2(0)) * PredlnWA(i);
     //PredlnSMSY_O(i) = logDelta1(1) + exp(logDelta2(1)) * PredlnWA(i);
     //PredlnSMSY_S(i) = logDelta1 + exp(logDelta2(0)) * PredlnWA(i);
@@ -440,7 +442,8 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(LogRS_Pred_ar);
   ADREPORT(LogRS_Pred_std);
   ADREPORT(LogRS_Pred_surv);
-  ADREPORT(PredlnSMSY_CI);
+  ADREPORT(PredlnSMSYs_CI);
+  ADREPORT(PredlnSMSYo_CI);
   //ADREPORT(PredlnSMSY_O);
   //ADREPORT(PredlnSMSY_S);
   REPORT(nLL_std);

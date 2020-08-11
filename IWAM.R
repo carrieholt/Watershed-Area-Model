@@ -24,6 +24,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- TRUE
 removeSkagit <- TRUE
+mod <- "IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -256,10 +257,10 @@ if (mod=="IWAM_FixedSep"){
 #dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
 #obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)#random = c( "logDelta2"), 
 
-#dyn.unload(dynlib("TMB_Files/IWAM_FixedCombined"))
-#compile("TMB_Files/IWAM_FixedCombined.cpp")
-#dyn.load(dynlib("TMB_Files/IWAM_FixedCombined"))
-obj <- MakeADFun(data, param, DLL="IWAM_FixedCombined", silent=TRUE)#random = c( "logDelta2"), 
+#dyn.unload(dynlib(paste("TMB_Files/", mod, sep="")))
+#compile(paste("TMB_Files/", mod, ".cpp", sep=""))
+#dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
+obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)#random = c( "logDelta2"), 
 
 # For Phase 1, fix Delta parameters. Do not need to fix Delta's beccause initlal values are lm fits, so very close
 #map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 

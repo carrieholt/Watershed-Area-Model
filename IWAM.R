@@ -24,7 +24,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- TRUE
-mod <- "IWAM_FixedSep_Constyi"#"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -271,7 +271,7 @@ if (mod=="IWAM_FixedSep_Constyi"){
   ## Lierman model
   param$logDelta1 <- 3#10# with skagit 2.881
   param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-  param$logDelta2ocean <- -5#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$logDelta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
   param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
   
 }

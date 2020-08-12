@@ -22,9 +22,9 @@ library(zoo)
 count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
-plot <- TRUE
+plot <- FALSE#TRUE
 removeSkagit <- TRUE
-mod <- "IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "IWAM_FixedSep_Constyi"#"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -83,7 +83,7 @@ stksOrder <- data.frame(Stocknumber =  c(stksNum_std, stksNum_ar, stksNum_surv),
 
 # What is the scale of S,R and SMSY,SREP data, ordered when aggregated by std, AR1, surv
 SRDat_Scale <- SRDat %>% select(Stocknumber, Scale) %>% distinct() 
-if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined") {
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|mod=="IWAM_FixedSep_Constm") {
   SRDat_Scale <- SRDat_Scale %>% left_join(stksOrder) %>% arrange(ModelOrder)
 }
 if(mod=="IWAM_FixedSep_RicStd") {
@@ -233,8 +233,9 @@ if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"|mo
 
 if (mod=="IWAM_FixedCombined"){
   param$logDelta1 <- 3.00# with skagit 2.881
-  ##param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-  param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  #param$Delta2Ocean <- 0
+  #param$Delta2 <- log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
   param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
   # without Skagit lnDelta1_start <- 2.999911
   # without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
@@ -270,7 +271,7 @@ if (mod=="IWAM_FixedSep_Constyi"){
   ## Lierman model
   param$logDelta1 <- 3#10# with skagit 2.881
   param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-  param$logDelta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$logDelta2ocean <- -5#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
   param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
   
 }

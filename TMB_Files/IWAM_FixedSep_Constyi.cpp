@@ -362,8 +362,8 @@ Type objective_function<Type>:: operator() ()
   
   //for (int i=0; i<N_stks; i++){
   for (int i=0; i<N_stks; i++){
-    //PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(order_noChick(i)) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(order_noChick(i)) ) * log(WA(order_noChick(i))) ;
     PredlnSMSY(i) = logDelta1 + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i)) ;
+    //PredlnSMSY(i) = logDelta1 + ( exp(logDelta2) ) * log(WA(i)) ;
     ans += -dnorm( PredlnSMSY(i), log(SMSY(i) * Scale(i) ),  sigma_delta, true);
   }
   
@@ -407,8 +407,8 @@ Type objective_function<Type>:: operator() ()
   
   for (int i=0; i<N_pred; i++){
     PredlnSMSYs_CI(i) = logDelta1 + exp(logDelta2) * PredlnWA(i);
-    //PredlnSMSYo_CI(i) = logDelta1 + logDelta1ocean + (exp(logDelta2) + exp(logDelta2ocean)) * PredlnWA(i);
-    PredlnSMSYo_CI(i) = logDelta1 + (exp(logDelta2) + exp(logDelta2ocean)) * PredlnWA(i);
+    //PredlnSMSYo_CI(i) = logDelta1 + (exp(logDelta2)) * PredlnWA(i);
+    PredlnSMSYo_CI(i) = logDelta1 + (exp(logDelta2) + exp(logDelta2ocean) ) * PredlnWA(i);
     //PredlnSMSY_S(i) = logDelta1(0) + exp(logDelta2(0)) * PredlnWA(i);
     //PredlnSMSY_O(i) = logDelta1(1) + exp(logDelta2(1)) * PredlnWA(i);
     //PredlnSMSY_S(i) = logDelta1 + exp(logDelta2(0)) * PredlnWA(i);

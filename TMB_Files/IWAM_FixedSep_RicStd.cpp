@@ -60,11 +60,9 @@ Type objective_function<Type>:: operator() ()
   
   DATA_VECTOR(WA);
   DATA_VECTOR(Scale);
-  ////DATA_SCALAR(Tau_dist);
   DATA_IVECTOR(Stream);
   DATA_INTEGER(N_stream);
   DATA_INTEGER(N_ocean);
-  //DATA_INTEGER(N_stks_short);
   DATA_IVECTOR(order_noChick);
 
   //Hierarchical hyper pars
@@ -74,6 +72,7 @@ Type objective_function<Type>:: operator() ()
   //DATA_SCALAR(logMuDelta2_sig);
   //DATA_SCALAR(Tau_Delta1_dist);
   //DATA_SCALAR(Tau_Delta2_dist);
+  
   DATA_VECTOR(PredlnWA);
   
   PARAMETER_VECTOR(logA_std);
@@ -150,11 +149,9 @@ Type objective_function<Type>:: operator() ()
 
   vector <Type> SMSY_stream(N_stream);
   vector <Type> SREP_stream(N_stream);
-  //vector <Type> WA_stream(N_stream);
   vector <Type> Scale_stream(N_stream);
   vector <Type> SMSY_ocean(N_ocean);
   vector <Type> SREP_ocean(N_ocean);
-  //vector <Type> WA_ocean(N_ocean);
   vector <Type> Scale_ocean(N_ocean);
   
 
@@ -215,7 +212,6 @@ Type objective_function<Type>:: operator() ()
   
   //Liermann's model with both stream and ocean type=================
   int N_stks_short = order_noChick.size();
-  //vector <Type> PredlnSMSY(N_stks);
   vector <Type> PredlnSMSY(N_stks_short);
   Type sigma_delta = exp(logDeltaSigma);
   

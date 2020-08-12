@@ -24,7 +24,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- TRUE
 removeSkagit <- TRUE
-mod <- "IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "IWAM_FixedSep_Constm"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -152,7 +152,7 @@ N_Stocks_std <- length(unique(SRDat_std$Name))
 data$yr_std <- SRDat_std$yr_num
 #data$Tau_sig <- TMB_Inputs$Tau_sigma
 
-if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"){
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedCombined_Constm"){
   Scale_ar <- SRDat_ar$Scale 
   data$S_ar <- SRDat_ar$Sp/Scale_ar 
   data$logRS_ar <- log( (SRDat_ar$Rec/Scale_ar) / (SRDat_ar$Sp/Scale_ar) ) 
@@ -211,7 +211,7 @@ B_std <- SRDat_std %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / 
 param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std ))#log(B_std$m/Scale.stock)
 param$logSigma_std <- rep(-2, N_Stocks_std)
 
-if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"){
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedCombined_Constm"){
   # Parameters for stocks with AR1
   param$logA_ar <- ( SRDat_ar %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
   B_ar <- SRDat_ar %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
@@ -255,6 +255,14 @@ if (mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"){
   param$logDelta1ocean <- 0# with skagit 2.881
   param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
   param$logDelta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+  
+}
+if (mod=="IWAM_FixedSep_Constm"){
+  ## Lierman model
+  param$logDelta1 <- 3#10# with skagit 2.881
+  param$logDelta1ocean <- 0# with skagit 2.881
+  param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
   param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
   
 }

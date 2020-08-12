@@ -75,7 +75,7 @@ Type objective_function<Type>:: operator() ()
   DATA_INTEGER(N_stream);
   DATA_INTEGER(N_ocean);
   //DATA_INTEGER(N_stks_short);
-  DATA_IVECTOR(order_noChick);
+  //DATA_IVECTOR(order_noChick);
 
   //Hierarchical hyper pars
   //DATA_SCALAR(logMuDelta1_mean);
@@ -355,16 +355,15 @@ Type objective_function<Type>:: operator() ()
   //}
   
   //Liermann's model with both stream and ocean type=================
-  int N_stks_short = order_noChick.size();
   //vector <Type> PredlnSMSY(N_stks);
-  vector <Type> PredlnSMSY(N_stks_short);
+  vector <Type> PredlnSMSY(N_stks);
   Type sigma_delta = exp(logDeltaSigma);
   
   //for (int i=0; i<N_stks; i++){
-  for (int i=0; i<N_stks_short; i++){
+  for (int i=0; i<N_stks; i++){
     //PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(order_noChick(i)) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(order_noChick(i)) ) * log(WA(order_noChick(i))) ;
-    PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(order_noChick(i)) +  exp(logDelta2) * log(WA(order_noChick(i))) ;
-    ans += -dnorm( PredlnSMSY(i), log(SMSY(order_noChick(i)) * Scale(order_noChick(i)) ),  sigma_delta, true);
+    PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) +  exp(logDelta2) * log(WA(i)) ;
+    ans += -dnorm( PredlnSMSY(i), log(SMSY(i) * Scale(i) ),  sigma_delta, true);
   }
   
   ////Model with stream and ocean-types add random slope (logDelta1) and yi-intercept (Delta2) ==============
@@ -466,8 +465,6 @@ Type objective_function<Type>:: operator() ()
   REPORT(nLL_ar);
   REPORT(nLL_surv);
   REPORT(ans);
-  int ch = 16;
-  REPORT(log(SMSY(ch)*Scale(ch)));
   //ADREPORT(Sgen);
   return ans;
   

@@ -75,7 +75,7 @@ Type objective_function<Type>:: operator() ()
   DATA_INTEGER(N_stream);
   DATA_INTEGER(N_ocean);
   //DATA_INTEGER(N_stks_short);
-  DATA_IVECTOR(order_noChick);
+  //DATA_IVECTOR(order_noChick);
 
   //Hierarchical hyper pars
   //DATA_SCALAR(logMuDelta1_mean);
@@ -98,7 +98,7 @@ Type objective_function<Type>:: operator() ()
   PARAMETER_VECTOR(logSigma_surv);
   PARAMETER_VECTOR(gamma);
   PARAMETER(logDelta1);
-  PARAMETER(logDelta1ocean);
+  //PARAMETER(logDelta1ocean);
   PARAMETER(logDelta2);
   PARAMETER(logDelta2ocean);
   PARAMETER(logDeltaSigma);
@@ -355,15 +355,16 @@ Type objective_function<Type>:: operator() ()
   //}
   
   //Liermann's model with both stream and ocean type=================
-  int N_stks_short = order_noChick.size();
+  //int N_stks = Stream.size();
   //vector <Type> PredlnSMSY(N_stks);
-  vector <Type> PredlnSMSY(N_stks_short);
+  vector <Type> PredlnSMSY(N_stks);
   Type sigma_delta = exp(logDeltaSigma);
   
   //for (int i=0; i<N_stks; i++){
-  for (int i=0; i<N_stks_short; i++){
-    PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(order_noChick(i)) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(order_noChick(i)) ) * log(WA(order_noChick(i))) ;
-    ans += -dnorm( PredlnSMSY(i), log(SMSY(order_noChick(i)) * Scale(order_noChick(i)) ),  sigma_delta, true);
+  for (int i=0; i<N_stks; i++){
+    //PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(order_noChick(i)) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(order_noChick(i)) ) * log(WA(order_noChick(i))) ;
+    PredlnSMSY(i) = logDelta1 + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i)) ;
+    ans += -dnorm( PredlnSMSY(i), log(SMSY(i) * Scale(i) ),  sigma_delta, true);
   }
   
   ////Model with stream and ocean-types add random slope (logDelta1) and yi-intercept (Delta2) ==============
@@ -406,7 +407,8 @@ Type objective_function<Type>:: operator() ()
   
   for (int i=0; i<N_pred; i++){
     PredlnSMSYs_CI(i) = logDelta1 + exp(logDelta2) * PredlnWA(i);
-    PredlnSMSYo_CI(i) = logDelta1 + logDelta1ocean + (exp(logDelta2) + exp(logDelta2ocean)) * PredlnWA(i);
+    //PredlnSMSYo_CI(i) = logDelta1 + logDelta1ocean + (exp(logDelta2) + exp(logDelta2ocean)) * PredlnWA(i);
+    PredlnSMSYo_CI(i) = logDelta1 + (exp(logDelta2) + exp(logDelta2ocean)) * PredlnWA(i);
     //PredlnSMSY_S(i) = logDelta1(0) + exp(logDelta2(0)) * PredlnWA(i);
     //PredlnSMSY_O(i) = logDelta1(1) + exp(logDelta2(1)) * PredlnWA(i);
     //PredlnSMSY_S(i) = logDelta1 + exp(logDelta2(0)) * PredlnWA(i);
@@ -464,8 +466,6 @@ Type objective_function<Type>:: operator() ()
   REPORT(nLL_ar);
   REPORT(nLL_surv);
   REPORT(ans);
-  int ch = 16;
-  REPORT(log(SMSY(ch)*Scale(ch)));
   //ADREPORT(Sgen);
   return ans;
   

@@ -122,7 +122,7 @@ All_Est <- left_join(All_Est, unique(SRDat[, c("Stocknumber", "Name")]))
 
 if(plot ==TRUE) {
   png("DataOut/SRstd.png", width=7, height=7, units="in", res=2000)
-  PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar=NA, stksNum_surv=NA, r2=NA, removeSkagit=FALSE) 
+  PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar=NA, stksNum_surv=NA, r2=NA, removeSkagit=FALSE, mod="IWAM_FixedSep") #Mod needed just to get Ricker model types
   dev.off()
   
 }

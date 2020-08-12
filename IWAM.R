@@ -83,10 +83,16 @@ stksOrder <- data.frame(Stocknumber =  c(stksNum_std, stksNum_ar, stksNum_surv),
 
 # What is the scale of S,R and SMSY,SREP data, ordered when aggregated by std, AR1, surv
 SRDat_Scale <- SRDat %>% select(Stocknumber, Scale) %>% distinct() 
-SRDat_Scale <- SRDat_Scale %>% left_join(stksOrder) %>% arrange(ModelOrder)
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined") {
+  SRDat_Scale <- SRDat_Scale %>% left_join(stksOrder) %>% arrange(ModelOrder)
+}
+if(mod=="IWAM_FixedSep_RicStd") {
+  SRDat_Scale <- SRDat_Scale %>% left_join(stksOrder) %>% arrange(Stocknumber)
+}
 SRDat_Scale <- SRDat_Scale$Scale
 
 SRDat_std <- SRDat %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) 
+if(mod=="IWAM_FixedSep_RicStd") SRDat_std <- SRDat
 SRDat_ar <- SRDat %>% filter(Stocknumber %in% stksNum_ar) 
 SRDat_surv <- SRDat %>% filter(Stocknumber %in% stksNum_surv) 
 
@@ -113,15 +119,22 @@ n_surv_Cow <- length(SRDat_surv_Cow$Yr)
 SRDat_surv_Cow$yr_num <- 0:(n_surv_Cow-1)
 #if(stksNum_surv == 23) SRDat_surv <- SRDat_surv_Cow
 if("Cowichan" %in% stks_surv) SRDat_surv <- SRDat_surv %>% filter(Name != "Cowichan") %>% bind_rows(SRDat_surv_Cow)
+if(mod=="IWAM_FixedSep_RicStd") SRDat <- SRDat %>% filter(Name != "Cowichan") %>% bind_rows(SRDat_surv_Cow)
 
 # Read in watershed area data and life-history type (stream vs ocean)
 WA <- read.csv("DataIn/WatershedArea.csv")
 names <- SRDat %>% select (Stocknumber, Name) %>% distinct() 
-WA <- WA %>% full_join(names, by="Name") %>% full_join (stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined") {
+  WA <- WA %>% full_join(names, by="Name") %>% full_join (stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
+}
+if(mod=="IWAM_FixedSep_RicStd") {
+  WA <- WA %>% full_join(names, by="Name") %>% full_join (stksOrder, by="Stocknumber") %>% arrange(Stocknumber)
+}
+
 if (removeSkagit==TRUE) {WA <- WA %>% filter(Name !="Skagit")}
 Stream <- SRDat %>% select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% summarize(lh=max(Stream))
 Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
-
+if(mod=="IWAM_FixedSep_RicStd")Stream <- Stream  %>% arrange(Stocknumber)
 # 2. Create data and parameter lists for TMB
 
 TMB_Inputs <- list(rho_Start = 0.0, logDelta1_start=3.00, logDelta2_start =log(0.72), logDeltaSigma_start = -0.412, 
@@ -164,14 +177,14 @@ if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"){
 
 # Read in wateshed area data and life-history type....
 data$WA <- WA$WA
-data$Scale <- SRDat_Scale #ordered by std, AR1, surv
+data$Scale <- SRDat_Scale #ordered by std, AR1, surv, if all 3 Ricker models uses. Otherwise ordered by Stocknumber
 ##data$Tau_dist <- TMB_Inputs$Tau_dist
 # What does inv gamma prior look like? library(invgamma); plot(x=seq(0,1,0.001), y=dinvgamma(seq(0,1,0.001),0.01,0.01), type="l")
 data$Stream <- Stream$lh
 data$N_stream <-length(which(data$Stream==0))
 data$N_ocean <- length(which(data$Stream==1))
 #data$N_stks_short <- 17
-data$order_noChick <- c(0:15,19)#, 17:23)
+data$order_noChick <- c(0:23)##c(0:15,19)#, 17:23)
 
 #data$logMuDelta1_mean <- TMB_Inputs$logMuDelta1_mean
 #data$logMuDelta1_sig <- TMB_Inputs$logMuDelta1_sig
@@ -298,16 +311,20 @@ All_Ests_std$Stocknumber <- rep(SN_std)
 All_Ests_std <- left_join(All_Ests_std, unique(SRDat_std[, c("Stocknumber", "Name")]))
 
 All_Ests_ar <- data.frame()
-All_Ests_ar<- All_Ests %>% filter (Param %in% c("logA_ar", "logB_ar", "rho",  "logSigma_ar", "SMSY_ar", "SREP_ar" ))
-SN_ar <- unique(SRDat_ar[, c("Stocknumber")])
-All_Ests_ar$Stocknumber <- rep(SN_ar)
-All_Ests_ar <- left_join(All_Ests_ar, unique(SRDat_ar[, c("Stocknumber", "Name")]))
-
 All_Ests_surv <- data.frame()
-All_Ests_surv<- All_Ests %>% filter (Param %in% c("logA_surv", "logB_surv", "gamma", "logSigma_surv", "SMSY_surv", "SREP_surv" ))#"gamma"
-SN_surv <- unique(SRDat_surv[, c("Stocknumber")])
-All_Ests_surv$Stocknumber <- rep(SN_surv)
-All_Ests_surv <- left_join(All_Ests_surv, unique(SRDat_surv[, c("Stocknumber", "Name")]))
+
+if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"){
+  All_Ests_ar<- All_Ests %>% filter (Param %in% c("logA_ar", "logB_ar", "rho",  "logSigma_ar", "SMSY_ar", "SREP_ar" ))
+  SN_ar <- unique(SRDat_ar[, c("Stocknumber")])
+  All_Ests_ar$Stocknumber <- rep(SN_ar)
+  All_Ests_ar <- left_join(All_Ests_ar, unique(SRDat_ar[, c("Stocknumber", "Name")]))
+  
+  All_Ests_surv<- All_Ests %>% filter (Param %in% c("logA_surv", "logB_surv", "gamma", "logSigma_surv", "SMSY_surv", "SREP_surv" ))#"gamma"
+  SN_surv <- unique(SRDat_surv[, c("Stocknumber")])
+  All_Ests_surv$Stocknumber <- rep(SN_surv)
+  All_Ests_surv <- left_join(All_Ests_surv, unique(SRDat_surv[, c("Stocknumber", "Name")]))
+  
+}
 
 # Combine again
 All_Est <- bind_rows(All_Ests_std, All_Ests_ar, All_Ests_surv) 
@@ -324,38 +341,50 @@ All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_
 
 nLL_std <- data.frame(nLL_std=obj$report()$nLL_std) %>% add_column(Stocknumber=SRDat_std$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_std))
 aic_std <- nLL_std %>% mutate(aic = 2 * 3 + 2*CnLL) # 
-nLL_ar <- data.frame(nLL_ar=obj$report()$nLL_ar) %>% add_column(Stocknumber=SRDat_ar$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_ar))
-aic_ar <- nLL_ar %>% mutate(aic = 2 * 4 + 2*CnLL)
-nLL_surv <- data.frame(nLL_surv=obj$report()$nLL_surv) %>% add_column(Stocknumber=SRDat_surv$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_surv))
-aic_surv <- nLL_surv %>% mutate(aic = 2 * 4 + 2*CnLL)
+if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"){
+  nLL_ar <- data.frame(nLL_ar=obj$report()$nLL_ar) %>% add_column(Stocknumber=SRDat_ar$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_ar))
+  aic_ar <- nLL_ar %>% mutate(aic = 2 * 4 + 2*CnLL)
+  nLL_surv <- data.frame(nLL_surv=obj$report()$nLL_surv) %>% add_column(Stocknumber=SRDat_surv$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_surv))
+  aic_surv <- nLL_surv %>% mutate(aic = 2 * 4 + 2*CnLL)
+  
+}
 
 # Get predicted values and calculate r2
 Pred_std <- data.frame()
 Pred_std <- All_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
 Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_std$Estimate)
 Preds_std <- Preds_std %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp/Scale) ) )
-r2_std <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
+r2 <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
-Pred_ar <- data.frame()
-Pred_ar <- All_Ests %>% filter (Param %in% c("LogRS_Pred_ar"))
-Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_ar$Estimate)
-Preds_ar <- Preds_ar %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
-r2_ar <- Preds_ar %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
+if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"){
+  Pred_ar <- data.frame()
+  Pred_ar <- All_Ests %>% filter (Param %in% c("LogRS_Pred_ar"))
+  Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_ar$Estimate)
+  Preds_ar <- Preds_ar %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
+  r2_ar <- Preds_ar %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
+  
+  Pred_surv <- data.frame()
+  Pred_surv <- All_Ests %>% filter (Param %in% c("LogRS_Pred_surv"))
+  Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_surv$Estimate)
+  Preds_surv <- Preds_surv %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
+  r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
+  r2 <- bind_rows(r2, r2_ar, r2_surv) %>% arrange(Stocknumber)
+  
+}
 
-Pred_surv <- data.frame()
-Pred_surv <- All_Ests %>% filter (Param %in% c("LogRS_Pred_surv"))
-Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_surv$Estimate)
-Preds_surv <- Preds_surv %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
-r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
-r2 <- bind_rows(r2_std, r2_ar, r2_surv) %>% arrange(Stocknumber)
 
 # Get predicted values and their SEs to plot CIs
 PredlnSMSY <- data.frame() 
 PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O", "PredlnSMSY_CI", "PredlnSMSYs_CI", "PredlnSMSYo_CI"))
 
 # Calculate standardized residuals
-SRes <- bind_rows(Preds_std, Preds_ar, Preds_surv) %>% arrange (Stocknumber)
+if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"){
+  SRes <- bind_rows(Preds_std, Preds_ar, Preds_surv) %>% arrange (Stocknumber)
+}
+if (mod=="IWAM_FixedSep_RicStd"){
+  SRes <- Preds_std %>% arrange (Stocknumber)
+}
 SRes <- SRes %>% mutate ( Res = ObsLogRS- Pred) #%>% mutate (StdRes = Res/??)
 sigma <- All_Est %>% filter(Param=="logSigma") %>% select(Stocknumber, Estimate, Name)
 SRes <- SRes %>% left_join(sigma) %>% rename(logSig = Estimate)
@@ -365,7 +394,7 @@ SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 #Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
 if (plot==TRUE){
   png(paste("DataOut/SR_", mod, ".png", sep=""), width=7, height=7, units="in", res=2000)
-  PlotSRCurve(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit)
+  PlotSRCurve(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit, mod=mod)
   dev.off()
   png(paste("DataOut/SRLin_", mod, ".png", sep=""), width=7, height=7, units="in", res=2000)
   PlotSRLinear(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit) 
@@ -407,10 +436,11 @@ lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
 
 #plotWAregression (All_Est=All_Est, All_Deltas=All_Deltas, SRDat=SRDat, Stream=Stream, WA=WA, PredlnSMSY=PredlnSMSY, PredlnWA = data$PredlnWA, title="Common, fixed yi (logDelta2), \nRandom slope (Delta1)")
 if(plot==TRUE){
-  png(paste("DataOut/WAreg_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
+  png(paste("DataOut/WAreg_AllStdRicker", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="IWAM_FixedSep_RicStd") title_plot <- "Separate life-histories: all Std Ricker\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
   dev.off()

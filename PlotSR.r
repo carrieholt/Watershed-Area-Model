@@ -2,7 +2,7 @@
 
 # Plot SR curves
 
-PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks_surv, r2, removeSkagit) {
+PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks_surv, r2, removeSkagit, mod) {
   Stks <- unique(SRDat$Stocknumber)
   NStks <- length(Stks)
   par(mfrow=c(5,5), mar=c(2, 2, 1, 0.1) + 0.1)
@@ -25,19 +25,20 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
       summarise(B=exp(Estimate)/Sc) %>% as.numeric()
     
     
-    
-    if (i %in% stksNum_surv) {  #stocknumber 0 and either 22 or 23, depending on if Skagit is removed
-      surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name==name$Name)
-      #if(i==0) surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name==name$Name) 
-      #if(i==22|i==23)surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name=="Cowichan") 
-      #if(i==22|i==23) { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
-      if(name$Name == "Cowichan") { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
-      mean.log.surv <- surv.dat %>% summarize(mean = mean(log(Surv)))
-      gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% select(Estimate)
-      a <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
-        summarise(A=exp(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
+    if(mod!="IWAM_FixedSep_RicStd"){
+      if (i %in% stksNum_surv) {  #stocknumber 0 and either 22 or 23, depending on if Skagit is removed
+        surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name==name$Name)
+        #if(i==0) surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name==name$Name) 
+        #if(i==22|i==23)surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name=="Cowichan") 
+        #if(i==22|i==23) { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
+        if(name$Name == "Cowichan") { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
+        mean.log.surv <- surv.dat %>% summarize(mean = mean(log(Surv)))
+        gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% select(Estimate)
+        a <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
+          summarise(A=exp(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
+      }
+      
     }
-    
     #Parken values for skagit
     skagit_alpha <- 7.74
     skagit_beta <- 0.0000657
@@ -64,6 +65,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
     if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
     if (i %in% stksNum_ar) col.use <- "red"
     if (i %in% stksNum_surv) col.use <- "blue"
+    if(mod=="IWAM_FixedSep_RicStd") col.use <- "black"
     lines(x=SS, y=RR, col=col.use) 
     
     #For Skagit, add Parken et al. 2006 model curve
@@ -82,15 +84,21 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
     
     abline(v = smsy, col=col.use)
 
-    if (i %in% stksNum_ar) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(1,0,0, alpha=0.1), border=NA ) 
-    if (i %in% stksNum_surv) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(0,0,1, alpha=0.1), border=NA ) 
-    if (i %not in% c(stksNum_ar, stksNum_surv))  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
+    if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"){
+      if (i %in% stksNum_ar) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(1,0,0, alpha=0.1), border=NA ) 
+      if (i %in% stksNum_surv) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(0,0,1, alpha=0.1), border=NA ) 
+      if (i %not in% c(stksNum_ar, stksNum_surv))  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
+    }
+    
+    if(mod=="IWAM_FixedSep_RicStd")  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     #else polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     
     SMSY_std <- SMSY_std %>% right_join(names) %>% filter(Name==name$Name)#filter(Stocknumber != 22)
     
-    if(i %in% stksNum_ar) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
-    if(i %in% stksNum_surv) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
+    if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"){
+      if(i %in% stksNum_ar) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
+      if(i %in% stksNum_surv) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
+    }
     
     ParkenSMSY <- read.csv("DataIn/ParkenSMSY.csv")
     #if (removeSkagit==TRUE) ParkenSMSY <- ParkenSMSY %>% filter(Name != "Skagit")
@@ -224,7 +232,8 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
   # what is scale of SMSY?
   Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
   SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
-  SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
+  if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
+  if (mod=="IWAM_FixedSep_RicStd") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber"))
   lnSMSY <- log(SMSY$rawSMSY)
   lnWA <- log(WA$WA)
   
@@ -236,8 +245,8 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
   #points(y=lnSMSY[18:length(SMSY$lh)], x=lnWA[18:length(SMSY$lh)], pch=3, col=col.use[18:length(SMSY$lh)], cex=1.5)
   logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
   logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% select(Estimate) %>% pull()
-  if(mod=="IWAM_FixedSep") logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% select(Estimate) %>% pull() + logD1
-  if(mod=="IWAM_FixedSep") D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% select(Estimate) %>% pull() ) + exp(logD2)
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd") logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% select(Estimate) %>% pull() + logD1
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd") D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% select(Estimate) %>% pull() ) + exp(logD2)
   if (is.na(logD2[1])==TRUE) D2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% select(Estimate) %>% pull()
   if(length(logD1)==1&length(logD2)==2){
     abline(a=logD1[1], b=exp(logD2[1]), col="forestgreen", lwd=2)
@@ -248,7 +257,7 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
     abline(a=logD1[2], b=exp(logD2[2]), col="dodgerblue3", lwd=2)
   }
   if(mod=="IWAM_FixedCombined") abline(a=logD1, b=D2, col="maroon", lwd=2)#Actually pulls Delta2_bounded, so no need to log
-  if(mod=="IWAM_FixedSep") {
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd") {
     abline(a=logD1, b=exp(logD2), col="forestgreen", lwd=2)
     abline(a=logD1o, b=D2o, col="dodgerblue3", lwd=2)
   }
@@ -283,7 +292,7 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
     text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(logD2[1],2)), col="maroon", cex=0.8)
   
   }
-  if(mod=="IWAM_FixedSep"){
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"){
     text(x=9, y=7,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="forestgreen", cex=0.8)
     text(x=6, y=9.5,labels= paste0("log(Delta1)=",round(logD1o[1],2), ", \nDelta2=", round(D2o[1],2)), col="dodgerblue3", cex=0.8)
     

@@ -134,14 +134,14 @@ Type objective_function<Type>:: operator() ()
 
   // Code for SMSY SREP 
   int N_stks_std = logA_std.size(); 
-  vector <Type> SMSY(N_stks_std);  
+  vector <Type> SMSY_std(N_stks_std);  
   vector <Type> B = exp(logB_std);
-  vector <Type> SREP(N_stks_std);
+  vector <Type> SREP_std(N_stks_std);
 
   for(int i=0; i<N_stks_std; i++){
-    SMSY(i) =  (1 - LambertW(exp(1-logA_std(i))) ) / B(i) ;
+    SMSY_std(i) =  (1 - LambertW(exp(1-logA_std(i))) ) / B(i) ;
   }
-  SREP = logA_std / B;
+  SREP_std = logA_std / B;
   
 
   
@@ -163,15 +163,15 @@ Type objective_function<Type>:: operator() ()
   
   for(int ii=0; ii < N_stks_std; ii++){
     if(Stream[ii]==0){
-      SMSY_stream[j] = SMSY[ii];
-      SREP_stream[j] = SREP[ii];
+      SMSY_stream[j] = SMSY_std[ii];
+      SREP_stream[j] = SREP_std[ii];
       //WA_stream[j] = WA[ii];
       Scale_stream[j] = Scale[ii];
       j += 1;
     }
     if(Stream[ii]==1){
-      SMSY_ocean[k] = SMSY[ii];
-      SREP_ocean[k] = SREP[ii];
+      SMSY_ocean[k] = SMSY_std[ii];
+      SREP_ocean[k] = SREP_std[ii];
       //WA_ocean[k] = WA[ii];
       Scale_ocean[k] = Scale[ii];
       k += 1;
@@ -222,7 +222,7 @@ Type objective_function<Type>:: operator() ()
   //for (int i=0; i<N_stks; i++){
   for (int i=0; i<N_stks_short; i++){
     PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(order_noChick(i)) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(order_noChick(i)) ) * log(WA(order_noChick(i))) ;
-    ans += -dnorm( PredlnSMSY(i), log(SMSY(order_noChick(i)) * Scale(order_noChick(i)) ),  sigma_delta, true);
+    ans += -dnorm( PredlnSMSY(i), log(SMSY_std(order_noChick(i)) * Scale(order_noChick(i)) ),  sigma_delta, true);
   }
   
   ////Model with stream and ocean-types add random slope (logDelta1) and yi-intercept (Delta2) ==============
@@ -277,7 +277,7 @@ Type objective_function<Type>:: operator() ()
   //ADREPORT(logA_);
   //ADREPORT(logAadj_);
   //ADREPORT(SMSYadj);
-  ADREPORT(SMSY);
+  ADREPORT(SMSY_std);
   ADREPORT(SMSY_stream)
   //ADREPORT(SREP_stream)
   //ADREPORT(WA_stream)

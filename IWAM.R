@@ -436,7 +436,7 @@ lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
 
 #plotWAregression (All_Est=All_Est, All_Deltas=All_Deltas, SRDat=SRDat, Stream=Stream, WA=WA, PredlnSMSY=PredlnSMSY, PredlnWA = data$PredlnWA, title="Common, fixed yi (logDelta2), \nRandom slope (Delta1)")
 if(plot==TRUE){
-  png(paste("DataOut/WAreg_AllStdRicker", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
+  png(paste("DataOut/WAreg_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"

@@ -152,7 +152,7 @@ N_Stocks_std <- length(unique(SRDat_std$Name))
 data$yr_std <- SRDat_std$yr_num
 #data$Tau_sig <- TMB_Inputs$Tau_sigma
 
-if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedCombined_Constm"){
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"){
   Scale_ar <- SRDat_ar$Scale 
   data$S_ar <- SRDat_ar$Sp/Scale_ar 
   data$logRS_ar <- log( (SRDat_ar$Rec/Scale_ar) / (SRDat_ar$Sp/Scale_ar) ) 
@@ -211,7 +211,7 @@ B_std <- SRDat_std %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / 
 param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std ))#log(B_std$m/Scale.stock)
 param$logSigma_std <- rep(-2, N_Stocks_std)
 
-if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedCombined_Constm"){
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"){
   # Parameters for stocks with AR1
   param$logA_ar <- ( SRDat_ar %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
   B_ar <- SRDat_ar %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )

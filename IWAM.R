@@ -410,16 +410,16 @@ SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 
 #Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
 if (plot==TRUE){
-  png(paste("DataOut/SR_", mod, ".png", sep=""), width=7, height=7, units="in", res=2000)
+  png(paste("DataOut/SR_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   PlotSRCurve(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit, mod=mod)
   dev.off()
-  png(paste("DataOut/SRLin_", mod, ".png", sep=""), width=7, height=7, units="in", res=2000)
+  png(paste("DataOut/SRLin_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   PlotSRLinear(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit) 
   dev.off()
-  png(paste("DataOut/StdResid_", mod, ".png", sep=""), width=7, height=7, units="in", res=2000)
+  png(paste("DataOut/StdResid_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   PlotStdResid(SRes)
   dev.off()
-  png(paste("DataOut/ACF_", mod, ".png", sep=""), width=7, height=7, units="in", res=2000)
+  png(paste("DataOut/ACF_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   Plotacf(SRes)
   dev.off()
   

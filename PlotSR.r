@@ -368,7 +368,7 @@ plotWAregression_ParkenSep <- function(data, All_Deltas){
 
 
 
-plotRicA <- function (All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Liermann_SepRicA=NA){
+plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Liermann_SepRicA=NA){
   #par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   All_Est_Liermann <- readRDS("DataOut/All_Est_Liermann.RDS")
   All_Est_Ricker_AllMod <- readRDS("DataOut/All_Est_Ricker_AllMod.RDS")
@@ -381,9 +381,12 @@ plotRicA <- function (All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Liermann_
   ggplot(box.data, aes(x=as.factor(Model), y=RicA, fill=as.factor(Model))) + 
     geom_boxplot() + 
     scale_fill_viridis(discrete = TRUE, alpha=0.6) + 
-    geom_jitter(color="black", size=0.4, alpha=0.9) +
+    geom_jitter(color="black", size=2, alpha=0.9) +
     ggtitle("Distribution of Ricker A") +
     theme(legend.position="none") +
+    theme(axis.text=element_text(size=18),
+          axis.title=element_text(size=20,face="bold"),
+          plot.title = element_text(size = 20)) + 
     xlab("Model")
   
   #boxplot(list(Hierarchical=RicAL$Estimate, Fixed=RicAR$Estimate), ylab="Ricker log(a)", outline=FALSE, col="forestgreen")

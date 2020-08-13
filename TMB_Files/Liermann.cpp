@@ -90,7 +90,7 @@ Type objective_function<Type>:: operator() ()
   for(int i=0; i<N_stks_std; i++){
     // add prior on logA
     ans += -dnorm(logA_std(i), logMuA, sigmaA, true );
-    // add prior on sigma (take this out??)
+    // add prior on sigma 
     ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
   }
   

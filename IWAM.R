@@ -17,6 +17,8 @@ library(gridExtra)
 library(reshape2)
 library(TMB)
 library(zoo)
+library(viridis)
+library(hrbrthemes)
 
 # Functions
 count.dig <- function(x) {floor(log10(x)) + 1}
@@ -24,7 +26,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- TRUE
-mod <- "Liermann"#"IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -152,7 +154,7 @@ N_Stocks_std <- length(unique(SRDat_std$Name))
 data$yr_std <- SRDat_std$yr_num
 #data$Tau_sig <- TMB_Inputs$Tau_sigma
 
-if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"){
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
   Scale_ar <- SRDat_ar$Scale 
   data$S_ar <- SRDat_ar$Sp/Scale_ar 
   data$logRS_ar <- log( (SRDat_ar$Rec/Scale_ar) / (SRDat_ar$Sp/Scale_ar) ) 
@@ -174,23 +176,23 @@ if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"|mo
   #data$Sgen_sig <- TMB_Inputs$Sgen_sig
 }
 
-if(mod=="Liermann"){
-  data$Tau_dist <- TMB_Inputs$Tau_sigma
+if (mod=="Liermann"){
+  data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
   data$logMuA_mean <- 1.5
-  data$logMuA_sig <- 1.5
-  data$Tau_A_dist <- TMB_Inputs$Tau_sigma
+  data$logMuA_sig <- 1
+  data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
 
 }
 # Read in wateshed area data and life-history type....
-data$WA <- WA$WA
+if (mod!="Ricker_AllMod") data$WA <- WA$WA
 data$Scale <- SRDat_Scale #ordered by std, AR1, surv, if all 3 Ricker models uses. Otherwise ordered by Stocknumber
 ##data$Tau_dist <- TMB_Inputs$Tau_dist
 # What does inv gamma prior look like? library(invgamma); plot(x=seq(0,1,0.001), y=dinvgamma(seq(0,1,0.001),0.01,0.01), type="l")
-data$Stream <- Stream$lh
+if (mod!="Ricker_AllMod") data$Stream <- Stream$lh
 #data$N_stream <-length(which(data$Stream==0))
 #data$N_ocean <- length(which(data$Stream==1))
 #data$N_stks_short <- 17
-if(mod=="IWAM_FixedSep") data$order_noChick <- c(0:23)##c(0:15,19)#, 17:23)
+if (mod=="IWAM_FixedSep") data$order_noChick <- c(0:23)##c(0:15,19)#, 17:23)
 
 #data$logMuDelta1_mean <- TMB_Inputs$logMuDelta1_mean
 #data$logMuDelta1_sig <- TMB_Inputs$logMuDelta1_sig
@@ -199,7 +201,7 @@ if(mod=="IWAM_FixedSep") data$order_noChick <- c(0:23)##c(0:15,19)#, 17:23)
 #data$Tau_Delta1_dist <- TMB_Inputs$Tau_Delta1_dist
 #data$Tau_Delta2_dist <- TMB_Inputs$Tau_Delta2_dist
   
-data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1) #predicated lnWA for plottig CIs
+if (mod!="Ricker_AllMod") data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1) #predicated lnWA for plottig CIs
 
 # Parameters
 param <- list()
@@ -222,10 +224,10 @@ param$logSigma_std <- rep(-2, N_Stocks_std)
 
 if(mod=="Liermann"){
   param$logMuA <- 1.5
-  param$logSigmaA <- 1
+  param$logSigmaA <- 1.5#1
 }
 
-if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"){
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
   # Parameters for stocks with AR1
   param$logA_ar <- ( SRDat_ar %>% group_by(Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
   B_ar <- SRDat_ar %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
@@ -312,7 +314,7 @@ if (mod=="IWAM_FixedSep_Constyi"){
 #dyn.unload(dynlib(paste("TMB_Files/", mod, sep="")))
 #compile(paste("TMB_Files/", mod, ".cpp", sep=""))
 dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
-if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_RicStd"){
+if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_RicStd"|mod=="Ricker_AllMod"){
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)#random = c( "logDelta2"), 
 }
 if(mod=="Liermann"){
@@ -349,7 +351,7 @@ All_Ests_std <- left_join(All_Ests_std, unique(SRDat_std[, c("Stocknumber", "Nam
 All_Ests_ar <- data.frame()
 All_Ests_surv <- data.frame()
 
-if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"){
+if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
   All_Ests_ar<- All_Ests %>% filter (Param %in% c("logA_ar", "logB_ar", "rho",  "logSigma_ar", "SMSY_ar", "SREP_ar" ))
   SN_ar <- unique(SRDat_ar[, c("Stocknumber")])
   All_Ests_ar$Stocknumber <- rep(SN_ar)
@@ -377,7 +379,7 @@ All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_
 
 nLL_std <- data.frame(nLL_std=obj$report()$nLL_std) %>% add_column(Stocknumber=SRDat_std$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_std))
 aic_std <- nLL_std %>% mutate(aic = 2 * 3 + 2*CnLL) # 
-if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"){
+if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
   nLL_ar <- data.frame(nLL_ar=obj$report()$nLL_ar) %>% add_column(Stocknumber=SRDat_ar$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_ar))
   aic_ar <- nLL_ar %>% mutate(aic = 2 * 4 + 2*CnLL)
   nLL_surv <- data.frame(nLL_surv=obj$report()$nLL_surv) %>% add_column(Stocknumber=SRDat_surv$Stocknumber) %>% group_by(Stocknumber) %>% summarize(CnLL=sum(nLL_surv))
@@ -392,7 +394,7 @@ Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", 
 Preds_std <- Preds_std %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp/Scale) ) )
 r2 <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
-if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"){
+if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
   Pred_ar <- data.frame()
   Pred_ar <- All_Ests %>% filter (Param %in% c("LogRS_Pred_ar"))
   Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_ar$Estimate)
@@ -415,7 +417,7 @@ PredlnSMSY <- data.frame()
 PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O", "PredlnSMSY_CI", "PredlnSMSYs_CI", "PredlnSMSYo_CI"))
 
 # Calculate standardized residuals
-if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"){
+if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
   SRes <- bind_rows(Preds_std, Preds_ar, Preds_surv) %>% arrange (Stocknumber)
 }
 if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"){
@@ -444,7 +446,26 @@ if (plot==TRUE){
   
 }
 
-saveRDS( All_Est, paste( c("DataOut/All_Est_", mod, ".RDS", sep="") ) )
+saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
+
+
+# Plot WA regression
+if(plot==TRUE){
+  png(paste("DataOut/WAreg_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
+  par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
+  if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="IWAM_FixedSep_RicStd") title_plot <- "Separate life-histories: all Std Ricker\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="IWAM_FixedSep_Constm") title_plot <- "Separate life-histories\n Fixed-effect yi (logDelta1), \nConstant Fixed-effect slope (Delta2)"
+  if (mod=="IWAM_FixedSep_Constyi") title_plot <- "Separate life-histories\n Constant Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="Liermann") title_plot <- "Separate life-histories: Random Ricker a\n Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
+  dev.off()
+  #plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Common, fixed yi (logDelta1), \nRandom slope (Delta2)")
+  
+}
+
 
 # What initial values to use for WA model parameters?
 
@@ -467,27 +488,6 @@ lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
 # without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
 # With Skagit lnDelta1_start <- 2.881
 # with Skagit nDelta2_start <- -0.288
-
-
-# Plot WA regression
-
-#plotWAregression (All_Est=All_Est, All_Deltas=All_Deltas, SRDat=SRDat, Stream=Stream, WA=WA, PredlnSMSY=PredlnSMSY, PredlnWA = data$PredlnWA, title="Common, fixed yi (logDelta2), \nRandom slope (Delta1)")
-if(plot==TRUE){
-  png(paste("DataOut/WAreg_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
-  par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
-  if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  if (mod=="IWAM_FixedSep_RicStd") title_plot <- "Separate life-histories: all Std Ricker\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  if (mod=="IWAM_FixedSep_Constm") title_plot <- "Separate life-histories\n Fixed-effect yi (logDelta1), \nConstant Fixed-effect slope (Delta2)"
-  if (mod=="IWAM_FixedSep_Constyi") title_plot <- "Separate life-histories\n Constant Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  if (mod=="Liermann") title_plot <- "Separate life-histories: Random Ricker a\n Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
-  dev.off()
-  #plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Common, fixed yi (logDelta1), \nRandom slope (Delta2)")
-  
-}
-
 
 #plot(y=exp(lnSMSY), x=exp(lnWA))
 #pdf("ParkenSMSYWA.pdf", width=4)

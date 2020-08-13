@@ -84,7 +84,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
     
     abline(v = smsy, col=col.use)
 
-    if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"){
+    if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="Ricker_AllMod"){
       if (i %in% stksNum_ar) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(1,0,0, alpha=0.1), border=NA ) 
       if (i %in% stksNum_surv) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(0,0,1, alpha=0.1), border=NA ) 
       if (i %not in% c(stksNum_ar, stksNum_surv))  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
@@ -95,7 +95,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
     
     SMSY_std <- SMSY_std %>% right_join(names) %>% filter(Name==name$Name)#filter(Stocknumber != 22)
     
-    if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"){
+    if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="Ricker_AllMod"){
       if(i %in% stksNum_ar) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
       if(i %in% stksNum_surv) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
     }
@@ -363,5 +363,32 @@ plotWAregression_ParkenSep <- function(data, All_Deltas){
   text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1o[1],2), ", \nDelta2=", round(D2o[1],2)), col="dodgerblue3", cex=0.8)
   
   title("Parken Data: Separated")
+  
+}
+
+
+
+plotRicA <- function (All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Liermann_SepRicA=NA){
+  #par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
+  All_Est_Liermann <- readRDS("DataOut/All_Est_Liermann.RDS")
+  All_Est_Ricker_AllMod <- readRDS("DataOut/All_Est_Ricker_AllMod.RDS")
+  
+  RicAL <- All_Est_Liermann %>% filter (Param=="logA")
+  RicAR <- All_Est_Ricker_AllMod %>% filter (Param=="logA")
+  nRicA <- length(RicAL$Estimate)
+  box.data <- data.frame(RicA=c(RicAL$Estimate,RicAR$Estimate), Model=c(rep("HierarchicalA",nRicA), rep("FixedA",nRicA)))
+  
+  ggplot(box.data, aes(x=as.factor(Model), y=RicA, fill=as.factor(Model))) + 
+    geom_boxplot() + 
+    scale_fill_viridis(discrete = TRUE, alpha=0.6) + 
+    geom_jitter(color="black", size=0.4, alpha=0.9) +
+    ggtitle("Distribution of Ricker A") +
+    theme(legend.position="none") +
+    xlab("Model")
+  
+  #boxplot(list(Hierarchical=RicAL$Estimate, Fixed=RicAR$Estimate), ylab="Ricker log(a)", outline=FALSE, col="forestgreen")
+  #points(x=jitter(rep(1,nRicA)), y=RicAL$Estimate, pch=20)
+  #points(x=jitter(rep(2,nRicA)), y=RicAR$Estimate, pch=20)
+  
   
 }

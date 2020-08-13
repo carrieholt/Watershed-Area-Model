@@ -100,7 +100,7 @@ Type objective_function<Type>:: operator() ()
   PARAMETER(logDelta1);
   //PARAMETER(logDelta1ocean);
   PARAMETER(logDelta2);
-  PARAMETER(logDelta2ocean);
+  PARAMETER(Delta2ocean);
   PARAMETER(logDeltaSigma);
 
   // Separate stream and ocean type Deltas- fixed effects
@@ -362,8 +362,8 @@ Type objective_function<Type>:: operator() ()
   
   //for (int i=0; i<N_stks; i++){
   for (int i=0; i<N_stks; i++){
-    PredlnSMSY(i) = logDelta1 + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i)) ;
-    //PredlnSMSY(i) = logDelta1 + ( exp(logDelta2) ) * log(WA(i)) ;
+    PredlnSMSY(i) = logDelta1 + ( exp(logDelta2) + Delta2ocean * Stream(i) ) * log(WA(i)) ;
+    //PredlnSMSY(i) = logDelta1 + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i)) ;
     ans += -dnorm( PredlnSMSY(i), log(SMSY(i) * Scale(i) ),  sigma_delta, true);
   }
   
@@ -407,8 +407,8 @@ Type objective_function<Type>:: operator() ()
   
   for (int i=0; i<N_pred; i++){
     PredlnSMSYs_CI(i) = logDelta1 + exp(logDelta2) * PredlnWA(i);
-    //PredlnSMSYo_CI(i) = logDelta1 + (exp(logDelta2)) * PredlnWA(i);
-    PredlnSMSYo_CI(i) = logDelta1 + (exp(logDelta2) + exp(logDelta2ocean) ) * PredlnWA(i);
+    //PredlnSMSYo_CI(i) = logDelta1 + (exp(logDelta2) + exp(logDelta2ocean) ) * PredlnWA(i);
+    PredlnSMSYo_CI(i) = logDelta1 + (exp(logDelta2) + Delta2ocean ) * PredlnWA(i);
     //PredlnSMSY_S(i) = logDelta1(0) + exp(logDelta2(0)) * PredlnWA(i);
     //PredlnSMSY_O(i) = logDelta1(1) + exp(logDelta2(1)) * PredlnWA(i);
     //PredlnSMSY_S(i) = logDelta1 + exp(logDelta2(0)) * PredlnWA(i);

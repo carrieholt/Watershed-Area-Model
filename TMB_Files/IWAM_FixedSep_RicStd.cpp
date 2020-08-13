@@ -63,7 +63,7 @@ Type objective_function<Type>:: operator() ()
   DATA_IVECTOR(Stream);
   DATA_INTEGER(N_stream);
   DATA_INTEGER(N_ocean);
-  DATA_IVECTOR(order_noChick);
+  //DATA_IVECTOR(order_noChick);
 
   //Hierarchical hyper pars
   //DATA_SCALAR(logMuDelta1_mean);
@@ -124,15 +124,17 @@ Type objective_function<Type>:: operator() ()
     
     //ans += -dnorm(LogR_Pred_std(i), logR_std(i),  sigma_std(stk_std(i)), true);
     ans += -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);
-    // Add inverse gamma penalty/prior on sigma_std
-    //ans += -dgamma(pow(sigma_std(stk_std(i)),-2), Tau_sig, 1/Tau_sig, true);
     
     nLL_std(i) = -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);
     
   }
-
-  // Code for SMSY SREP 
+  //// Add inverse gamma penalty/prior on sigma_std
   int N_stks_std = logA_std.size(); 
+  //for (int i = 0; i<N_stks_std; i++){
+  //  ans += -dgamma(pow(sigma_std(i),-2), Tau_sig, 1/Tau_sig, true);
+  //}
+  
+  // Code for SMSY SREP 
   vector <Type> SMSY_std(N_stks_std);  
   vector <Type> B = exp(logB_std);
   vector <Type> SREP_std(N_stks_std);
@@ -211,14 +213,14 @@ Type objective_function<Type>:: operator() ()
   //}
   
   //Liermann's model with both stream and ocean type=================
-  int N_stks_short = order_noChick.size();
-  vector <Type> PredlnSMSY(N_stks_short);
+  //int N_stks_short = order_noChick.size();
+  vector <Type> PredlnSMSY(N_stks_std);
   Type sigma_delta = exp(logDeltaSigma);
   
-  //for (int i=0; i<N_stks; i++){
-  for (int i=0; i<N_stks_short; i++){
-    PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(order_noChick(i)) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(order_noChick(i)) ) * log(WA(order_noChick(i))) ;
-    ans += -dnorm( PredlnSMSY(i), log(SMSY_std(order_noChick(i)) * Scale(order_noChick(i)) ),  sigma_delta, true);
+  for (int i=0; i<N_stks_std; i++){
+  //for (int i=0; i<N_stks_short; i++){
+    PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + ( exp(logDelta2) + exp(logDelta2ocean) * Stream(i) ) * log(WA(i)) ;
+    ans += -dnorm( PredlnSMSY(i), log(SMSY_std(i) * Scale(i) ),  sigma_delta, true);
   }
   
   ////Model with stream and ocean-types add random slope (logDelta1) and yi-intercept (Delta2) ==============

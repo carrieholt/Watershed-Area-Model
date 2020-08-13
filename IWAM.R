@@ -24,7 +24,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- TRUE
-mod <- "IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "IWAM_FixedSep"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -184,7 +184,7 @@ data$Stream <- Stream$lh
 data$N_stream <-length(which(data$Stream==0))
 data$N_ocean <- length(which(data$Stream==1))
 #data$N_stks_short <- 17
-#data$order_noChick <- c(0:23)##c(0:15,19)#, 17:23)
+if(mod=="IWAM_FixedSep") data$order_noChick <- c(0:23)##c(0:15,19)#, 17:23)
 
 #data$logMuDelta1_mean <- TMB_Inputs$logMuDelta1_mean
 #data$logMuDelta1_sig <- TMB_Inputs$logMuDelta1_sig
@@ -203,6 +203,9 @@ Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% s
                      summarize(Scale.stock_ar = max(Scale)))$Scale.stock_ar
 Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% stksNum_surv) %>% 
                      summarize(Scale.stock_surv = max(Scale)))$Scale.stock_surv
+if(mod=="IWAM_FixedSep_RicStd"){
+  Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
+}
 #Scale.stock <- 10^(digits$maxDigits-1)
 
 # Parameters for stocks without AR1
@@ -255,7 +258,7 @@ if (mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"){
   param$logDelta1 <- 3#10# with skagit 2.881
   param$logDelta1ocean <- 0# with skagit 2.881
   param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-  param$logDelta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$Delta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
   param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
   
 }
@@ -271,7 +274,7 @@ if (mod=="IWAM_FixedSep_Constyi"){
   ## Lierman model
   param$logDelta1 <- 3#10# with skagit 2.881
   param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-  param$logDelta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$Delta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
   param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
   
 }
@@ -350,7 +353,7 @@ All_Est$surv <- All_Est$Stocknumber %in% stksNum_surv
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
 
 All_Deltas <- data.frame()
-All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta", "Delta2_bounded", "logDelta1ocean", "logDelta2ocean"))
+All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta", "Delta2_bounded", "logDelta1ocean", "logDelta2ocean", "Delta2ocean"))
 
 # 4. Calculate diagnostics and plot SR curves, etc.
 

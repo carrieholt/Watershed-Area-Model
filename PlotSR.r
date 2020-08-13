@@ -25,7 +25,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
       summarise(B=exp(Estimate)/Sc) %>% as.numeric()
     
     
-    if(mod!="IWAM_FixedSep_RicStd"){
+    if(mod!="IWAM_FixedSep_RicStd"&mod!="Liermann"){
       if (i %in% stksNum_surv) {  #stocknumber 0 and either 22 or 23, depending on if Skagit is removed
         surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name==name$Name)
         #if(i==0) surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name==name$Name) 
@@ -90,7 +90,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
       if (i %not in% c(stksNum_ar, stksNum_surv))  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     }
     
-    if(mod=="IWAM_FixedSep_RicStd")  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
+    if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann")  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     #else polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     
     SMSY_std <- SMSY_std %>% right_join(names) %>% filter(Name==name$Name)#filter(Stocknumber != 22)
@@ -233,7 +233,7 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
   Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
   SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
   if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
-  if (mod=="IWAM_FixedSep_RicStd") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber"))
+  if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber"))
   lnSMSY <- log(SMSY$rawSMSY)
   lnWA <- log(WA$WA)
   
@@ -245,8 +245,8 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
   #points(y=lnSMSY[18:length(SMSY$lh)], x=lnWA[18:length(SMSY$lh)], pch=3, col=col.use[18:length(SMSY$lh)], cex=1.5)
   logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
   logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% select(Estimate) %>% pull()
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm") logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% select(Estimate) %>% pull() + logD1
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi") {
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann") logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% select(Estimate) %>% pull() + logD1
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann") {
     D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% select(Estimate) %>% pull() ) + exp(logD2)
     if(nrow(All_Deltas %>% filter(Param=="Delta2ocean"))>=1)  D2o <- (All_Deltas %>% filter(Param=="Delta2ocean") %>% select(Estimate) %>% pull() ) + exp(logD2)
   }
@@ -260,7 +260,7 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
     abline(a=logD1[2], b=exp(logD2[2]), col="dodgerblue3", lwd=2)
   }
   if(mod=="IWAM_FixedCombined") abline(a=logD1, b=D2, col="maroon", lwd=2)#Actually pulls Delta2_bounded, so no need to log
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd") {
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann") {
     abline(a=logD1, b=exp(logD2), col="forestgreen", lwd=2)
     abline(a=logD1o, b=D2o, col="dodgerblue3", lwd=2)
   }
@@ -303,7 +303,7 @@ plotWAregression <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMS
     text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(D2[1],2)), col="maroon", cex=0.8)
   
   }
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"){
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"){
     text(x=9, y=7,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="forestgreen", cex=0.8)
     text(x=6, y=9.5,labels= paste0("log(Delta1)=",round(logD1o[1],2), ", \nDelta2=", round(D2o[1],2)), col="dodgerblue3", cex=0.8)
   }

@@ -24,7 +24,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE
 removeSkagit <- FALSE
-
+mod <- "Liermann"
 source ("PlotSR.r")# Plotting functions
 
 
@@ -230,7 +230,7 @@ SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
 
 #Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
 if (plot==TRUE){ #Need to fix these for straight standard model
-  PlotSRCurve(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY, stksNum_ar=NA, stksNum_surv=NA, r2=r2, removeSkagit=removeSkagit)
+  PlotSRCurve(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY, stksNum_ar=NA, stksNum_surv=NA, r2=r2, removeSkagit=removeSkagit, mod=mod)
   PlotSRLinear(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY, stksNum_ar=NA, stksNum_surv=NA, r2=r2, removeSkagit=removeSkagit) 
   PlotStdResid(SRes)
   Plotacf(SRes)

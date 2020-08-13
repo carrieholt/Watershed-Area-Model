@@ -61,8 +61,8 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(WA);
   DATA_VECTOR(Scale);
   DATA_IVECTOR(Stream);
-  DATA_INTEGER(N_stream);
-  DATA_INTEGER(N_ocean);
+  //DATA_INTEGER(N_stream);
+  //DATA_INTEGER(N_ocean);
   //DATA_IVECTOR(order_noChick);
 
   //Hierarchical hyper pars
@@ -149,34 +149,34 @@ Type objective_function<Type>:: operator() ()
   
 //Separate into stream and ocean type stocks
 
-  vector <Type> SMSY_stream(N_stream);
-  vector <Type> SREP_stream(N_stream);
-  vector <Type> Scale_stream(N_stream);
-  vector <Type> SMSY_ocean(N_ocean);
-  vector <Type> SREP_ocean(N_ocean);
-  vector <Type> Scale_ocean(N_ocean);
+  //vector <Type> SMSY_stream(N_stream);
+  //vector <Type> SREP_stream(N_stream);
+  //vector <Type> Scale_stream(N_stream);
+  //vector <Type> SMSY_ocean(N_ocean);
+  //vector <Type> SREP_ocean(N_ocean);
+  //vector <Type> Scale_ocean(N_ocean);
   
 
-  int j = 0;
-  int k = 0;
+  //int j = 0;
+  //int k = 0;
   
-  for(int ii=0; ii < N_stks_std; ii++){
-    if(Stream[ii]==0){
-      SMSY_stream[j] = SMSY_std[ii];
-      SREP_stream[j] = SREP_std[ii];
-      //WA_stream[j] = WA[ii];
-      Scale_stream[j] = Scale[ii];
-      j += 1;
-    }
-    if(Stream[ii]==1){
-      SMSY_ocean[k] = SMSY_std[ii];
-      SREP_ocean[k] = SREP_std[ii];
-      //WA_ocean[k] = WA[ii];
-      Scale_ocean[k] = Scale[ii];
-      k += 1;
-    }
+  //for(int ii=0; ii < N_stks_std; ii++){
+    //if(Stream[ii]==0){
+      //SMSY_stream[j] = SMSY_std[ii];
+      //SREP_stream[j] = SREP_std[ii];
+      ////WA_stream[j] = WA[ii];
+      //Scale_stream[j] = Scale[ii];
+      //j += 1;
+    //}
+    //if(Stream[ii]==1){
+      //SMSY_ocean[k] = SMSY_std[ii];
+      //SREP_ocean[k] = SREP_std[ii];
+      ////WA_ocean[k] = WA[ii];
+      //Scale_ocean[k] = Scale[ii];
+      //k += 1;
+    //}
     
-  }
+  //}
 
   //// WA model with all data =============
   //vector <Type> PredlnSMSY(N_stks);
@@ -278,10 +278,10 @@ Type objective_function<Type>:: operator() ()
   //ADREPORT(logAadj_);
   //ADREPORT(SMSYadj);
   ADREPORT(SMSY_std);
-  ADREPORT(SMSY_stream)
+  //ADREPORT(SMSY_stream)
   //ADREPORT(SREP_stream)
   //ADREPORT(WA_stream)
-  ADREPORT(SMSY_ocean*Scale_ocean)
+  //ADREPORT(SMSY_ocean*Scale_ocean)
   //ADREPORT(WA_ocean)
   //ADREPORT(logDelta1)
   ////ADREPORT(exp(logDelta2))

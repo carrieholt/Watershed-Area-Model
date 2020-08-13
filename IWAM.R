@@ -444,6 +444,7 @@ if (plot==TRUE){
   
 }
 
+saveRDS( All_Est, paste( c("DataOut/All_Est_", mod, ".RDS", sep="") ) )
 
 # What initial values to use for WA model parameters?
 

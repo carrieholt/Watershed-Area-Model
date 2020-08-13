@@ -24,7 +24,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- TRUE
-mod <- "IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "Liermann"#"IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions

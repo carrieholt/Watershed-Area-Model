@@ -65,7 +65,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
     if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
     if (i %in% stksNum_ar) col.use <- "red"
     if (i %in% stksNum_surv) col.use <- "blue"
-    if(mod=="IWAM_FixedSep_RicStd") col.use <- "black"
+    if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann") col.use <- "black"
     lines(x=SS, y=RR, col=col.use) 
     
     #For Skagit, add Parken et al. 2006 model curve
@@ -127,9 +127,10 @@ PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2,
     
     # what is the scale of Ricker b estimate?
     Sc <- SRDat %>% filter (Stocknumber==i) %>% select(Scale) %>% distinct() %>% as.numeric()
-    if(i !=22 & i!=0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
-    if(i ==22) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(LogRS) ) )
-    if(i ==0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(min(LogRS),max(LogRS) ) )
+    plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
+    #if(i !=22 & i!=0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
+    #if(i ==22) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(LogRS) ) )
+    #if(i ==0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(min(LogRS),max(LogRS) ) )
     
     name <- All_Est %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
     mtext(name$Name, side=3)
@@ -141,20 +142,23 @@ PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2,
     B <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logB") %>% 
       summarise(B=exp(Estimate)/Sc) %>% as.numeric()
 
-    if (i %in% stksNum_surv) {  #stocknumber 0 and either 22 or 23, depending on if Skagit is removed
-      
-      if(i==0) surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name=="Harrison") 
-      if(i==22|i==23)surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name=="Cowichan") 
-      if(i==22|i==23) { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
-      mean.log.surv <- surv.dat %>% summarize(mean = mean(log(Surv)))
-      gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% select(Estimate)
-      LogA <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
-        summarise(LogA.adj=(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
+    if(mod!="IWAM_FixedSep_RicStd"&mod!="Liermann"){
+      if (i %in% stksNum_surv) {  #stocknumber 0 and either 22 or 23, depending on if Skagit is removed
+        
+        if(i==0) surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name=="Harrison") 
+        if(i==22|i==23)surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name=="Cowichan") 
+        if(i==22|i==23) { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
+        mean.log.surv <- surv.dat %>% summarize(mean = mean(log(Surv)))
+        gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% select(Estimate)
+        LogA <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
+          summarise(LogA.adj=(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
+      }
     }
     
     if (i %in% stksNum_ar) col.use <- "red"
     if (i %in% stksNum_surv) col.use <- "blue"
     if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
+    if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann") col.use <- "black"
     
     abline(a=LogA, b=-B, col=col.use)
     

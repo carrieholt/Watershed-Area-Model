@@ -86,7 +86,10 @@ Type objective_function<Type>:: operator() ()
   
   // Standard Ricker model
   for (int i = 0; i<N_Obs; i++){
+
+    // But there are only logAs_std estimates for stream type stocks, and same voer logAo_std only for ocean type, not N_stks
     LogRS_Pred_std(i) = logAs_std(stk_std(i)) + logAo_std(stk_std(i)) * Stream(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i);
+    
     ans += -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);    
     nLL_std(i) = -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);
     
@@ -120,7 +123,7 @@ Type objective_function<Type>:: operator() ()
   for(int i=0; i<N_stks_std; i++){
     SMSY_std(i) =  (1 - LambertW( exp (1- (logAs_std(i) + logAo_std(i) * Stream(i) ) ) ) ) / exp(logB_std(i)) ;
   }
-  SREP_std = (logAs_std + logAo_std * Stream(i) ) / exp(logB_std);
+  SREP_std = (logAs_std + logAo_std * Stream ) / exp(logB_std);
   
   
   //Liermann's model with both stream and ocean type=================

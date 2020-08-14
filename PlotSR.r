@@ -388,10 +388,11 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
           axis.title=element_text(size=20,face="bold"),
           plot.title = element_text(size = 20)) + 
     xlab("Model")
-  
   #boxplot(list(Hierarchical=RicAL$Estimate, Fixed=RicAR$Estimate), ylab="Ricker log(a)", outline=FALSE, col="forestgreen")
   #points(x=jitter(rep(1,nRicA)), y=RicAL$Estimate, pch=20)
   #points(x=jitter(rep(2,nRicA)), y=RicAR$Estimate, pch=20)
-  
-  
 }
+
+#png(paste("DataOut/RicADist.png", sep=""), width=7, height=7, units="in", res=1000)
+#plotRicA()
+#dev.off()

@@ -181,8 +181,17 @@ if (mod=="Liermann"){
   data$logMuA_mean <- 1.5
   data$logMuA_sig <- 1
   data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
-
 }
+
+if (mod=="Liermann_SepRicA"){
+  data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
+  data$logMuAs_mean <- 1.5
+  data$logMuAs_sig <- 1
+  data$logMuAo_mean <- 0
+  data$logMuAo_sig <- 1
+  data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
+}
+
 # Read in wateshed area data and life-history type....
 if (mod!="Ricker_AllMod") data$WA <- WA$WA
 data$Scale <- SRDat_Scale #ordered by std, AR1, surv, if all 3 Ricker models uses. Otherwise ordered by Stocknumber
@@ -225,6 +234,14 @@ param$logSigma_std <- rep(-2, N_Stocks_std)
 if(mod=="Liermann"){
   param$logMuA <- 1.5
   param$logSigmaA <- 1.5#1
+}
+
+if(mod=="Liermann"){
+  param$logMuAs <- 1.5
+  param$logSigmaAs <- 1.5#1
+  param$logMuAo <- 0
+  param$logSigmaAo <- 1.5#1
+  
 }
 
 if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){

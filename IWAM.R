@@ -184,12 +184,12 @@ if (mod=="Liermann"){
 }
 
 if (mod=="Liermann_SepRicA"){
-  data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
+  data$Tau_dist <- 0.1#TMB_Inputs$Tau_sigma
   data$logMuAs_mean <- 1.5
-  data$logMuAs_sig <- 1
+  data$logMuAs_sig <- 5
   data$logMuAo_mean <- 0
-  data$logMuAo_sig <- 1
-  data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
+  data$logMuAo_sig <- 5
+  data$Tau_A_dist <- 0.1#TMB_Inputs$Tau_sigma
 }
 
 # Read in wateshed area data and life-history type....
@@ -226,16 +226,7 @@ if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"){
 #Scale.stock <- 10^(digits$maxDigits-1)
 
 # Parameters for stocks without AR1
-if(mod!="Liermann_SepRicA"){
-  param$logA_std <- ( SRDat_std %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
-}
-if(mod=="Liermann_SepRicA"){
-  param$logAs_std <- ( SRDat_std %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
-}
-if(mod=="Liermann_SepRicA"){
-  param$logAo_std <- rep(0,length(param$logAs_std ))
-}
-
+param$logA_std <- ( SRDat_std %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
 B_std <- SRDat_std %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
 param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std ))#log(B_std$m/Scale.stock)
 param$logSigma_std <- rep(-2, N_Stocks_std)
@@ -247,9 +238,9 @@ if(mod=="Liermann"){
 
 if(mod=="Liermann_SepRicA"){
   param$logMuAs <- 1.5
-  param$logSigmaAs <- 1.5#1
+  param$logSigmaAs <- 1
   param$logMuAo <- 0
-  param$logSigmaAo <- 1.5#1
+  param$logSigmaAo <- 1
   
 }
 
@@ -343,7 +334,7 @@ dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
 if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_RicStd"|mod=="Ricker_AllMod"){
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)#random = c( "logDelta2"), 
 }
-if(mod=="Liermann"){
+if(mod=="Liermann"|mod=="Liermann_SepRicA"){
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std")) 
 }
 
@@ -354,7 +345,7 @@ if(mod=="Liermann"){
 #upper <- c(rep(Inf, 80), 5.00, rep(Inf,2))
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
-#summary(sdreport(obj), p.value=TRUE)
+summary(sdreport(obj), p.value=TRUE)
 
 #library(tmbstan)
 #fitmcmc <- tmbstan(obj, chains=3, iter=1000, init=list(opt$par), control = list(adapt_delta = 0.95))

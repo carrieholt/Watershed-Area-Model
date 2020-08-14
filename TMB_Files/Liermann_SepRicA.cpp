@@ -58,8 +58,7 @@ Type objective_function<Type>:: operator() ()
   DATA_IVECTOR(Stream);
   DATA_VECTOR(PredlnWA);
 
-  PARAMETER_VECTOR(logAs_std);
-  PARAMETER_VECTOR(logAo_std);
+  PARAMETER_VECTOR(logA_std);
   PARAMETER_VECTOR(logB_std);
   PARAMETER_VECTOR(logSigma_std);
   PARAMETER(logMuAs);
@@ -87,21 +86,19 @@ Type objective_function<Type>:: operator() ()
   // Standard Ricker model
   for (int i = 0; i<N_Obs; i++){
 
-    // But there are only logAs_std estimates for stream type stocks, and same voer logAo_std only for ocean type, not N_stks
-    LogRS_Pred_std(i) = logAs_std(stk_std(i)) + logAo_std(stk_std(i)) * Stream(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i);
+    LogRS_Pred_std(i) = logA_std(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i);
     
     ans += -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);    
     nLL_std(i) = -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);
     
   }
 
-    // Add hierarchical structure to A ==============
+  // Add hierarchical structure to A ==============
   for(int i=0; i<N_stks_std; i++){
-    // add prior on logA stream type
-    ans += -dnorm(logAs_std(i), logMuAs, sigmaAs, true );
-    // add prior on logA ocean type
-    ans += -dnorm(logAo_std(i), logMuAo, sigmaAo, true );
-    // add prior on sigma 
+    // add prior on logA_std, 
+    // but this distribution of logA_std is not normal! Must have normal distribtion of logAs adn logAo, which means I have to pull the data sets apart, and then combine later...
+    ans += -dnorm(logA_std(i), logMuAs + logMuAo * Stream(i), sigmaAs, true );
+     // add prior on sigma 
     ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
   }
   
@@ -119,11 +116,11 @@ Type objective_function<Type>:: operator() ()
   vector <Type> SMSY_std(N_stks_std);  
   vector <Type> SREP_std(N_stks_std);  
   
-  //For SMSY calculation, logA = logA(stream-type) + logA(Ocean-type)*Stream, where stream is vector of 0 and 1
+  //For SMSY calculation, 
   for(int i=0; i<N_stks_std; i++){
-    SMSY_std(i) =  (1 - LambertW( exp (1- (logAs_std(i) + logAo_std(i) * Stream(i) ) ) ) ) / exp(logB_std(i)) ;
+    SMSY_std(i) =  (1 - LambertW( exp (1- logA_std(i)) ) ) / exp(logB_std(i)) ;
   }
-  SREP_std = (logAs_std + logAo_std * Stream ) / exp(logB_std);
+  SREP_std = logA_std / exp(logB_std);
   
   
   //Liermann's model with both stream and ocean type=================

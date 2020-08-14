@@ -26,7 +26,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- TRUE
-mod <- "Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "Liermann"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -179,17 +179,19 @@ if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"|mo
 if (mod=="Liermann"){
   data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
   data$logMuA_mean <- 1.5
-  data$logMuA_sig <- 1
+  data$logMuA_sig <- 5
   data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
 }
 
 if (mod=="Liermann_SepRicA"){
-  data$Tau_dist <- 0.1#TMB_Inputs$Tau_sigma
+  data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
   data$logMuAs_mean <- 1.5
   data$logMuAs_sig <- 5
-  data$logMuAo_mean <- 0
+  data$logMuAo_mean <- 0#1.5
   data$logMuAo_sig <- 5
-  data$Tau_A_dist <- 0.1#TMB_Inputs$Tau_sigma
+  data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
+  #data$N_stream <- 13
+  #data$N_ocean <- 11
 }
 
 # Read in wateshed area data and life-history type....
@@ -220,27 +222,46 @@ Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% s
                      summarize(Scale.stock_ar = max(Scale)))$Scale.stock_ar
 Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% stksNum_surv) %>% 
                      summarize(Scale.stock_surv = max(Scale)))$Scale.stock_surv
+
 if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"){
   Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
 }
+#if(mod=="Liermann_SepRicA"){
+#  Scale.stock_stream <- (SRDat %>% filter(Stream==0) %>% group_by(Stocknumber) %>% summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
+#  Scale.stock_ocean <- (SRDat %>% filter(Stream==1) %>% group_by(Stocknumber) %>% summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
+#}
+
 #Scale.stock <- 10^(digits$maxDigits-1)
 
 # Parameters for stocks without AR1
-param$logA_std <- ( SRDat_std %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
-B_std <- SRDat_std %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
-param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std ))#log(B_std$m/Scale.stock)
-param$logSigma_std <- rep(-2, N_Stocks_std)
+#if(mod!="Liermann_SepRicA"){
+  param$logA_std <- ( SRDat_std %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
+  B_std <- SRDat_std %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
+  param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std ))#log(B_std$m/Scale.stock)
+  param$logSigma_std <- rep(-2, N_Stocks_std)
+#}
 
 if(mod=="Liermann"){
   param$logMuA <- 1.5
-  param$logSigmaA <- 1.5#1
+  param$logSigmaA <- 5#1.5#1
 }
 
 if(mod=="Liermann_SepRicA"){
+  #param$logA_s <- ( SRDat_std %>% filter(Stream==0) %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
+  #B_s <- SRDat_std %>% filter(Stream==0) %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
+  #param$logB_s <- log ( 1/ ( (1/B_s$m)/Scale.stock_stream ))
+  #param$logSigma_s <- rep(-2, length(param$logA_s))
+  
+  #param$logA_o <- ( SRDat_std %>% filter(Stream==1) %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
+  #B_o <- SRDat_std %>% filter(Stream==1) %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
+  #param$logB_o <- log ( 1/ ( (1/B_o$m)/Scale.stock_ocean ))
+  #param$logSigma_o <- rep(-2, length(param$logA_o))
+
   param$logMuAs <- 1.5
-  param$logSigmaAs <- 1
-  param$logMuAo <- 0
-  param$logSigmaAo <- 1
+  #param$logSigmaAs <- 1
+  param$logMuAo <- 0#1.5
+  param$logSigmaA <- 1
+  #param$logSigmaAo <- 1
   
 }
 
@@ -334,8 +355,11 @@ dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
 if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_RicStd"|mod=="Ricker_AllMod"){
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)#random = c( "logDelta2"), 
 }
-if(mod=="Liermann"|mod=="Liermann_SepRicA"){
+if(mod=="Liermann"){
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std")) 
+}
+if(mod=="Liermann_SepRicA"){
+  obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))#c("logA_s", "logA_o")) 
 }
 
 # For Phase 1, fix Delta parameters. Do not need to fix Delta's beccause initlal values are lm fits, so very close
@@ -345,7 +369,7 @@ if(mod=="Liermann"|mod=="Liermann_SepRicA"){
 #upper <- c(rep(Inf, 80), 5.00, rep(Inf,2))
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
-summary(sdreport(obj), p.value=TRUE)
+#summary(sdreport(obj), p.value=TRUE)
 
 #library(tmbstan)
 #fitmcmc <- tmbstan(obj, chains=3, iter=1000, init=list(opt$par), control = list(adapt_delta = 0.95))
@@ -437,7 +461,7 @@ PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O", 
 if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
   SRes <- bind_rows(Preds_std, Preds_ar, Preds_surv) %>% arrange (Stocknumber)
 }
-if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"){
+if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"){
   SRes <- Preds_std %>% arrange (Stocknumber)
 }
 SRes <- SRes %>% mutate ( Res = ObsLogRS- Pred) #%>% mutate (StdRes = Res/??)
@@ -476,6 +500,7 @@ if(plot==TRUE){
   if (mod=="IWAM_FixedSep_Constm") title_plot <- "Separate life-histories\n Fixed-effect yi (logDelta1), \nConstant Fixed-effect slope (Delta2)"
   if (mod=="IWAM_FixedSep_Constyi") title_plot <- "Separate life-histories\n Constant Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   if (mod=="Liermann") title_plot <- "Separate life-histories: Random Ricker a\n Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="Liermann_SepRicA") title_plot <- "Separate life-histories: Random Separate Ricker a\n Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
   dev.off()

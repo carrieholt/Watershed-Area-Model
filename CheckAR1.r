@@ -94,7 +94,7 @@ ac # 6 stocks have significant lag-1 autocorrelation: Chikamin, Keta, Blossom, S
 
 # Plot acfs: 
 if (plot==TRUE) {
-  png("DataOut/ACFstd.png", width=7, height=7, units="in", res=1000)
+  png("DataOut/ACFstd.png", width=7, height=7, units="in", res=500)
   Plotacf(Preds)
   dev.off()
   
@@ -121,7 +121,7 @@ All_Est <- left_join(All_Est, unique(SRDat[, c("Stocknumber", "Name")]))
 # Plot SR curves:
 
 if(plot ==TRUE) {
-  png("DataOut/SRstd.png", width=7, height=7, units="in", res=1000)
+  png("DataOut/SRstd.png", width=7, height=7, units="in", res=500)
   PlotSRCurve(SRDat, All_Est, SMSY_std, stksNum_ar=NA, stksNum_surv=NA, r2=NA, removeSkagit=FALSE, mod="IWAM_FixedSep") #Mod needed just to get Ricker model types
   dev.off()
   

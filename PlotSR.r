@@ -375,17 +375,28 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   All_Est_Ricker_std <- readRDS("DataOut/All_Est_Ricker_std.RDS")
   All_Est_Liermann_SepRicA <- readRDS("DataOut/All_Est_Liermann_SepRicA.RDS")
   All_Est_Liermann_SepRicA_uniformSigmAPrior <- readRDS("DataOut/All_Est_Liermann_SepRicA_uniformSigmaAPrior.RDS")
+  All_Est_Liermann_SepRicA_invGamma0.001 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.001.RDS")
+  All_Est_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.1.RDS")
+  All_Est_Liermann_SepRicA_invGamma0.01_invGammaA0.001 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.01_invGammaA0.001.RDS")
+  All_Est_Liermann_SepRicA_invGamma0.001_invGammaA0.01 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.001_invGammaA0.01.RDS")
   
   RicAL <- All_Est_Liermann %>% filter (Param=="logA")
   RicALsep <- All_Est_Liermann_SepRicA %>% filter (Param=="logA")
   RicALsep_uni <- All_Est_Liermann_SepRicA_uniformSigmAPrior %>% filter (Param=="logA")
+  RicALsep_0.1 <- All_Est_Liermann_SepRicA_invGamma0.1 %>% filter (Param=="logA")
+  RicALsep_0.001 <- All_Est_Liermann_SepRicA_invGamma0.001 %>% filter (Param=="logA")
+  RicALsep_0.001_0.01 <- All_Est_Liermann_SepRicA_invGamma0.001_invGammaA0.01 %>% filter (Param=="logA")
+  RicALsep_0.01_0.001 <- All_Est_Liermann_SepRicA_invGamma0.01_invGammaA0.001 %>% filter (Param=="logA")
   RicAR <- All_Est_Ricker_AllMod %>% filter (Param=="logA")
   RicARstd <- All_Est_Ricker_std %>% filter (Param=="logA_std")
   nRicAL <- length(RicAL$Estimate)
   nRicAstd <- length(RicARstd$Estimate)
   #box.data <- data.frame(RicLogA=c(RicAL$Estimate,RicALsep$Estimate, RicAR$Estimate), Model=c(rep("Hierarchical_logA_combined",nRicA),rep("Hierarchical_logA_sep",nRicA), rep("Fixed_logA",nRicA)))
-  box.data <- data.frame(RicLogA=c(RicALsep$Estimate, RicALsep_uni$Estimate, RicARstd$Estimate), 
-                         Model=c(rep("Hierarchical_logA_sep",nRicAL),rep("UniformPrior_Sigma(Loga)",nRicAL), rep("Fixed_logA",nRicAstd)))
+  box.data <- data.frame(RicLogA=c(RicALsep$Estimate, RicALsep_0.1$Estimate, RicALsep_0.001$Estimate, RicALsep_0.001_0.01$Estimate, 
+                                   RicALsep_uni$Estimate, RicARstd$Estimate), 
+                         Model=c(rep("Hierarchical\nbase case",nRicAL), rep("InvGamma\n(0.1, 0.1)", nRicAL), 
+                                 rep("InvGamma\n(0.001, 0.001)", nRicAL), rep("LogA:\nInvGamma\n(0.001, 0.001)\nRicker:InvGamma\n(0.01,0.01)", nRicAL), 
+                                 rep("Uniform\nSigma(Loga)",nRicAL), rep("Fixed effects",nRicAstd)))
   
   ggplot(box.data, aes(x=as.factor(Model), y=RicLogA, fill=as.factor(Model))) + 
     geom_boxplot() + 
@@ -393,7 +404,7 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
     geom_jitter(color="black", size=2, alpha=0.9) +
     ggtitle("Distribution of Ricker LogA") +
     theme(legend.position="none") +
-    theme(axis.text=element_text(size=10),
+    theme(axis.text=element_text(size=12),
           axis.title=element_text(size=20,face="bold"),
           plot.title = element_text(size = 20)) + 
     xlab("Model")
@@ -402,6 +413,6 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   #points(x=jitter(rep(2,nRicA)), y=RicAR$Estimate, pch=20)
 }
 
-#png(paste("DataOut/RicADist_ComparePriors_invgammaA0.01_invgamma0.1.png", sep=""), width=7, height=7, units="in", res=1000)
+#png(paste("DataOut/RicADist_ComparePriors.png", sep=""), width=7, height=7, units="in", res=1000)
 #plotRicA()
 #dev.off()

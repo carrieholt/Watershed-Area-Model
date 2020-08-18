@@ -362,10 +362,10 @@ if(mod=="Liermann"){
 if(mod=="Liermann_SepRicA"){
   upper<-unlist(param)
   upper[1:length(upper)]<- Inf
-  upper[names(upper) == "logSigmaA"] <- 100
+  upper[names(upper) == "logSigmaA"] <- log(100)
   lower<-unlist(param)
   lower[1:length(lower)]<- -Inf
-  lower[names(lower) == "logSigmaA"] <- 0
+  lower[names(lower) == "logSigmaA"] <- log(0.00001)
   
   #obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"), lower=lower, upper= upper )#c("logA_s", "logA_o")) 
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
@@ -499,6 +499,7 @@ if (plot==TRUE){
 
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.001_invGammaA0.01.RDS", sep="") )
+#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_uniformSigmaAPrior.RDS", sep="") )
 
 
 # Plot WA regression

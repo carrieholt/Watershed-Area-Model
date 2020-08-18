@@ -372,13 +372,20 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   #par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   All_Est_Liermann <- readRDS("DataOut/All_Est_Liermann.RDS")
   All_Est_Ricker_AllMod <- readRDS("DataOut/All_Est_Ricker_AllMod.RDS")
+  All_Est_Ricker_std <- readRDS("DataOut/All_Est_Ricker_std.RDS")
   All_Est_Liermann_SepRicA <- readRDS("DataOut/All_Est_Liermann_SepRicA.RDS")
+  All_Est_Liermann_SepRicA_uniformSigmAPrior <- readRDS("DataOut/All_Est_Liermann_SepRicA_uniformSigmaAPrior.RDS")
   
   RicAL <- All_Est_Liermann %>% filter (Param=="logA")
   RicALsep <- All_Est_Liermann_SepRicA %>% filter (Param=="logA")
+  RicALsep_uni <- All_Est_Liermann_SepRicA_uniformSigmAPrior %>% filter (Param=="logA")
   RicAR <- All_Est_Ricker_AllMod %>% filter (Param=="logA")
-  nRicA <- length(RicAL$Estimate)
-  box.data <- data.frame(RicLogA=c(RicAL$Estimate,RicALsep$Estimate, RicAR$Estimate), Model=c(rep("Hierarchical_logA_combined",nRicA),rep("Hierarchical_logA_sep",nRicA), rep("Fixed_logA",nRicA)))
+  RicARstd <- All_Est_Ricker_std %>% filter (Param=="logA_std")
+  nRicAL <- length(RicAL$Estimate)
+  nRicAstd <- length(RicARstd$Estimate)
+  #box.data <- data.frame(RicLogA=c(RicAL$Estimate,RicALsep$Estimate, RicAR$Estimate), Model=c(rep("Hierarchical_logA_combined",nRicA),rep("Hierarchical_logA_sep",nRicA), rep("Fixed_logA",nRicA)))
+  box.data <- data.frame(RicLogA=c(RicALsep$Estimate, RicALsep_uni$Estimate, RicARstd$Estimate), 
+                         Model=c(rep("Hierarchical_logA_sep",nRicAL),rep("UniformPrior_Sigma(Loga)",nRicAL), rep("Fixed_logA",nRicAstd)))
   
   ggplot(box.data, aes(x=as.factor(Model), y=RicLogA, fill=as.factor(Model))) + 
     geom_boxplot() + 
@@ -395,6 +402,6 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   #points(x=jitter(rep(2,nRicA)), y=RicAR$Estimate, pch=20)
 }
 
-#png(paste("DataOut/RicADist.png", sep=""), width=7, height=7, units="in", res=1000)
+#png(paste("DataOut/RicADist_ComparePriors_invgammaA0.01_invgamma0.1.png", sep=""), width=7, height=7, units="in", res=1000)
 #plotRicA()
 #dev.off()

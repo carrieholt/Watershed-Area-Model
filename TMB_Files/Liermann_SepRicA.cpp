@@ -206,6 +206,7 @@ Type objective_function<Type>:: operator() ()
   ans += -dnorm(logMuAo, logMuAo_mean, logMuAo_sig, true);
   // sigmaA prior
   ans += -dgamma(pow(sigmaA,-2), Tau_A_dist, 1/Tau_A_dist, true);
+  
   //// sigmaA prior stream type
   //ans += -dgamma(pow(sigmaAs,-2), Tau_A_dist, 1/Tau_A_dist, true);
   //// sigmaA prior ocean type

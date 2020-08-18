@@ -26,7 +26,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- TRUE
-mod <- "Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -189,7 +189,8 @@ if (mod=="Liermann_SepRicA"){
   data$logMuAs_sig <- 5
   data$logMuAo_mean <- 0#1.5
   data$logMuAo_sig <- 5
-  data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
+  data$Tau_A_dist <- 0.1#TMB_Inputs$Tau_sigma
+  
   #data$N_stream <- 13
   #data$N_ocean <- 11
 }
@@ -359,7 +360,16 @@ if(mod=="Liermann"){
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std")) 
 }
 if(mod=="Liermann_SepRicA"){
-  obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))#c("logA_s", "logA_o")) 
+  upper<-unlist(param)
+  upper[1:length(upper)]<- Inf
+  upper[names(upper) == "logSigmaA"] <- 100
+  lower<-unlist(param)
+  lower[1:length(lower)]<- -Inf
+  lower[names(lower) == "logSigmaA"] <- 0
+  
+  #obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"), lower=lower, upper= upper )#c("logA_s", "logA_o")) 
+  obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
+  
 }
 
 # For Phase 1, fix Delta parameters. Do not need to fix Delta's beccause initlal values are lm fits, so very close
@@ -488,11 +498,13 @@ if (plot==TRUE){
 }
 
 saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
+#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_uniformSigmaAPriord.RDS", sep="") )
 
 
 # Plot WA regression
 if(plot==TRUE){
   png(paste("DataOut/WAreg_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
+  #png(paste("DataOut/WAreg_Liermann_SepRicA_uniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"

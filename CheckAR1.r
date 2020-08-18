@@ -101,6 +101,7 @@ if (plot==TRUE) {
 }
 
 
+#saveRDS( All_Ests, paste( "DataOut/All_Est_Ricker_std.RDS", sep="") )
 
 
 A_std <- All_Ests %>% filter(Param=="logA_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(A=exp(Estimate))

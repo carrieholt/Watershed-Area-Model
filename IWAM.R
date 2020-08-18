@@ -25,7 +25,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
 plot <- FALSE#TRUE
-removeSkagit <- TRUE
+removeSkagit <- FALSE#TRUE
 mod <- "Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
@@ -498,6 +498,9 @@ if (plot==TRUE){
 }
 
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
+#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.1.RDS", sep="") )
+#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.001.RDS", sep="") )
+#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.01_invGammaA0.001.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.001_invGammaA0.01.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_uniformSigmaAPrior.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_noSigmaAPrior.RDS", sep="") )

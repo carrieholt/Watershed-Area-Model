@@ -391,13 +391,13 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   RicALsep_none <- All_Est_Liermann_SepRicA_noSigmaPrior %>% filter (Param=="logA")
   RicAR <- All_Est_Ricker_AllMod %>% filter (Param=="logA")
   RicARstd <- All_Est_Ricker_std %>% filter (Param=="logA_std")
-  nRicAL <- length(RicAL$Estimate)
+  nRicAL <- length(RicALsep$Estimate)
   nRicAstd <- length(RicARstd$Estimate)
   #box.data <- data.frame(RicLogA=c(RicAL$Estimate,RicALsep$Estimate, RicAR$Estimate), Model=c(rep("Hierarchical_logA_combined",nRicA),rep("Hierarchical_logA_sep",nRicA), rep("Fixed_logA",nRicA)))
-  box.data <- data.frame(RicLogA=c(RicALsep$Estimate, RicALsep_0.1$Estimate, RicALsep_0.001$Estimate, RicALsep_0.001_0.01$Estimate, 
+  box.data <- data.frame(RicLogA=c(RicALsep$Estimate, RicALsep_0.1$Estimate, RicALsep_0.001$Estimate,  
                                    RicALsep_uni$Estimate, RicALsep_none$Estimate, RicARstd$Estimate), 
                          Model=c(rep("Hierarchical\nbase\ncase",nRicAL), rep("Inv\nGamma\n(0.1, 0.1)", nRicAL), 
-                                 rep("InvGamma\n(0.001, 0.001)", nRicAL), rep("LogA:\nInvGamma\n(0.001, 0.001)\nRicker:InvGamma\n(0.01,0.01)", nRicAL), 
+                                 rep("InvGamma\n(0.001, 0.001)", nRicAL), 
                                  rep("Uniform\nSigma(Loga)",nRicAL), rep("No priors\nSigmas",nRicAL), rep("Fixed\neffects",nRicAstd)))
   
   ggplot(box.data, aes(x=as.factor(Model), y=RicLogA, fill=as.factor(Model))) + 

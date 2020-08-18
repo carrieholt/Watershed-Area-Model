@@ -76,7 +76,8 @@ Type objective_function<Type>:: operator() ()
   //DATA_INTEGER(N_ocean);
   //DATA_INTEGER(N_stks_short);
   DATA_IVECTOR(order_noChick);
-
+  //DATA_SCALAR(Tau_D_dist);
+  
   //Hierarchical hyper pars
   //DATA_SCALAR(logMuDelta1_mean);
   //DATA_SCALAR(logMuDelta1_sig);
@@ -367,6 +368,8 @@ Type objective_function<Type>:: operator() ()
     ans += -dnorm( PredlnSMSY(i), log(SMSY(order_noChick(i)) * Scale(order_noChick(i)) ),  sigma_delta, true);
   }
   
+  // Add hierarchical structure to sigma_delta==============
+  //ans += -dgamma(pow(sigma_delta,-2), Tau_D_dist, 1/Tau_D_dist, true);
   ////Model with stream and ocean-types add random slope (logDelta1) and yi-intercept (Delta2) ==============
   //vector <Type> PredlnSMSY(N_stks);
   //Type sigma_delta = exp(logDeltaSigma);

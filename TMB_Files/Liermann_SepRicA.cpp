@@ -56,6 +56,7 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(WA); 
   DATA_VECTOR(Scale);
   DATA_IVECTOR(Stream);
+  DATA_SCALAR(Tau_D_dist);
   //DATA_INTEGER(N_stream);
   //DATA_INTEGER(N_ocean);
   DATA_VECTOR(PredlnWA);
@@ -79,6 +80,12 @@ Type objective_function<Type>:: operator() ()
   PARAMETER(logDelta2);
   PARAMETER(Delta2ocean);
   PARAMETER(logDeltaSigma);
+  
+  PARAMETER(logNu1);
+  PARAMETER(logNu1ocean);
+  PARAMETER(logNu2);
+  PARAMETER(Nu2ocean);
+  PARAMETER(logNuSigma);
   
 
   
@@ -252,23 +259,38 @@ Type objective_function<Type>:: operator() ()
   
   //Liermann's model with both stream and ocean type=================
   vector <Type> PredlnSMSY(N_stks_std);
+  vector <Type> PredlnSREP(N_stks_std);
   Type sigma_delta = exp(logDeltaSigma);
+  Type sigma_nu = exp(logNuSigma);
   
   for (int i=0; i<N_stks_std; i++){
     PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + ( exp(logDelta2) + Delta2ocean * Stream(i) ) * log(WA(i)) ;
     ans += -dnorm( PredlnSMSY(i), log(SMSY_std(i) * Scale(i) ),  sigma_delta, true);
+    PredlnSREP(i) = logNu1 + logNu1ocean * Stream(i) + ( exp(logNu2) + Nu2ocean * Stream(i) ) * log(WA(i)) ;
+    ans += -dnorm( PredlnSREP(i), log(SREP_std(i) * Scale(i) ),  sigma_nu, true);
     //PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + ( exp(logDelta2) + Delta2ocean * Stream(i) ) * log(WA(i)) ;
     //ans += -dnorm( PredlnSMSY(i), log(SMSY_std(i) * Scale(i) ),  sigma_delta, true);
   }
+  
+  // sigma_delta prior
+  ans += -dgamma(pow(sigma_delta,-2), Tau_D_dist, 1/Tau_D_dist, true);
+  
+  // sigma_delta prior
+  ans += -dgamma(pow(sigma_nu,-2), Tau_D_dist, 1/Tau_D_dist, true);
+  
   
   // Get predicted values for plotting  WA regresssion with CIs
   int N_pred = PredlnWA.size();
   vector <Type> PredlnSMSYs_CI(N_pred);
   vector <Type> PredlnSMSYo_CI(N_pred);
-
+  vector <Type> PredlnSREPs_CI(N_pred);
+  vector <Type> PredlnSREPo_CI(N_pred);
+  
   for (int i=0; i<N_pred; i++){
     PredlnSMSYs_CI(i) = logDelta1 + exp(logDelta2) * PredlnWA(i);
     PredlnSMSYo_CI(i) = logDelta1 + logDelta1ocean + (exp(logDelta2) + Delta2ocean) * PredlnWA(i);
+    PredlnSREPs_CI(i) = logNu1 + exp(logNu2) * PredlnWA(i);
+    PredlnSREPo_CI(i) = logNu1 + logNu1ocean + (exp(logNu2) + Nu2ocean) * PredlnWA(i);
   }
   
   ADREPORT(SMSY_std);
@@ -276,6 +298,8 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(LogRS_Pred_std);
   ADREPORT(PredlnSMSYs_CI);
   ADREPORT(PredlnSMSYo_CI);
+  ADREPORT(PredlnSREPs_CI);
+  ADREPORT(PredlnSREPo_CI);
   //REPORT(stkNumber_lhOrder);//This is the order of stocks in the output (different from order in input!)
   REPORT(nLL_std);
   //REPORT(nLL_o);

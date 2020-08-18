@@ -184,16 +184,22 @@ if (mod=="Liermann"){
 }
 
 if (mod=="Liermann_SepRicA"){
-  data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
+  data$Tau_dist <- 0.001#TMB_Inputs$Tau_sigma
   data$logMuAs_mean <- 1.5
   data$logMuAs_sig <- 5
   data$logMuAo_mean <- 0#1.5
   data$logMuAo_sig <- 5
-  data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
+  data$Tau_A_dist <- 0.001#TMB_Inputs$Tau_sigma
   
+  data$Tau_D_dist <- 1#TMB_Inputs$Tau_sigma
   #data$N_stream <- 13
   #data$N_ocean <- 11
 }
+
+if (mod=="IWAM_FixedSep"){
+  #data$Tau_D_dist <- 0.001#TMB_Inputs$Tau_sigma
+}
+
 
 # Read in wateshed area data and life-history type....
 if (mod!="Ricker_AllMod") data$WA <- WA$WA
@@ -313,6 +319,13 @@ if (mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"||mod=="Lier
   param$Delta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
   param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
   
+  param$logNu1 <- 3#10# with skagit 2.881
+  param$logNu1ocean <- 0# with skagit 2.881
+  param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$Nu2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+  param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+  
+  
 }
 if (mod=="IWAM_FixedSep_Constm"){
   ## Lierman model
@@ -372,6 +385,19 @@ if(mod=="Liermann_SepRicA"){
   
 }
 
+if(mod=="IWAM_FixedSep"){
+  # Uniform prior on logDeltaSigma (removed for now)
+  upper<-unlist(param)
+  upper[1:length(upper)]<- Inf
+  #upper[names(upper) == "logDeltaSigma"] <- log(100)
+  lower<-unlist(param)
+  lower[1:length(lower)]<- -Inf
+  #lower[names(lower) == "logDeltaSigma"] <- log(0.001)
+  
+  #obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"), lower=lower, upper= upper )#c("logA_s", "logA_o")) 
+  obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, upper=upper, lower=lower)
+  
+}
 # For Phase 1, fix Delta parameters. Do not need to fix Delta's beccause initlal values are lm fits, so very close
 #map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
 #obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
@@ -422,7 +448,9 @@ All_Est$surv <- All_Est$Stocknumber %in% stksNum_surv
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
 
 All_Deltas <- data.frame()
-All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta", "Delta2_bounded", "logDelta1ocean", "logDelta2ocean", "Delta2ocean"))
+All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta", "Delta2_bounded", 
+                                                "logDelta1ocean", "logDelta2ocean", "Delta2ocean", "logNu1", 
+                                                "logNu2", "sigma_nu", "logNu1ocean", "Nu2ocean"))
 
 # 4. Calculate diagnostics and plot SR curves, etc.
 
@@ -466,6 +494,8 @@ if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|m
 # Get predicted values and their SEs to plot CIs
 PredlnSMSY <- data.frame() 
 PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O", "PredlnSMSY_CI", "PredlnSMSYs_CI", "PredlnSMSYo_CI"))
+PredlnSREP <- data.frame() 
+PredlnSREP <- All_Ests %>% filter (Param %in% c("PredlnSREP_S", "PredlnSREP_O", "PredlnSREP_CI", "PredlnSREPs_CI", "PredlnSREPo_CI"))
 
 # Calculate standardized residuals
 if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
@@ -498,6 +528,7 @@ if (plot==TRUE){
 }
 
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
+
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.1.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.001.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.01_invGammaA0.001.RDS", sep="") )
@@ -508,7 +539,7 @@ if (plot==TRUE){
 
 # Plot WA regression
 if(plot==TRUE){
-  png(paste("DataOut/WAreg_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
+  png(paste("DataOut/WAregSMSY_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
   #png(paste("DataOut/WAreg_Liermann_SepRicA_uniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -517,9 +548,23 @@ if(plot==TRUE){
   if (mod=="IWAM_FixedSep_Constm") title_plot <- "Separate life-histories\n Fixed-effect yi (logDelta1), \nConstant Fixed-effect slope (Delta2)"
   if (mod=="IWAM_FixedSep_Constyi") title_plot <- "Separate life-histories\n Constant Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   if (mod=="Liermann") title_plot <- "Separate life-histories: Random Ricker a\n Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  if (mod=="Liermann_SepRicA") title_plot <- "Separate life-histories: Random Separate Ricker a\n Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="Liermann_SepRicA") title_plot <- "Separate life-histories: Random Separate Ricker a"#\n Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
+  plotWAregressionSMSY (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
+  dev.off()
+
+  png(paste("DataOut/WAregSREP_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
+  #png(paste("DataOut/WAreg_Liermann_SepRicA_uniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
+  par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
+  if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="IWAM_FixedSep_RicStd") title_plot <- "Separate life-histories: all Std Ricker\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="IWAM_FixedSep_Constm") title_plot <- "Separate life-histories\n Fixed-effect yi (logDelta1), \nConstant Fixed-effect slope (Delta2)"
+  if (mod=="IWAM_FixedSep_Constyi") title_plot <- "Separate life-histories\n Constant Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="Liermann") title_plot <- "Separate life-histories: Random Ricker a\n Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  if (mod=="Liermann_SepRicA") title_plot <- "Separate life-histories: Random Separate Ricker a"#\n Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
+  plotWAregressionSREP (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSREP, PredlnWA = data$PredlnWA, title1=title_plot, mod)
   dev.off()
   #plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1="Common, fixed yi (logDelta1), \nRandom slope (Delta2)")
   

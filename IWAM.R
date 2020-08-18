@@ -189,7 +189,7 @@ if (mod=="Liermann_SepRicA"){
   data$logMuAs_sig <- 5
   data$logMuAo_mean <- 0#1.5
   data$logMuAo_sig <- 5
-  #data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
+  data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
   
   #data$N_stream <- 13
   #data$N_ocean <- 11
@@ -500,7 +500,8 @@ if (plot==TRUE){
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.001_invGammaA0.01.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_uniformSigmaAPrior.RDS", sep="") )
-
+#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_noSigmaAPrior.RDS", sep="") )
+#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_noSigmaPrior.RDS", sep="") )
 
 # Plot WA regression
 if(plot==TRUE){

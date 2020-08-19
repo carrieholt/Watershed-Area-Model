@@ -188,7 +188,7 @@ Type objective_function<Type>:: operator() ()
     // add prior on logA_std, 
     ans += -dnorm(logA_std(i), logMuAs + logMuAo * Stream(i), sigmaA, true );
      // add prior on sigma 
-    ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
+    //ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
   }
   
   //// Add hierarchical structure to A: stream ==============
@@ -203,7 +203,7 @@ Type objective_function<Type>:: operator() ()
   //  // add prior on logA_std, 
   //  ans += -dnorm(logA_o(i), logMuAo, sigmaAo, true );
   //  // add prior on sigma 
-  //  ans += -dgamma(pow(sigma_o(i),-2), Tau_dist, 1/Tau_dist, true);
+    ans += -dgamma(pow(sigma_o(i),-2), Tau_dist, 1/Tau_dist, true);
   //}
   
     // Add priors for hyperpars ====================

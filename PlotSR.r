@@ -495,7 +495,7 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
                                    RicALsep_uni$Estimate, RicALsep_none$Estimate, RicARstd$Estimate), 
                          Model=c(rep("Hierarchical\nbase\ncase",nRicAL), rep("Inv\nGamma\n(0.1, 0.1)", nRicAL), 
                                  rep("InvGamma\n(0.001, 0.001)", nRicAL), 
-                                 rep("Uniform\nSigma(Loga)",nRicAL), rep("No priors\nSigmas",nRicAL), rep("Fixed\neffects",nRicAstd)))
+                                 rep("Uniform",nRicAL), rep("No priors\nSigmas",nRicAL), rep("Fixed\neffects",nRicAstd)))
   
   ggplot(box.data, aes(x=as.factor(Model), y=RicLogA, fill=as.factor(Model))) + 
     geom_boxplot() + 

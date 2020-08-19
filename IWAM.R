@@ -184,12 +184,12 @@ if (mod=="Liermann"){
 }
 
 if (mod=="Liermann_SepRicA"){
-  data$Tau_dist <- 0.001#TMB_Inputs$Tau_sigma
+  data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
   data$logMuAs_mean <- 1.5
   data$logMuAs_sig <- 5
   data$logMuAo_mean <- 0#1.5
   data$logMuAo_sig <- 5
-  data$Tau_A_dist <- 0.001#TMB_Inputs$Tau_sigma
+  data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
   
   data$Tau_D_dist <- 1#TMB_Inputs$Tau_sigma
   #data$N_stream <- 13
@@ -376,10 +376,12 @@ if(mod=="Liermann_SepRicA"){
   upper<-unlist(param)
   upper[1:length(upper)]<- Inf
   upper[names(upper) == "logSigmaA"] <- log(100)
+  upper[51:75] <- log(100) #logSigma_std
   lower<-unlist(param)
   lower[1:length(lower)]<- -Inf
   lower[names(lower) == "logSigmaA"] <- log(0.00001)
-  
+  lower[51:75] <- log(0.00001)
+   
   #obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"), lower=lower, upper= upper )#c("logA_s", "logA_o")) 
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
   

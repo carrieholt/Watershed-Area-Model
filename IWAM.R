@@ -267,7 +267,7 @@ if(mod=="Liermann_SepRicA"){
   param$logMuAs <- 1.5
   #param$logSigmaAs <- 1
   param$logMuAo <- 0#1.5
-  param$logSigmaA <- 1
+  param$logSigmaA <- 5
   #param$logSigmaAo <- 1
   
 }

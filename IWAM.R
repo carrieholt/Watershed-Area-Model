@@ -197,12 +197,14 @@ if (mod=="Liermann_SepRicA"){
 }
 
 if (mod=="Liermann_HalfNormRicVar"){
-  #data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
   data$logMuAs_mean <- 1.5
   data$logMuAs_sig <- 5
   data$logMuAo_mean <- 0#1.5
   data$logMuAo_sig <- 5
-  #data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
+  data$HalfNormMean <- 0#TMB_Inputs$Tau_sigma
+  data$HalfNormSig <- 1#TMB_Inputs$Tau_sigma
+  data$HalfNormMeanA <- 0.44#TMB_Inputs$Tau_sigma
+  data$HalfNormSigA <- 0.5#TMB_Inputs$Tau_sigma
   
   data$Tau_D_dist <- 1#TMB_Inputs$Tau_sigma
   #data$N_stream <- 13
@@ -386,17 +388,17 @@ if(mod=="Liermann"){
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std")) 
 }
 if(mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"){
-  upper<-unlist(param)
-  upper[1:length(upper)]<- Inf
-  upper[names(upper) == "logSigmaA"] <- log(0)#log(100)
+  #upper<-unlist(param)
+  #upper[1:length(upper)]<- Inf
+  #upper[names(upper) == "logSigmaA"] <- log(2)#log(100)
   #upper[51:75] <- log(100) #logSigma_std
   #upper[50:74] <- log(2) #logSigma_std
   
-  lower<-unlist(param)
-  lower[1:length(lower)]<- -Inf
-  #lower[names(lower) == "logSigmaA"] <- log(0.00001)
+  #lower<-unlist(param)
+  #lower[1:length(lower)]<- -Inf
+  #lower[names(lower) == "logSigmaA"] <- log(0.1)
   #lower[51:75] <- log(0.00001)
-   
+  
   #obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"), lower=lower, upper= upper )#c("logA_s", "logA_o")) 
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
   
@@ -419,8 +421,25 @@ if(mod=="IWAM_FixedSep"){
 #map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
 #obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 
-#upper <- c(rep(Inf, 80), 5.00, rep(Inf,2))
-opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, upper=upper)
+if(mod=="Liermann_HalfNormRicVar"){
+  upper<-unlist(obj$par)
+  upper[1:length(upper)]<- Inf
+  upper[names(upper) == "logSigmaA"] <- log(2)#log(100)
+  
+  lower<-unlist(obj$par)
+  lower[1:length(lower)]<- -Inf
+  lower[names(lower) == "logSigmaA"] <- log(0.1)
+}
+
+if(mod!="Liermann_HalfNormRicVar"){
+  upper<-unlist(obj$par)
+  upper[1:length(upper)]<- Inf
+
+  lower<-unlist(obj$par)
+  lower[1:length(lower)]<- -Inf
+}
+  
+opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5), lower=lower, upper=upper)#lower=as.vector(lower), upper=as.vector(upper))
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
 #summary(sdreport(obj), p.value=TRUE)
 

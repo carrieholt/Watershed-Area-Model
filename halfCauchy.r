@@ -1,8 +1,9 @@
   test <- seq(0.001,3,0.1)
-  plot(x=test, y=abs(dcauchy(test,0,1)), type="l", ylab="Probability density", xlab="" , ylim=c(0,0.4))
+  plot(x=test, y=abs(dcauchy(test,0,1)), type="l", ylab="Probability density", xlab="" , ylim=c(0,0.8))
   
   #Normal
-  lines(x=test, y=abs(dnorm(test,0,1)), lty="dashed")
+  lines(x=test, y=abs(dnorm(test,0,2)), lty="dashed")
+  lines(x=test, y=(dnorm(test,0.44,0.1)), lty="dashed")
   # Cauchy = normal/sqrt(chi^2), Gelman et al. 2006
   #theta <- xi*eta
   

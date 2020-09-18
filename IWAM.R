@@ -212,11 +212,11 @@ if (mod=="Liermann_HalfNormRicVar"){
 }
 
 
-if (mod=="Liermann_HalfNormRicVar"){
+if (mod=="Liermann_HalfCauchyRicVar"){
   data$logMuAs_mean <- 1.5
-  data$logMuAs_sig <- 5
+  data$logMuAs_sig <- 2
   data$logMuAo_mean <- 0#1.5
-  data$logMuAo_sig <- 5
+  data$logMuAo_sig <- 2
   data$Tau_D_dist <- 1#TMB_Inputs$Tau_sigma
   #data$N_stream <- 13
   #data$N_ocean <- 11
@@ -256,7 +256,7 @@ Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% s
 Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>% filter(Stocknumber %in% stksNum_surv) %>% 
                      summarize(Scale.stock_surv = max(Scale)))$Scale.stock_surv
 
-if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfNormRicVar"){
+if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"){
   Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
 }
 #if(mod=="Liermann_SepRicA"){
@@ -279,7 +279,7 @@ if(mod=="Liermann"){
   param$logSigmaA <- 5#1.5#1
 }
 
-if(mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfNormRicVar"){
+if(mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"){
   #param$logA_s <- ( SRDat_std %>% filter(Stream==0) %>% group_by (Stocknumber) %>% summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
   #B_s <- SRDat_std %>% filter(Stream==0) %>% group_by(Stocknumber) %>% summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
   #param$logB_s <- log ( 1/ ( (1/B_s$m)/Scale.stock_stream ))
@@ -337,7 +337,7 @@ if (mod=="IWAM_FixedCombined"){
 #param$ologDelta2 <- log(0.94)#0#21.2 
 #param$ologDeltaSigma <-  -0.412#-0.94 
 
-if (mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"||mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfNormRicVar"){
+if (mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"||mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"){
   ## Lierman model
   param$logDelta1 <- 3#10# with skagit 2.881
   param$logDelta1ocean <- 0# with skagit 2.881
@@ -398,7 +398,7 @@ if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|m
 if(mod=="Liermann"){
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std")) 
 }
-if(mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"|mod=="Liermann_HalfNormRicVar"){
+if(mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"){
   #upper<-unlist(param)
   #upper[1:length(upper)]<- Inf
   #upper[names(upper) == "logSigmaA"] <- log(2)#log(100)
@@ -425,7 +425,7 @@ if(mod=="IWAM_FixedSep"){
   #lower[names(lower) == "logDeltaSigma"] <- log(0.001)
   
   #obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"), lower=lower, upper= upper )#c("logA_s", "logA_o")) 
-  obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, upper=upper, lower=lower)
+  obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)
   
 }
 # For Phase 1, fix Delta parameters. Do not need to fix Delta's beccause initlal values are lm fits, so very close

@@ -180,14 +180,14 @@ Type objective_function<Type>:: operator() ()
   //  nLL_o(i) = -dnorm(LogRS_Pred_o(i), logRS_o(i),  sigma_o(stk_o(i)), true);
   //}
   
-  
+
   // Add hierarchical structure to A ==============
   for(int i=0; i<N_stks_std; i++){
     // add prior on logA_std, 
     ans += -dnorm(logA_std(i), logMuAs + logMuAo * Stream(i), sigmaA, true );
      // add prior on sigma 
     //ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
-    ans += - dt( sigma_std(i), Type(0), 1 );
+    ans += - dt( sigma_std(i), Type(0), true );
   }
   
   //// Add hierarchical structure to A: stream ==============
@@ -212,7 +212,8 @@ Type objective_function<Type>:: operator() ()
   ans += -dnorm(logMuAo, logMuAo_mean, logMuAo_sig, true);
   // sigmaA prior
   //ans += -dgamma(pow(sigmaA,-2), Tau_A_dist, 1/Tau_A_dist, true);
-  ans += - dt( sigmaA, Type(0), 1);
+
+  ans += - dt( sigmaA, Type(0), true);
   
   //// sigmaA prior stream type
   //ans += -dgamma(pow(sigmaAs,-2), Tau_A_dist, 1/Tau_A_dist, true);

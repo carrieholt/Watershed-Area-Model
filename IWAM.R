@@ -26,7 +26,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- FALSE#TRUE
-mod <- "Liermann_HalfCauchyRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "LIermann_SepRicA"#"Liermann_HalfNormRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -399,17 +399,6 @@ if(mod=="Liermann"){
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std")) 
 }
 if(mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"){
-  #upper<-unlist(param)
-  #upper[1:length(upper)]<- Inf
-  #upper[names(upper) == "logSigmaA"] <- log(2)#log(100)
-  #upper[51:75] <- log(100) #logSigma_std
-  #upper[50:74] <- log(2) #logSigma_std
-  
-  #lower<-unlist(param)
-  #lower[1:length(lower)]<- -Inf
-  #lower[names(lower) == "logSigmaA"] <- log(0.1)
-  #lower[51:75] <- log(0.00001)
-  
   #obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"), lower=lower, upper= upper )#c("logA_s", "logA_o")) 
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
   
@@ -449,7 +438,22 @@ if(mod!="Liermann_HalfNormRicVar"){
   lower<-unlist(obj$par)
   lower[1:length(lower)]<- -Inf
 }
+if(mod!="Liermann_SepRicA"){
+  upper<-unlist(obj$par)
+  upper[1:length(upper)]<- Inf
+  #upper[names(upper) == "logSigmaA"] <- log(2)#log(100)
+  #upper[51:75] <- log(100) #logSigma_std
+  #upper[50:74] <- log(2) #logSigma_std
   
+  lower<-unlist(obj$par)
+  lower[1:length(lower)]<- -Inf
+  #lower[names(lower) == "logSigmaA"] <- log(0.1)
+  #lower[51:75] <- log(0.00001)
+  
+}
+  
+
+
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5), lower=lower, upper=upper)#lower=as.vector(lower), upper=as.vector(upper))
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
 #summary(sdreport(obj), p.value=TRUE)

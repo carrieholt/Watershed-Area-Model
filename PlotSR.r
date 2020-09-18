@@ -25,7 +25,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
       summarise(B=exp(Estimate)/Sc) %>% as.numeric()
     
     
-    if(mod!="IWAM_FixedSep_RicStd" & mod!="Liermann" & mod!="Liermann_SepRicA" & mod!="Liermann_HalfNormRicVar"){
+    if(mod!="IWAM_FixedSep_RicStd" & mod!="Liermann" & mod!="Liermann_SepRicA" & mod!="Liermann_HalfNormRicVar"& mod!="Liermann_HalfCauchyRicVar"){
       if (i %in% stksNum_surv) {  #stocknumber 0 and either 22 or 23, depending on if Skagit is removed
         surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name==name$Name)
         #if(i==0) surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name==name$Name) 
@@ -65,7 +65,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
     if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
     if (i %in% stksNum_ar) col.use <- "red"
     if (i %in% stksNum_surv) col.use <- "blue"
-    if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar") col.use <- "black"
+    if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") col.use <- "black"
     lines(x=SS, y=RR, col=col.use) 
     
     #For Skagit, add Parken et al. 2006 model curve
@@ -90,7 +90,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
       if (i %not in% c(stksNum_ar, stksNum_surv))  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     }
     
-    if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar")  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
+    if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar")  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     #else polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     
     SMSY_std <- SMSY_std %>% right_join(names) %>% filter(Name==name$Name)#filter(Stocknumber != 22)
@@ -142,7 +142,7 @@ PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2,
     B <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logB") %>% 
       summarise(B=exp(Estimate)/Sc) %>% as.numeric()
 
-    if(mod!="IWAM_FixedSep_RicStd" & mod!="Liermann" & mod!="Liermann_SepRicA" & mod!="Liermann_HalfNormRicVar"){
+    if(mod!="IWAM_FixedSep_RicStd" & mod!="Liermann" & mod!="Liermann_SepRicA" & mod!="Liermann_HalfNormRicVar" & mod!="Liermann_HalfCauchyRicVar"){
       if (i %in% stksNum_surv) {  #stocknumber 0 and either 22 or 23, depending on if Skagit is removed
         
         if(i==0) surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name=="Harrison") 
@@ -158,7 +158,7 @@ PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2,
     if (i %in% stksNum_ar) col.use <- "red"
     if (i %in% stksNum_surv) col.use <- "blue"
     if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
-    if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar") col.use <- "black"
+    if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") col.use <- "black"
     
     abline(a=LogA, b=-B, col=col.use)
     
@@ -237,7 +237,7 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
   SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
   if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
-  if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber"))
+  if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber"))
   lnSMSY <- log(SMSY$rawSMSY)
   lnWA <- log(WA$WA)
   
@@ -249,8 +249,8 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   #points(y=lnSMSY[18:length(SMSY$lh)], x=lnWA[18:length(SMSY$lh)], pch=3, col=col.use[18:length(SMSY$lh)], cex=1.5)
   logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
   logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% select(Estimate) %>% pull()
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar") logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% select(Estimate) %>% pull() + logD1
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar") {
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% select(Estimate) %>% pull() + logD1
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") {
     D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% select(Estimate) %>% pull() ) + exp(logD2)
     if(nrow(All_Deltas %>% filter(Param=="Delta2ocean"))>=1)  D2o <- (All_Deltas %>% filter(Param=="Delta2ocean") %>% select(Estimate) %>% pull() ) + exp(logD2)
   }
@@ -264,7 +264,7 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
     abline(a=logD1[2], b=exp(logD2[2]), col="dodgerblue3", lwd=2)
   }
   if(mod=="IWAM_FixedCombined") abline(a=logD1, b=exp(logD2), col="maroon", lwd=2)#Actually pulls Delta2_bounded, so no need to log
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar") {
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") {
     abline(a=logD1, b=exp(logD2), col="forestgreen", lwd=2)
     abline(a=logD1o, b=D2o, col="dodgerblue3", lwd=2)
   }
@@ -307,7 +307,7 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
     text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="maroon", cex=0.8)
   
   }
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"){
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"){
     text(x=9, y=7,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="forestgreen", cex=0.8)
     text(x=6, y=9.5,labels= paste0("log(Delta1)=",round(logD1o[1],2), ", \nDelta2=", round(D2o[1],2)), col="dodgerblue3", cex=0.8)
   }
@@ -333,7 +333,7 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
   SREP <- SREP %>% left_join(Sc) %>% mutate(rawSREP=Estimate*Scale)
   if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi") SREP <- SREP %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
-  if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar") SREP <- SREP %>% left_join(Stream, by=c("Stocknumber"))
+  if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") SREP <- SREP %>% left_join(Stream, by=c("Stocknumber"))
   lnSREP <- log(SREP$rawSREP)
   lnWA <- log(WA$WA)
   
@@ -345,8 +345,8 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   #points(y=lnSREP[18:length(SREP$lh)], x=lnWA[18:length(SREP$lh)], pch=3, col=col.use[18:length(SREP$lh)], cex=1.5)
   logN1 <- All_Deltas %>% filter(Param=="logNu1") %>% select(Estimate) %>% pull()
   logN2 <- All_Deltas %>% filter(Param=="logNu2") %>% select(Estimate) %>% pull()
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar") logN1o <- All_Deltas %>% filter(Param=="logNu1ocean") %>% select(Estimate) %>% pull() + logN1
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar") {
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") logN1o <- All_Deltas %>% filter(Param=="logNu1ocean") %>% select(Estimate) %>% pull() + logN1
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") {
     N2o <- exp(All_Deltas %>% filter(Param=="logNu2ocean") %>% select(Estimate) %>% pull() ) + exp(logN2)
     if(nrow(All_Deltas %>% filter(Param=="Nu2ocean"))>=1)  N2o <- (All_Deltas %>% filter(Param=="Nu2ocean") %>% select(Estimate) %>% pull() ) + exp(logN2)
   }
@@ -360,7 +360,7 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
     abline(a=logN1[2], b=exp(logN2[2]), col="dodgerblue3", lwd=2)
   }
   if(mod=="IWAM_FixedCombined") abline(a=logN1, b=exp(logN2), col="maroon", lwd=2)#Actually pulls Delta2_bounded, so no need to log
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar") {
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") {
     abline(a=logN1, b=exp(logN2), col="forestgreen", lwd=2)
     abline(a=logN1o, b=N2o, col="dodgerblue3", lwd=2)
   }
@@ -403,7 +403,7 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
     text(x=6, y=10.5,labels= paste0("log(Nu1)=",round(logN1[1],2), ", \nNu2=", round(exp(logN2[1]),2)), col="maroon", cex=0.8)
     
   }
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"){
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"){
     text(x=9, y=7,labels= paste0("log(Nu1)=",round(logN1[1],2), ", \nNu2=", round(exp(logN2[1]),2)), col="forestgreen", cex=0.8)
     text(x=6, y=10.5,labels= paste0("log(Nu1)=",round(logN1o[1],2), ", \nNu2=", round(N2o[1],2)), col="dodgerblue3", cex=0.8)
   }
@@ -472,6 +472,7 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   All_Est_Ricker_std <- readRDS("DataOut/All_Est_Ricker_std.RDS")
   All_Est_Liermann_SepRicA <- readRDS("DataOut/All_Est_Liermann_SepRicA.RDS")
   All_Est_Liermann_HalfNormRicVar <- readRDS("DataOut/All_Est_Liermann_HalfNormRicVar.RDS")
+  All_Est_Liermann_HalfCauchyRicVar <- readRDS("DataOut/All_Est_Liermann_HalfCauchyRicVar.RDS")
   All_Est_Liermann_SepRicA_uniformSigmAPrior <- readRDS("DataOut/All_Est_Liermann_SepRicA_uniformSigmaAPrior.RDS")
   All_Est_Liermann_SepRicA_noSigmaPrior <- readRDS("DataOut/All_Est_Liermann_SepRicA_noSigmaPrior.RDS")
   All_Est_Liermann_SepRicA_invGamma0.001 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.001.RDS")
@@ -482,6 +483,7 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   RicAL <- All_Est_Liermann %>% filter (Param=="logA")
   RicALsep <- All_Est_Liermann_SepRicA %>% filter (Param=="logA")
   RicALhNRV <- All_Est_Liermann_HalfNormRicVar %>% filter (Param=="logA")
+  RicALhCRV <- All_Est_Liermann_HalfCauchyRicVar %>% filter (Param=="logA")
   RicALsep_uni <- All_Est_Liermann_SepRicA_uniformSigmAPrior %>% filter (Param=="logA")
   RicALsep_0.1 <- All_Est_Liermann_SepRicA_invGamma0.1 %>% filter (Param=="logA")
   RicALsep_0.001 <- All_Est_Liermann_SepRicA_invGamma0.001 %>% filter (Param=="logA")
@@ -495,9 +497,9 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
 
   
   #box.data <- data.frame(RicLogA=c(RicAL$Estimate,RicALsep$Estimate, RicAR$Estimate), Model=c(rep("Hierarchical_logA_combined",nRicA),rep("Hierarchical_logA_sep",nRicA), rep("Fixed_logA",nRicA)))
-  box.data <- data.frame(RicLogA=c(RicALsep$Estimate,RicALhNRV$Estimate, RicALsep_0.1$Estimate, RicALsep_0.001$Estimate,  
+  box.data <- data.frame(RicLogA=c(RicALsep$Estimate,RicALhNRV$Estimate, RicALhCRV$Estimate, RicALsep_0.1$Estimate, RicALsep_0.001$Estimate,  
                                    RicALsep_uni$Estimate, RicALsep_none$Estimate, RicARstd$Estimate), 
-                         Model=c(rep("Hierarchical\nbase\ncase",nRicAL), rep("Hierarchical\nhalf\nNormal",nRicAL),rep("Inv\nGamma\n(0.1, 0.1)", nRicAL), 
+                         Model=c(rep("Hierarchical\nbase\ncase",nRicAL), rep("Hierarchical\nhalf\nNormal",nRicAL), rep("Hierarchical\nhalf\nCauchy",nRicAL), rep("Inv\nGamma\n(0.1, 0.1)", nRicAL), 
                                  rep("InvGamma\n(0.001, 0.001)", nRicAL), 
                                  rep("Uniform",nRicAL), rep("No priors\nSigmas",nRicAL), rep("Fixed\neffects",nRicAstd)))
   

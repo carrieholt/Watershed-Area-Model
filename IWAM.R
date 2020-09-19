@@ -26,7 +26,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- FALSE#TRUE
-mod <- "LIermann_SepRicA"#"Liermann_HalfNormRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "Liermann_SepRicA"#"Liermann_HalfNormRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -438,7 +438,7 @@ if(mod!="Liermann_HalfNormRicVar"){
   lower<-unlist(obj$par)
   lower[1:length(lower)]<- -Inf
 }
-if(mod!="Liermann_SepRicA"){
+if(mod=="Liermann_SepRicA"){
   upper<-unlist(obj$par)
   upper[1:length(upper)]<- Inf
   #upper[names(upper) == "logSigmaA"] <- log(2)#log(100)

@@ -497,12 +497,16 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
 
   
   #box.data <- data.frame(RicLogA=c(RicAL$Estimate,RicALsep$Estimate, RicAR$Estimate), Model=c(rep("Hierarchical_logA_combined",nRicA),rep("Hierarchical_logA_sep",nRicA), rep("Fixed_logA",nRicA)))
-  box.data <- data.frame(RicLogA=c(RicALsep$Estimate,RicALhNRV$Estimate, RicALhCRV$Estimate, RicALsep_0.1$Estimate, RicALsep_0.001$Estimate,  
-                                   RicALsep_uni$Estimate, RicALsep_none$Estimate, RicARstd$Estimate), 
-                         Model=c(rep("Hierarchical\nbase\ncase",nRicAL), rep("Hierarchical\nhalf\nNormal",nRicAL), rep("Hierarchical\nhalf\nCauchy",nRicAL), rep("Inv\nGamma\n(0.1, 0.1)", nRicAL), 
-                                 rep("InvGamma\n(0.001, 0.001)", nRicAL), 
-                                 rep("Uniform",nRicAL), rep("No priors\nSigmas",nRicAL), rep("Fixed\neffects",nRicAstd)))
+  box.data <- data.frame(RicLogA=c(RicARstd$Estimate, RicALsep_0.001$Estimate, RicALsep$Estimate, RicALsep_0.1$Estimate, 
+                                   RicALhNRV$Estimate, RicALhCRV$Estimate, RicALsep_uni$Estimate, RicALsep_none$Estimate), 
+                         Model=c(rep("Fixed\neffects",nRicAstd), rep("InvGamma\n(0.001, 0.001)", nRicAL), 
+                                 rep("Hierarchical\nbase\ncase",nRicAL), rep("Inv\nGamma\n(0.1, 0.1)", nRicAL),
+                                 rep("Hierarchical\nhalf\nNormal",nRicAL), 
+                                 rep("Hierarchical\nhalf\nCauchy",nRicAL),  
+                                 rep("Uniform",nRicAL), rep("No priors\nSigmas",nRicAL) ))
   
+  #Add reorder to as.factor(Model), I think, but need to specify order as above 1:8. Add column to dataframe to do this, of length 200.
+  # see my old dplyr code on adding new columns with string of numbers aligned with a factor (IWAM.r)
   ggplot(box.data, aes(x=as.factor(Model), y=RicLogA, fill=as.factor(Model))) + 
     geom_boxplot() + 
     scale_fill_viridis(discrete = TRUE, alpha=0.6) + 

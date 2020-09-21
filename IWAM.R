@@ -26,7 +26,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- FALSE#TRUE
-mod <- "Liermann_HalfNormRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "Liermann_HalfCauchyRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -589,6 +589,7 @@ if (plot==TRUE){
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_uniformSigmaAPrior.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_noSigmaAPrior.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_noSigmaPrior.RDS", sep="") )
+#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") ) #For Liermann_HalfCauchyRicVar and Liermann_HalfNormalRicVar
 
 # Plot WA regression
 if(plot==TRUE){

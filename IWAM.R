@@ -26,7 +26,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- FALSE#TRUE
-mod <- "Liermann_SepRicA"#"Liermann_HalfNormRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "Liermann_HalfNormRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -424,11 +424,11 @@ if(mod=="IWAM_FixedSep"){
 if(mod=="Liermann_HalfNormRicVar"){
   upper<-unlist(obj$par)
   upper[1:length(upper)]<- Inf
-  upper[names(upper) == "logSigmaA"] <- log(2)#log(100)
+  #upper[names(upper) == "logSigmaA"] <- log(2)#log(100)
   
   lower<-unlist(obj$par)
   lower[1:length(lower)]<- -Inf
-  lower[names(lower) == "logSigmaA"] <- log(0.1)
+  #lower[names(lower) == "logSigmaA"] <- log(0.1)
 }
 
 if(mod!="Liermann_HalfNormRicVar"){
@@ -456,6 +456,8 @@ if(mod=="Liermann_SepRicA"){
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5), lower=lower, upper=upper)#lower=as.vector(lower), upper=as.vector(upper))
 pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
+#obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)
+
 #summary(sdreport(obj), p.value=TRUE)
 
 #library(tmbstan)

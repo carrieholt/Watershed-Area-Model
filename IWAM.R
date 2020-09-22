@@ -26,7 +26,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- FALSE#TRUE
-mod <- "Liermann_HalfCauchyRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "Liermann_SepRicA"#"Liermann_HalfCauchyRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -179,16 +179,16 @@ if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"|mo
 if (mod=="Liermann"){
   data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
   data$logMuA_mean <- 1.5
-  data$logMuA_sig <- 5
+  data$logMuA_sig <- 2
   data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
 }
 
 if (mod=="Liermann_SepRicA"){
   data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
   data$logMuAs_mean <- 1.5
-  data$logMuAs_sig <- 5
+  data$logMuAs_sig <- 2
   data$logMuAo_mean <- 0#1.5
-  data$logMuAo_sig <- 5
+  data$logMuAo_sig <- 2
   data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
   
   data$Tau_D_dist <- 1#TMB_Inputs$Tau_sigma
@@ -198,13 +198,13 @@ if (mod=="Liermann_SepRicA"){
 
 if (mod=="Liermann_HalfNormRicVar"){
   data$logMuAs_mean <- 1.5
-  data$logMuAs_sig <- 5
+  data$logMuAs_sig <- 2
   data$logMuAo_mean <- 0#1.5
-  data$logMuAo_sig <- 5
+  data$logMuAo_sig <- 2
   data$HalfNormMean <- 0#TMB_Inputs$Tau_sigma
   data$HalfNormSig <- 1#TMB_Inputs$Tau_sigma
-  data$HalfNormMeanA <- 0.44#TMB_Inputs$Tau_sigma
-  data$HalfNormSigA <- 0.5#TMB_Inputs$Tau_sigma
+  data$HalfNormMeanA <- 0#0.44#TMB_Inputs$Tau_sigma
+  data$HalfNormSigA <- 1#0.5#TMB_Inputs$Tau_sigma
   
   data$Tau_D_dist <- 1#TMB_Inputs$Tau_sigma
   #data$N_stream <- 13
@@ -442,12 +442,14 @@ if(mod=="Liermann_SepRicA"){
   upper<-unlist(obj$par)
   upper[1:length(upper)]<- Inf
   #upper[names(upper) == "logSigmaA"] <- log(2)#log(100)
+  #upper[names(upper) == "logSigma_std"] <- log(2)#log(100)
   #upper[51:75] <- log(100) #logSigma_std
   #upper[50:74] <- log(2) #logSigma_std
   
   lower<-unlist(obj$par)
   lower[1:length(lower)]<- -Inf
-  #lower[names(lower) == "logSigmaA"] <- log(0.1)
+  #lower[names(lower) == "logSigmaA"] <- log(0.00001)
+  #lower[names(lower) == "logSigma_std"] <- log(0.00001)
   #lower[51:75] <- log(0.00001)
   
 }
@@ -582,12 +584,14 @@ if (plot==TRUE){
 }
 
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
+#saveRDS( All_Est, paste( "DataOut/All_Est_Ricker_std.RDS", sep="") )# mod "IWAM_FixedSep_RicStd"
 
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.1.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.001.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.01_invGammaA0.001.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.001_invGammaA0.01.RDS", sep="") )
-#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_uniformSigmaAPrior.RDS", sep="") )
+#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_uniformSigmaPrior.RDS", sep="") )
+#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_uniform1SigmaPrior.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_noSigmaAPrior.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_noSigmaPrior.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") ) #For Liermann_HalfCauchyRicVar and Liermann_HalfNormalRicVar
@@ -595,7 +599,7 @@ if (plot==TRUE){
 # Plot WA regression
 if(plot==TRUE){
   png(paste("DataOut/WAregSMSY_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
-  #png(paste("DataOut/WAreg_Liermann_SepRicA_uniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
+  #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -611,7 +615,7 @@ if(plot==TRUE){
   dev.off()
 
   png(paste("DataOut/WAregSREP_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
-  #png(paste("DataOut/WAreg_Liermann_SepRicA_uniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
+  png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"

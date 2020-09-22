@@ -1,5 +1,26 @@
 # Plot SR models: curves and linearized mddel
 
+# Functions
+# Functions
+t_col <- function(color, percent = 50, name = NULL) {
+  #      color = color name
+  #    percent = % transparency
+  #       name = an optional name for the color
+  
+  ## Get RGB values for named color
+  rgb.val <- col2rgb(color)
+  
+  ## Make new color using input color as base and alpha set by transparency
+  t.col <- rgb(rgb.val[1], rgb.val[2], rgb.val[3],
+               max = 255,
+               alpha = (100 - percent) * 255 / 100,
+               names = name)
+  
+  ## Save the color
+  t.col
+  #invisible(t.col)
+}
+
 # Plot SR curves
 
 PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks_surv, r2, removeSkagit, mod) {
@@ -235,9 +256,9 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
   # what is scale of SMSY?
   Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
-  SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
-  if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
-  if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber"))
+  SMSY <- SMSY %>% left_join(Sc, by="Stocknumber") %>% mutate(rawSMSY=Estimate*Scale)
+  #if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
+  #if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber"))
   lnSMSY <- log(SMSY$rawSMSY)
   lnWA <- log(WA$WA)
   
@@ -332,8 +353,8 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   # what is scale of SREP?
   Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
   SREP <- SREP %>% left_join(Sc) %>% mutate(rawSREP=Estimate*Scale)
-  if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi") SREP <- SREP %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
-  if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") SREP <- SREP %>% left_join(Stream, by=c("Stocknumber"))
+  #if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi") SREP <- SREP %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
+  #if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar") SREP <- SREP %>% left_join(Stream, by=c("Stocknumber"))
   lnSREP <- log(SREP$rawSREP)
   lnWA <- log(WA$WA)
   
@@ -473,7 +494,7 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   All_Est_Liermann_SepRicA <- readRDS("DataOut/All_Est_Liermann_SepRicA.RDS")
   All_Est_Liermann_HalfNormRicVar <- readRDS("DataOut/All_Est_Liermann_HalfNormRicVar.RDS")
   All_Est_Liermann_HalfCauchyRicVar <- readRDS("DataOut/All_Est_Liermann_HalfCauchyRicVar.RDS")
-  All_Est_Liermann_SepRicA_uniformSigmAPrior <- readRDS("DataOut/All_Est_Liermann_SepRicA_uniformSigmaAPrior.RDS")
+  All_Est_Liermann_SepRicA_uniformSigmaPrior <- readRDS("DataOut/All_Est_Liermann_SepRicA_uniformSigmaPrior.RDS")
   All_Est_Liermann_SepRicA_noSigmaPrior <- readRDS("DataOut/All_Est_Liermann_SepRicA_noSigmaPrior.RDS")
   All_Est_Liermann_SepRicA_invGamma0.001 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.001.RDS")
   All_Est_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.1.RDS")
@@ -484,14 +505,14 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   RicALsep <- All_Est_Liermann_SepRicA %>% filter (Param=="logA")
   RicALhNRV <- All_Est_Liermann_HalfNormRicVar %>% filter (Param=="logA")
   RicALhCRV <- All_Est_Liermann_HalfCauchyRicVar %>% filter (Param=="logA")
-  RicALsep_uni <- All_Est_Liermann_SepRicA_uniformSigmAPrior %>% filter (Param=="logA")
+  RicALsep_uni <- All_Est_Liermann_SepRicA_uniformSigmaPrior %>% filter (Param=="logA")
   RicALsep_0.1 <- All_Est_Liermann_SepRicA_invGamma0.1 %>% filter (Param=="logA")
   RicALsep_0.001 <- All_Est_Liermann_SepRicA_invGamma0.001 %>% filter (Param=="logA")
   RicALsep_0.001_0.01 <- All_Est_Liermann_SepRicA_invGamma0.001_invGammaA0.01 %>% filter (Param=="logA")
   RicALsep_0.01_0.001 <- All_Est_Liermann_SepRicA_invGamma0.01_invGammaA0.001 %>% filter (Param=="logA")
   RicALsep_none <- All_Est_Liermann_SepRicA_noSigmaPrior %>% filter (Param=="logA")
   RicAR <- All_Est_Ricker_AllMod %>% filter (Param=="logA")
-  RicARstd <- All_Est_Ricker_std %>% filter (Param=="logA_std")
+  RicARstd <- All_Est_Ricker_std %>% filter (Param=="logA")#(Param=="logA_std")
   nRicAL <- length(RicALsep$Estimate)
   nRicAstd <- length(RicARstd$Estimate)
 
@@ -503,18 +524,23 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
                                  rep("InvGamma\n(0.01,0.01)",nRicAL), rep("Inv\nGamma\n(0.001, 0.001)", nRicAL),
                                  rep("Half\nNormal\n(0,1)",nRicAL), 
                                  rep("Half\nCauchy\n(0,1)",nRicAL),  
-                                 rep("Uniform\n(0,2)",nRicAL), rep("No priors\nSigmas",nRicAL), 
+                                 rep("Uniform\n(0,2)",nRicAL), rep("No priors\nSigmas",nRicAL)), 
                          lh = c(RicARstd$lh, RicALsep_0.1$lh, RicALsep$lh, RicALsep_0.001$lh, 
-                                      RicALhNRV$lh, RicALhCRV$lh, RicALsep_uni$lh, RicALsep_none$lh) ))
+                                      RicALhNRV$lh, RicALhCRV$lh, RicALsep_uni$lh, RicALsep_none$lh) )
   
   order <- data.frame(Model=unique(box.data$Model), order=1:8)
   box.data <- box.data %>% left_join(order, by="Model")
   #Add reorder to as.factor(Model), I think, but need to specify order as above 1:8. Add column to dataframe to do this, of length 200.
   # see my old dplyr code on adding new columns with string of numbers aligned with a factor (IWAM.r)
-  ggplot(box.data, aes(x=reorder(as.factor(Model),order), y=RicLogA, fill=as.factor(Model))) +  #
+  cols<-viridis(4, alpha=0.9)
+  cols.order <- c(grey(0.5), cols[3], cols[2], t_col(color=cols[1], percent=70), t_col(cols[1], percent=50), t_col(cols[1], percent=30), "white", cols[4])
+  #print cols.order and then cut and past into line: scale_fill_manual below. These are the colours I used in the plot of priors. can add a legend to quickly see how ggplot reorders this befor plotting
+  
+  ggplot(box.data, aes(x=reorder(as.factor(Model),order), y=RicLogA, fill=as.factor(Model))) +  
     geom_boxplot() + 
-    scale_fill_viridis(discrete = TRUE, alpha=0.6) + 
-    geom_jitter(color="black", size=2, alpha=0.9) + #,aes(shape=lh)?. I like shape 16,17
+    scale_fill_manual(values=c("#808080", "#35B779E6", "#31688EE6", "#4401544C", "#4401547F", "#440154B2", "white", "#FDE725E6" )) +
+    #scale_fill_viridis(discrete = TRUE, alpha=0.6) + 
+    geom_jitter(color="black", shape=as.factor(box.data$lh), size=2, alpha=0.9) + #,aes(shape=lh)?. I like shape 16,17
     ggtitle("Distribution of Ricker LogA") +
     theme(legend.position="none") +
     theme(axis.text=element_text(size=10),
@@ -526,6 +552,6 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   #points(x=jitter(rep(2,nRicA)), y=RicAR$Estimate, pch=20)
 }
 
-#png(paste("DataOut/RicADist_ComparePriors.png", sep=""), width=7, height=7, units="in", res=1000)
+#png(paste("DataOut/RicADist_ComparePriors.png", sep=""), width=7, height=7, units="in", res=500)
 #plotRicA()
 #dev.off()

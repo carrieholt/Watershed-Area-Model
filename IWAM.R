@@ -499,6 +499,7 @@ All_Est <- bind_rows(All_Ests_std, All_Ests_ar, All_Ests_surv)
 All_Est$ar <- All_Est$Stocknumber %in% stksNum_ar
 All_Est$surv <- All_Est$Stocknumber %in% stksNum_surv
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
+All_Est <- All_Est %>%left_join(Stream, by="Stocknumber")
 
 All_Deltas <- data.frame()
 All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta", "Delta2_bounded", 

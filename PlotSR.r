@@ -497,23 +497,27 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
 
   
   #box.data <- data.frame(RicLogA=c(RicAL$Estimate,RicALsep$Estimate, RicAR$Estimate), Model=c(rep("Hierarchical_logA_combined",nRicA),rep("Hierarchical_logA_sep",nRicA), rep("Fixed_logA",nRicA)))
-  box.data <- data.frame(RicLogA=c(RicARstd$Estimate, RicALsep_0.001$Estimate, RicALsep$Estimate, RicALsep_0.1$Estimate, 
+  box.data <- data.frame(RicLogA = c(RicARstd$Estimate, RicALsep_0.1$Estimate, RicALsep$Estimate, RicALsep_0.001$Estimate, 
                                    RicALhNRV$Estimate, RicALhCRV$Estimate, RicALsep_uni$Estimate, RicALsep_none$Estimate), 
-                         Model=c(rep("Fixed\neffects",nRicAstd), rep("InvGamma\n(0.001, 0.001)", nRicAL), 
-                                 rep("Hierarchical\nbase\ncase",nRicAL), rep("Inv\nGamma\n(0.1, 0.1)", nRicAL),
-                                 rep("Hierarchical\nhalf\nNormal",nRicAL), 
-                                 rep("Hierarchical\nhalf\nCauchy",nRicAL),  
-                                 rep("Uniform",nRicAL), rep("No priors\nSigmas",nRicAL) ))
+                         Model = c(rep("Fixed\neffects",nRicAstd), rep("InvGamma\n(0.1, 0.1)", nRicAL), 
+                                 rep("InvGamma\n(0.01,0.01)",nRicAL), rep("Inv\nGamma\n(0.001, 0.001)", nRicAL),
+                                 rep("Half\nNormal\n(0,1)",nRicAL), 
+                                 rep("Half\nCauchy\n(0,1)",nRicAL),  
+                                 rep("Uniform\n(0,2)",nRicAL), rep("No priors\nSigmas",nRicAL), 
+                         lh = c(RicARstd$lh, RicALsep_0.1$lh, RicALsep$lh, RicALsep_0.001$lh, 
+                                      RicALhNRV$lh, RicALhCRV$lh, RicALsep_uni$lh, RicALsep_none$lh) ))
   
+  order <- data.frame(Model=unique(box.data$Model), order=1:8)
+  box.data <- box.data %>% left_join(order, by="Model")
   #Add reorder to as.factor(Model), I think, but need to specify order as above 1:8. Add column to dataframe to do this, of length 200.
   # see my old dplyr code on adding new columns with string of numbers aligned with a factor (IWAM.r)
-  ggplot(box.data, aes(x=as.factor(Model), y=RicLogA, fill=as.factor(Model))) + 
+  ggplot(box.data, aes(x=reorder(as.factor(Model),order), y=RicLogA, fill=as.factor(Model))) +  #
     geom_boxplot() + 
     scale_fill_viridis(discrete = TRUE, alpha=0.6) + 
-    geom_jitter(color="black", size=2, alpha=0.9) +
+    geom_jitter(color="black", size=2, alpha=0.9) + #,aes(shape=lh)?. I like shape 16,17
     ggtitle("Distribution of Ricker LogA") +
     theme(legend.position="none") +
-    theme(axis.text=element_text(size=12),
+    theme(axis.text=element_text(size=10),
           axis.title=element_text(size=20,face="bold"),
           plot.title = element_text(size = 20)) + 
     xlab("Model")

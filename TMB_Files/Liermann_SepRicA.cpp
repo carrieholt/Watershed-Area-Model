@@ -47,12 +47,12 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(logRS_std);
   DATA_IVECTOR(stk_std);
   DATA_IVECTOR(yr_std);
-  DATA_SCALAR(Tau_dist);
+  //DATA_SCALAR(Tau_dist);
   DATA_SCALAR(logMuAs_mean);
   DATA_SCALAR(logMuAs_sig);
   DATA_SCALAR(logMuAo_mean);
   DATA_SCALAR(logMuAo_sig);
-  DATA_SCALAR(Tau_A_dist);
+  //DATA_SCALAR(Tau_A_dist);
   DATA_VECTOR(WA); 
   DATA_VECTOR(Scale);
   DATA_IVECTOR(Stream);
@@ -188,7 +188,7 @@ Type objective_function<Type>:: operator() ()
     // add prior on logA_std, 
     ans += -dnorm(logA_std(i), logMuAs + logMuAo * Stream(i), sigmaA, true );
      // add prior on sigma 
-    ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
+    //ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
   }
   
   //// Add hierarchical structure to A: stream ==============
@@ -212,7 +212,7 @@ Type objective_function<Type>:: operator() ()
   // MuA prior for ocean type
   ans += -dnorm(logMuAo, logMuAo_mean, logMuAo_sig, true);
   // sigmaA prior
-  ans += -dgamma(pow(sigmaA,-2), Tau_A_dist, 1/Tau_A_dist, true);
+  //ans += -dgamma(pow(sigmaA,-2), Tau_A_dist, 1/Tau_A_dist, true);
   
   //// sigmaA prior stream type
   //ans += -dgamma(pow(sigmaAs,-2), Tau_A_dist, 1/Tau_A_dist, true);

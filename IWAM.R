@@ -184,12 +184,12 @@ if (mod=="Liermann"){
 }
 
 if (mod=="Liermann_SepRicA"){
-  data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
+  #data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
   data$logMuAs_mean <- 1.5
   data$logMuAs_sig <- 2
   data$logMuAo_mean <- 0#1.5
   data$logMuAo_sig <- 2
-  data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
+  #data$Tau_A_dist <- 0.01#TMB_Inputs$Tau_sigma
   
   data$Tau_D_dist <- 1#TMB_Inputs$Tau_sigma
   #data$N_stream <- 13
@@ -615,7 +615,7 @@ if(plot==TRUE){
   dev.off()
 
   png(paste("DataOut/WAregSREP_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
-  png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
+  #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"

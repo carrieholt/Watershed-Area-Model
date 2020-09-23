@@ -541,6 +541,7 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
     scale_fill_manual(values=c("#808080", "#35B779E6", "#31688EE6", "#4401544C", "#4401547F", "#440154B2", "white", "#FDE725E6" )) +
     #scale_fill_viridis(discrete = TRUE, alpha=0.6) + 
     geom_jitter(color="black", shape=as.factor(box.data$lh), size=2, alpha=0.9) + #,aes(shape=lh)?. I like shape 16,17
+    scale_shape_manual(values=c(16,17)) + #Does not work 
     ggtitle("Distribution of Ricker LogA") +
     theme(legend.position="none") +
     theme(axis.text=element_text(size=10),

@@ -103,6 +103,6 @@ png(paste("DataOut/RicPriors_InvGamma.png", sep=""), width=7, height=7, units="i
 plotPriors(plot_inv_gamma_only=TRUE)
 dev.off()
 
-png(paste("DataOut/RicPriors.png", sep=""), width=7, height=7, units="in", res=500)
+png(paste("DataOut/RicPriors_sm.png", sep=""), width=7, height=7, units="in", res=500)
 plotPriors(plot_inv_gamma_only=FALSE)
 dev.off()

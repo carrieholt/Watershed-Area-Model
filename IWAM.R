@@ -26,7 +26,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 
 plot <- FALSE#TRUE
 removeSkagit <- FALSE#TRUE
-mod <- "Liermann_SepRicA"#"Liermann_HalfCauchyRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+mod <- "Liermann_HalfNormRicVar"#"Liermann_HalfCauchyRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 
 if( plot== TRUE) {
   source ("PlotSR.r")# Plotting functions
@@ -202,9 +202,9 @@ if (mod=="Liermann_HalfNormRicVar"){
   data$logMuAo_mean <- 0#1.5
   data$logMuAo_sig <- 2
   data$HalfNormMean <- 0#TMB_Inputs$Tau_sigma
-  data$HalfNormSig <- 1#TMB_Inputs$Tau_sigma
+  data$HalfNormSig <- 2#1#TMB_Inputs$Tau_sigma
   data$HalfNormMeanA <- 0#0.44#TMB_Inputs$Tau_sigma
-  data$HalfNormSigA <- 1#0.5#TMB_Inputs$Tau_sigma
+  data$HalfNormSigA <- 2#1#0.5#TMB_Inputs$Tau_sigma
   
   data$Tau_D_dist <- 1#TMB_Inputs$Tau_sigma
   #data$N_stream <- 13

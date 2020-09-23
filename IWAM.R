@@ -202,9 +202,9 @@ if (mod=="Liermann_HalfNormRicVar"){
   data$logMuAo_mean <- 0#1.5
   data$logMuAo_sig <- 2
   data$HalfNormMean <- 0#TMB_Inputs$Tau_sigma
-  data$HalfNormSig <- 2#1#TMB_Inputs$Tau_sigma
+  data$HalfNormSig <- 1#TMB_Inputs$Tau_sigma
   data$HalfNormMeanA <- 0#0.44#TMB_Inputs$Tau_sigma
-  data$HalfNormSigA <- 2#1#0.5#TMB_Inputs$Tau_sigma
+  data$HalfNormSigA <- 1#0.5#TMB_Inputs$Tau_sigma
   
   data$Tau_D_dist <- 1#TMB_Inputs$Tau_sigma
   #data$N_stream <- 13
@@ -480,6 +480,12 @@ SN_std <- unique(SRDat_std[, c("Stocknumber")])
 All_Ests_std$Stocknumber <- rep(SN_std)
 All_Ests_std <- left_join(All_Ests_std, unique(SRDat_std[, c("Stocknumber", "Name")]))
 
+logDeltaSigma <- All_Ests %>% filter (Param %in% c("logDeltaSigma")) 
+DeltaSigmaUCL <- exp(logDeltaSigma$Estimate + logDeltaSigma$Std..Error*1.96)
+DeltaSigmaLCL <- exp(logDeltaSigma$Estimate - logDeltaSigma$Std..Error*1.96) 
+DeltaSigma <- exp(logDeltaSigma$Estimate)
+
+
 All_Ests_ar <- data.frame()
 All_Ests_surv <- data.frame()
 
@@ -598,7 +604,7 @@ if (plot==TRUE){
 
 # Plot WA regression
 if(plot==TRUE){
-  png(paste("DataOut/WAregSMSY_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
+  png(paste("DataOut/WAregSMSY_", mod, "_InvGammaDeltaSig0.01.png", sep=""), width=7, height=7, units="in", res=500)
   #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -614,7 +620,7 @@ if(plot==TRUE){
   plotWAregressionSMSY (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
   dev.off()
 
-  png(paste("DataOut/WAregSREP_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
+  png(paste("DataOut/WAregSREP_", mod, "_InvGammaDeltaSig0.01.png", sep=""), width=7, height=7, units="in", res=500)
   #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"

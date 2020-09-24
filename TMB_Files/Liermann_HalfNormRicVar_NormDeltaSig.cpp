@@ -61,6 +61,7 @@ Type objective_function<Type>:: operator() ()
   //DATA_SCALAR(Tau_D_dist);
   //DATA_SCALAR(logDeltaSigma);
   //DATA_SCALAR(logNuSigma);
+  
   DATA_SCALAR(sigDelta_mean);
   DATA_SCALAR(sigDelta_sig);
   DATA_SCALAR(sigNu_mean);
@@ -285,11 +286,12 @@ Type objective_function<Type>:: operator() ()
   // sigma_delta prior
   //ans += -dgamma(pow(sigma_delta,-2), Tau_D_dist, 1/Tau_D_dist, true);
   ans += -dnorm(sigma_delta, sigDelta_mean, sigDelta_sig, true);
+  //ans += -abs( dt( sigma_delta, Type(1), true));
   
   // sigma_delta prior
   //ans += -dgamma(pow(sigma_nu,-2), Tau_D_dist, 1/Tau_D_dist, true);
   ans += -dnorm(sigma_nu, sigNu_mean, sigNu_sig, true);
-  
+  //ans += - abs( dt( sigma_nu, Type(1), true ));
   
   // Get predicted values for plotting  WA regresssion with CIs
   int N_pred = PredlnWA.size();

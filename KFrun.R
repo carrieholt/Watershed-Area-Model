@@ -43,25 +43,31 @@ stk <- unique(SRDat$Stocknumber)
 ind <- 0
 nstk <- length(stk)
 SDKFlSmsy <- NA
+SDKFlSrep <- NA
 use <- rep(0,nstk) #need to check that this is working
 #plot time-varying Ric A
 KFsmsy.ls <- list()
 
 par(cex=1.5)
-plot(x=1939:2000, y=rep(0,length(1939:2000)), type="l", col="white", ylim=c(4,12), xlab="Brood year", ylab="Time varying log(SMSY)")
+#plot(x=1939:2000, y=rep(0,length(1939:2000)), type="l", col="white", ylim=c(4,12), xlab="Brood year", ylab="Time varying log(SMSY)")
+plot(x=1939:2000, y=rep(0,length(1939:2000)), type="l", col="white", ylim=c(4,12), xlab="Brood year", ylab="Time varying log(SREP)")
 for (i in stk){
   ind <- ind + 1
-  Rec <- SRDat %>% filter (Stocknumber==i) %>% pull (Rec) #/10000
-  Sp <- SRDat %>% filter (Stocknumber==i) %>% pull (Sp) #/10000
-  Yr <- SRDat %>% filter (Stocknumber==i) %>% pull (Yr) #/10000
+  Rec <- SRDat %>% filter (Stocknumber==i) %>% pull (Rec)
+  Sp <- SRDat %>% filter (Stocknumber==i) %>% pull (Sp)
+  Yr <- SRDat %>% filter (Stocknumber==i) %>% pull (Yr)
   
   KFa <- kf.rw(initial=initial, x=Sp, y=log(Rec/Sp))$smoothe.mean.a
   KFb <- kf.rw(initial=initial, x=Sp, y=log(Rec/Sp))$b
   KFsmsy <- (1 - gsl::lambert_W0(exp(1 - (KFa)))) / -(rep(KFb,length(KFa)))
-  lines(x=Yr, y=log(KFsmsy))
+  KFsrep <- KFa/-rep(KFb,length(KFa))
   KFsmsy.ls[[ind]] <- KFsmsy
-  KFsmsy[which(KFsmsy<0)] <- 0.000001
-  SDKFlSmsy[ind] <- sd(log(KFsmsy))#exclude those stocks that vary minimally (straight line visually). Should this be SD of hte standardized SMSY values?
+  KFsmsy[which(KFsmsy<0)] <- NA
+  KFsrep[which(KFsrep<0)] <- NA
+  #lines(x=Yr, y=log(KFsmsy))
+  lines(x=Yr, y=log(KFsrep))
+  SDKFlSmsy[ind] <- sd(log(KFsmsy))
+  SDKFlSrep[ind] <- sd(log(KFsrep))
   
   kfAICc <- kf.rw(initial=initial, x=Sp, y=log(Rec/Sp))$AICc # uses concentrated nLL
   
@@ -79,17 +85,28 @@ for (i in stk){
   
 }
 
-summary(SDKFlSmsy) # 4 straight lines
+summary(SDKFlSmsy, na.rm=T) # 4 straight lines
+summary(SDKFlSrep, na.rm=T) # 4 straight lines
 
 # Include only those stocks where log(KFSmsy) values vary over time
 summary(SDKFlSmsy[which(SDKFlSmsy >0.01)])
 hist(SDKFlSmsy[which(SDKFlSmsy >0.01)], breaks=50, xlab="SD of time-varying ln(SMSY)", main ="")
 medSDlogSmsy <- median(SDKFlSmsy[which(SDKFlSmsy >0.01)]) # use this a min bound on sigmaDelta
 
+# Include only those stocks where log(KFSrep) values vary over time
+summary(SDKFlSrep[which(SDKFlSrep >0.01)])
+hist(SDKFlSrep[which(SDKFlSrep >0.01)], breaks=50, xlab="SD of time-varying ln(SMSY)", main ="")
+medSDlogSrep <- median(SDKFlSrep[which(SDKFlSrep >0.01)]) # use this a min bound on sigmaDelta
+
 # Include on those stocks where AICc of KF model is < or within 2 units of AICc of linear model
 summary(SDKFlSmsy[which(use>0)])
 hist(SDKFlSmsy[which(use>0)], breaks=20)
-medSDlogSmsy <- median(SDKFlSmsy[which(use >0)]) # OR better yet use this a min bound on sigmaDelta
+medSDlogSmsy <- median(SDKFlSmsy[which(use >0)], na.rm=T) # OR better yet use this a min bound on sigmaDelta
+
+# Include on those stocks where AICc of KF model is < or within 2 units of AICc of linear model
+summary(SDKFlSrep[which(use>0)])
+hist(SDKFlSrep[which(use>0)], breaks=20)
+medSDlogSrep <- median(SDKFlSrep[which(use >0)], na.rm=T) # OR better yet use this a min bound on sigmaDelta
 
 # For max bounds, use SD of log(SMSY) among all 25 stocks.
 SDlSMSYParken <- sd(log(read.csv("DataIn/ParkenSMSY.csv")$SMSY))

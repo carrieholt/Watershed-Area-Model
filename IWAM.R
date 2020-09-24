@@ -221,14 +221,14 @@ if (mod=="Liermann_HalfNormRicVar_NormDeltaSig"){
   data$HalfNormMeanA <- 0#0.44#TMB_Inputs$Tau_sigma
   data$HalfNormSigA <- 1#0.5#TMB_Inputs$Tau_sigma
   
-  #data$logDeltaSigma <- log(0.47)# See KFrun.R, "medSDlogSmsy" = log(0.21)
+  data$logDeltaSigma <- log(0.47)# See KFrun.R, "medSDlogSmsy" = log(0.21)
   ## Or take Parken et al. (2006) WA sigmas, averaging var of straeam and ocean type models, and taking sqrt = log(sqrt((0.293+0.146)/2)=0.47)
-  #data$logNuSigma <- log(0.43)# See KFrun.R, "medSDlogSrep" = log(0.29)
+  data$logNuSigma <- log(0.43)# See KFrun.R, "medSDlogSrep" = log(0.29)
   ## Or take Parken et al. (2006) WA sigmas, averaging var of straeam and ocean type models, and taking sqrt = log(sqrt((0.240+0.133)/2)=0.43)
-  data$sigDelta_mean <- 0.80# See KFrun.R, #For half-normal use N(0,1)
-  data$sigDelta_sig <- 0.28# See KFrun.R,
-  data$sigNu_mean <- 0.84# See KFrun.R,
-  data$sigNu_sig <- 0.275# See KFrun.R,
+  #data$sigDelta_mean <- 0.80# See KFrun.R, #For half-normal use N(0,1)
+  #data$sigDelta_sig <- 0.28# See KFrun.R,
+  #data$sigNu_mean <- 0.84# See KFrun.R,
+  #data$sigNu_sig <- 0.275# See KFrun.R,
 }
 
 
@@ -378,13 +378,13 @@ if (mod=="Liermann_HalfNormRicVar_NormDeltaSig"){
     param$logDelta1ocean <- 0# with skagit 2.881
     param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
     param$Delta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-    param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+    #param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
     
     param$logNu1 <- 3#10# with skagit 2.881
     param$logNu1ocean <- 0# with skagit 2.881
     param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
     param$Nu2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-    param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+    #param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
     
     
   }
@@ -467,13 +467,13 @@ if(mod!="Liermann_HalfNormRicVar"){
 if(mod=="Liermann_HalfNormRicVar_NormDeltaSig"){
   upper<-unlist(obj$par)
   upper[1:length(upper)]<- Inf
-  upper[names(upper) == "logDeltaSigma"] <- log(1.39) # See KFrun.R, "SDlSMSYParken"
-  upper[names(upper) == "logNuSigma"] <- log(1.38)# See KFrun.R, "SDlSREPParken"
+  #upper[names(upper) == "logDeltaSigma"] <- log(1.39) # See KFrun.R, "SDlSMSYParken"
+  #upper[names(upper) == "logNuSigma"] <- log(1.38)# See KFrun.R, "SDlSREPParken"
   
   lower<-unlist(obj$par)
   lower[1:length(lower)]<- -Inf
-  lower[names(lower) == "logDeltaSigma"] <- log(0.21) # See KFrun.R, "medSDlogSmsy"
-  lower[names(lower) == "logNuSigma"] <- log(0.29) # See KFrun.R, "medSDlogSrep"
+  #lower[names(lower) == "logDeltaSigma"] <- log(0.21) # See KFrun.R, "medSDlogSmsy"
+  #lower[names(lower) == "logNuSigma"] <- log(0.29) # See KFrun.R, "medSDlogSrep"
 }
 
 if(mod=="Liermann_SepRicA"){
@@ -642,7 +642,7 @@ if (plot==TRUE){
 
 # Plot WA regression
 if(plot==TRUE){
-  png(paste("DataOut/WAregSMSY_", mod, "HalfCauchyDeltaSig.png", sep=""), width=7, height=7, units="in", res=500)
+  png(paste("DataOut/WAregSMSY_", mod, "FixedDeltaMin.png", sep=""), width=7, height=7, units="in", res=500)
   #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"

@@ -110,12 +110,20 @@ medSDlogSrep <- median(SDKFlSrep[which(use >0)], na.rm=T) # OR better yet use th
 
 # For max bounds, use SD of log(SMSY) among all 25 stocks.
 SDlSMSYParken <- sd(log(read.csv("DataIn/ParkenSMSY.csv")$SMSY))
+# For max bounds, use SD of log(SREP) among all 25 stocks.
+SDlSREPParken <- sd(log(read.csv("DataIn/ParkenSREP.csv")$SREP))
 
 meanSigmaDelta <- (SDlSMSYParken - medSDlogSmsy)/2 + medSDlogSmsy
+meanSigmaNu <- (SDlSREPParken - medSDlogSrep)/2 + medSDlogSrep
 
 test<- seq(medSDlogSmsy,SDlSMSYParken,length=50)
 plot(x=test, y=dnorm(test, meanSigmaDelta,1), type="l", xlab="sigmaDelta", ylab="Probability Density", ylim=c(0,5))
 lines(x=test, y=dnorm(test, meanSigmaDelta,0.5))
 lines(x=test, y=dnorm(test, meanSigmaDelta,0.28))# With this sigma, 95% of probablity density is within bounds mean +/- 0.55 (where (SDlSMSYParken - medSDlogSmsy)/2 = 0.55)
-
 #0.28*1.96 = 0.55
+
+test<- seq(medSDlogSrep,SDlSREPParken,length=50)
+plot(x=test, y=dnorm(test, meanSigmaNu,1), type="l", xlab="sigmaNu", ylab="Probability Density", ylim=c(0,5))
+lines(x=test, y=dnorm(test, meanSigmaNu,0.5))
+lines(x=test, y=dnorm(test, meanSigmaNu,0.275))# With this sigma, 95% of probablity density is within bounds mean +/- 0.55 (where (SDlSREPParken - medSDlogSrep)/2 = 0.54)
+#0.275*1.96 = 0.54

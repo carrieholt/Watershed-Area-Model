@@ -352,7 +352,7 @@
     out <- kalman.rw(initial$mean.a, initial$var.a, lm.b, fit$par[2], fit$par[3], x, y, initial$Ts)
   }
   N <- length(x) - sum(is.na(x))
-  param <- 3
+  param <- 4#3
   AICc <- 2 * out$cum.neg.log.lik[1] + 2 * param * ((N - initial$Ts)/(N - initial$Ts - param - 1))
   out$N.tot <- N
   out$N.cond <- initial$Ts

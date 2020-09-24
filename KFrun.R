@@ -42,20 +42,26 @@ SRDat <- SRDatwNA %>% filter(Name != "Humptulips" & Name != "Queets")
 stk <- unique(SRDat$Stocknumber)
 ind <- 0
 nstk <- length(stk)
-SDKFSmsy <- NA
-use <- 0 #need to check that this is working
+SDKFlSmsy <- NA
+use <- rep(0,nstk) #need to check that this is working
 #plot time-varying Ric A
+KFsmsy.ls <- list()
 
-
+par(cex=1.5)
+plot(x=1939:2000, y=rep(0,length(1939:2000)), type="l", col="white", ylim=c(4,12), xlab="Brood year", ylab="Time varying log(SMSY)")
 for (i in stk){
   ind <- ind + 1
   Rec <- SRDat %>% filter (Stocknumber==i) %>% pull (Rec) #/10000
   Sp <- SRDat %>% filter (Stocknumber==i) %>% pull (Sp) #/10000
-
+  Yr <- SRDat %>% filter (Stocknumber==i) %>% pull (Yr) #/10000
+  
   KFa <- kf.rw(initial=initial, x=Sp, y=log(Rec/Sp))$smoothe.mean.a
   KFb <- kf.rw(initial=initial, x=Sp, y=log(Rec/Sp))$b
   KFsmsy <- (1 - gsl::lambert_W0(exp(1 - (KFa)))) / -(rep(KFb,length(KFa)))
-  SDKFSmsy[ind] <- sd(KFsmsy)#exclude those stocks that vary minimally (straight line visually). Should this be SD of hte standardized SMSY values?
+  lines(x=Yr, y=log(KFsmsy))
+  KFsmsy.ls[[ind]] <- KFsmsy
+  KFsmsy[which(KFsmsy<0)] <- 0.000001
+  SDKFlSmsy[ind] <- sd(log(KFsmsy))#exclude those stocks that vary minimally (straight line visually). Should this be SD of hte standardized SMSY values?
   
   kfAICc <- kf.rw(initial=initial, x=Sp, y=log(Rec/Sp))$AICc # uses concentrated nLL
   
@@ -73,30 +79,26 @@ for (i in stk){
   
 }
 
+summary(SDKFlSmsy) # 4 straight lines
 
+# Include only those stocks where log(KFSmsy) values vary over time
+summary(SDKFlSmsy[which(SDKFlSmsy >0.01)])
+hist(SDKFlSmsy[which(SDKFlSmsy >0.01)], breaks=50, xlab="SD of time-varying ln(SMSY)", main ="")
+medSDlogSmsy <- median(SDKFlSmsy[which(SDKFlSmsy >0.01)]) # use this a min bound on sigmaDelta
 
-KFsmsy
+# Include on those stocks where AICc of KF model is < or within 2 units of AICc of linear model
+summary(SDKFlSmsy[which(use>0)])
+hist(SDKFlSmsy[which(use>0)], breaks=20)
+medSDlogSmsy <- median(SDKFlSmsy[which(use >0)]) # OR better yet use this a min bound on sigmaDelta
 
-#data <- read.csv("data/Stellacko.csv") #From KF funcs package
-#x <- data$ETS
-#y <- log(data$Rec/data$ETS)
+# For max bounds, use SD of log(SMSY) among all 25 stocks.
+SDlSMSYParken <- sd(log(read.csv("DataIn/ParkenSMSY.csv")$SMSY))
 
+meanSigmaDelta <- (SDlSMSYParken - medSDlogSmsy)/2 + medSDlogSmsy
 
-KFa <- kf.rw(initial=initial, x=data$ETS, y=log(data$Rec/data$ETS))$smoothe.mean.a
-KFb <- kf.rw(initial=initial, x=data$ETS, y=log(data$Rec/data$ETS))$b
+test<- seq(medSDlogSmsy,SDlSMSYParken,length=50)
+plot(x=test, y=dnorm(test, meanSigmaDelta,1), type="l", xlab="sigmaDelta", ylab="Probability Density", ylim=c(0,5))
+lines(x=test, y=dnorm(test, meanSigmaDelta,0.5))
+lines(x=test, y=dnorm(test, meanSigmaDelta,0.28))# With this sigma, 95% of probablity density is within bounds mean +/- 0.55 (where (SDlSMSYParken - medSDlogSmsy)/2 = 0.55)
 
-kfAICc <- kf.rw(initial=initial, x=data$ETS, y=log(data$Rec/data$ETS))$AICc # uses concentrated nLL
-kfAICc
-
-
-linearnLL <- -logLik( lm ( log (data$Rec/data$ETS) ~ data$ETS ))[1] #full nLL
-rss <- sum(lm ( log (data$Rec/data$ETS) ~ data$ETS )$resid^2)
-sigEst <- sd(lm ( log (data$Rec/data$ETS) ~ data$ETS )$resid)
-linearnLLconc <- - ( -(N/2)*log(sigEst^2) - (1/(2*sigEst^2)) * rss ) #Concentrated nLL
-lin_param <- 3
-N <- length(data$ETS) #assuming complete data
-linAICc <- 2 * linearnLLconc + 2 * lin_param * (N/(N - lin_param - 1))
-linAICc
-
-if( linAICc > (kfAIC-2) ) use <- 1
-
+#0.28*1.96 = 0.55

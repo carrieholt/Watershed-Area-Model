@@ -221,6 +221,10 @@ if (mod=="Liermann_HalfNormRicVar_NormDeltaSig"){
   data$HalfNormMeanA <- 0#0.44#TMB_Inputs$Tau_sigma
   data$HalfNormSigA <- 1#0.5#TMB_Inputs$Tau_sigma
   
+  #data$logDeltaSigma <- log(0.47)# See KFrun.R, "medSDlogSmsy" = log(0.21)
+  ## Or take Parken et al. (2006) WA sigmas, averaging var of straeam and ocean type models, and taking sqrt = log(sqrt((0.293+0.146)/2)=0.47)
+  #data$logNuSigma <- log(0.43)# See KFrun.R, "medSDlogSrep" = log(0.29)
+  ## Or take Parken et al. (2006) WA sigmas, averaging var of straeam and ocean type models, and taking sqrt = log(sqrt((0.240+0.133)/2)=0.43)
   data$sigDelta_mean <- 0.80
   data$sigDelta_sig <- 0.28
   data$sigNu_mean <- 0.84
@@ -365,10 +369,27 @@ if (mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"||mod=="Lier
   param$logNu1ocean <- 0# with skagit 2.881
   param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
   param$Nu2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
-  param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
-  
-  
+  param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.66
 }
+  
+if (mod=="Liermann_HalfNormRicVar_NormDeltaSig"){
+    ## Lierman model
+    param$logDelta1 <- 3#10# with skagit 2.881
+    param$logDelta1ocean <- 0# with skagit 2.881
+    param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+    param$Delta2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+    param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+    
+    param$logNu1 <- 3#10# with skagit 2.881
+    param$logNu1ocean <- 0# with skagit 2.881
+    param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+    param$Nu2ocean <- 0#log(0.72/(1-0.72)) #logit 0f 0.72 #with skagit logDelta2 = -0.288
+    param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+    
+    
+  }
+  
+  
 if (mod=="IWAM_FixedSep_Constm"){
   ## Lierman model
   param$logDelta1 <- 3#10# with skagit 2.881
@@ -411,33 +432,19 @@ dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
 if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_RicStd"|mod=="Ricker_AllMod"){
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)#random = c( "logDelta2"), 
 }
-if(mod=="Liermann"){
-  obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std")) 
-}
-if(mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"|mod=="Liermann_HalfNormRicVar_NormDeltaSig"){
+
+if(mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"|mod=="Liermann_HalfNormRicVar_NormDeltaSig"){
   #obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"), lower=lower, upper= upper )#c("logA_s", "logA_o")) 
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
   
 }
 
-if(mod=="IWAM_FixedSep"){
-  # Uniform prior on logDeltaSigma (removed for now)
-  upper<-unlist(param)
-  upper[1:length(upper)]<- Inf
-  #upper[names(upper) == "logDeltaSigma"] <- log(100)
-  lower<-unlist(param)
-  lower[1:length(lower)]<- -Inf
-  #lower[names(lower) == "logDeltaSigma"] <- log(0.001)
-  
-  #obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"), lower=lower, upper= upper )#c("logA_s", "logA_o")) 
-  obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)
-  
-}
+
 # For Phase 1, fix Delta parameters. Do not need to fix Delta's beccause initlal values are lm fits, so very close
 #map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
 #obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 
-if(mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfNormRicVar_NormDeltaSig"){
+if(mod=="Liermann_HalfNormRicVar"){
   upper<-unlist(obj$par)
   upper[1:length(upper)]<- Inf
   #upper[names(upper) == "logSigmaA"] <- log(2)#log(100)
@@ -447,6 +454,8 @@ if(mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfNormRicVar_NormDeltaSig"){
   #lower[names(lower) == "logSigmaA"] <- log(0.1)
 }
 
+
+
 if(mod!="Liermann_HalfNormRicVar"){
   upper<-unlist(obj$par)
   upper[1:length(upper)]<- Inf
@@ -454,6 +463,19 @@ if(mod!="Liermann_HalfNormRicVar"){
   lower<-unlist(obj$par)
   lower[1:length(lower)]<- -Inf
 }
+
+if(mod=="Liermann_HalfNormRicVar_NormDeltaSig"){
+  upper<-unlist(obj$par)
+  upper[1:length(upper)]<- Inf
+  #upper[names(upper) == "logDeltaSigma"] <- log(1.39) # See KFrun.R, "SDlSMSYParken"
+  #upper[names(upper) == "logNuSigma"] <- log(1.38)# See KFrun.R, "SDlSREPParken"
+  
+  lower<-unlist(obj$par)
+  lower[1:length(lower)]<- -Inf
+  #lower[names(lower) == "logDeltaSigma"] <- log(0.21) # See KFrun.R, "medSDlogSmsy"
+  #lower[names(lower) == "logNuSigma"] <- log(0.29) # See KFrun.R, "medSDlogSrep"
+}
+
 if(mod=="Liermann_SepRicA"){
   upper<-unlist(obj$par)
   upper[1:length(upper)]<- Inf
@@ -620,7 +642,7 @@ if (plot==TRUE){
 
 # Plot WA regression
 if(plot==TRUE){
-  png(paste("DataOut/WAregSMSY_", mod, "_InvGammaDeltaSig0.01.png", sep=""), width=7, height=7, units="in", res=500)
+  png(paste("DataOut/WAregSMSY_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
   #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -637,7 +659,7 @@ if(plot==TRUE){
   plotWAregressionSMSY (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
   dev.off()
 
-  png(paste("DataOut/WAregSREP_", mod, "_InvGammaDeltaSig0.01.png", sep=""), width=7, height=7, units="in", res=500)
+  png(paste("DataOut/WAregSREP_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
   #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"

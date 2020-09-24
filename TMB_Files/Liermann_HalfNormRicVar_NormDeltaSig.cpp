@@ -59,6 +59,8 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(Scale);
   DATA_IVECTOR(Stream);
   //DATA_SCALAR(Tau_D_dist);
+  //DATA_SCALAR(logDeltaSigma);
+  //DATA_SCALAR(logNuSigma);
   DATA_SCALAR(sigDelta_mean);
   DATA_SCALAR(sigDelta_sig);
   DATA_SCALAR(sigNu_mean);

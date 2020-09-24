@@ -270,7 +270,8 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   #points(y=lnSMSY[18:length(SMSY$lh)], x=lnWA[18:length(SMSY$lh)], pch=3, col=col.use[18:length(SMSY$lh)], cex=1.5)
   logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
   logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% select(Estimate) %>% pull()
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"|mod=="Liermann_HalfNormRicVar_NormDeltaSig") logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% select(Estimate) %>% pull() + logD1
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"|mod=="Liermann_HalfNormRicVar_NormDeltaSig") {
+    logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% select(Estimate) %>% pull() + logD1}
   if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann"|mod=="Liermann_SepRicA"|mod=="Liermann_HalfNormRicVar"|mod=="Liermann_HalfCauchyRicVar"|mod=="Liermann_HalfNormRicVar_NormDeltaSig") {
     D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% select(Estimate) %>% pull() ) + exp(logD2)
     if(nrow(All_Deltas %>% filter(Param=="Delta2ocean"))>=1)  D2o <- (All_Deltas %>% filter(Param=="Delta2ocean") %>% select(Estimate) %>% pull() ) + exp(logD2)

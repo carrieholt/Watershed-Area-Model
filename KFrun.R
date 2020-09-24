@@ -43,7 +43,9 @@ stk <- unique(SRDat$Stocknumber)
 ind <- 0
 nstk <- length(stk)
 SDKFSmsy <- NA
-use <- 0
+use <- 0 #need to check that this is working
+#plot time-varying Ric A
+
 
 for (i in stk){
   ind <- ind + 1
@@ -53,7 +55,7 @@ for (i in stk){
   KFa <- kf.rw(initial=initial, x=Sp, y=log(Rec/Sp))$smoothe.mean.a
   KFb <- kf.rw(initial=initial, x=Sp, y=log(Rec/Sp))$b
   KFsmsy <- (1 - gsl::lambert_W0(exp(1 - (KFa)))) / -(rep(KFb,length(KFa)))
-  SDKFSmsy[ind] <- sd(KFsmsy)
+  SDKFSmsy[ind] <- sd(KFsmsy)#exclude those stocks that vary minimally (straight line visually). Should this be SD of hte standardized SMSY values?
   
   kfAICc <- kf.rw(initial=initial, x=Sp, y=log(Rec/Sp))$AICc # uses concentrated nLL
   

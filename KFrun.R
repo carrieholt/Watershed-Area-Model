@@ -38,6 +38,8 @@ stockwNA <- SRDatwNA %>% filter (is.na(Rec) == TRUE) %>% select (Stocknumber) %>
 #Do not use Kf model on  stocks with NAs, Humptulips and Queets (20 and 21)
 SRDat <- SRDatwNA %>% filter(Name != "Humptulips" & Name != "Queets")
 
+png(paste("DataOut/KFSMSY.png", sep=""), width=7, height=7, units="in", res=500)
+
 
 stk <- unique(SRDat$Stocknumber)
 ind <- 0
@@ -49,8 +51,10 @@ use <- rep(0,nstk) #need to check that this is working
 KFsmsy.ls <- list()
 
 par(cex=1.5)
+plot(x=1939:2000, y=rep(0,length(1939:2000)), type="l", col="white", ylim=c(4,12), xlab="Brood year", ylab="Time varying log(SMSY)", xlim=c(1965,2000))
 #plot(x=1939:2000, y=rep(0,length(1939:2000)), type="l", col="white", ylim=c(4,12), xlab="Brood year", ylab="Time varying log(SMSY)")
-plot(x=1939:2000, y=rep(0,length(1939:2000)), type="l", col="white", ylim=c(4,12), xlab="Brood year", ylab="Time varying log(SREP)")
+#plot(x=1939:2000, y=rep(0,length(1939:2000)), type="l", col="white", ylim=c(4,12), xlab="Brood year", ylab="Time varying log(SREP)")
+
 for (i in stk){
   ind <- ind + 1
   Rec <- SRDat %>% filter (Stocknumber==i) %>% pull (Rec)
@@ -64,8 +68,6 @@ for (i in stk){
   KFsmsy.ls[[ind]] <- KFsmsy
   KFsmsy[which(KFsmsy<0)] <- NA
   KFsrep[which(KFsrep<0)] <- NA
-  #lines(x=Yr, y=log(KFsmsy))
-  lines(x=Yr, y=log(KFsrep))
   SDKFlSmsy[ind] <- sd(log(KFsmsy))
   SDKFlSrep[ind] <- sd(log(KFsrep))
   
@@ -83,7 +85,14 @@ for (i in stk){
   
   if( linAICc > (kfAICc-2) ) use[ind] <- 1
   
+  if(use[ind]>0){
+    lines(x=Yr, y=log(KFsmsy), lwd=2)
+  }
+  #lines(x=Yr, y=log(KFsrep))
+  
 }
+
+dev.off()
 
 summary(SDKFlSmsy, na.rm=T) # 4 straight lines
 summary(SDKFlSrep, na.rm=T) # 4 straight lines
@@ -100,7 +109,10 @@ medSDlogSrep <- median(SDKFlSrep[which(SDKFlSrep >0.01)]) # use this a min bound
 
 # Include on those stocks where AICc of KF model is < or within 2 units of AICc of linear model
 summary(SDKFlSmsy[which(use>0)])
-hist(SDKFlSmsy[which(use>0)], breaks=20)
+png(paste("DataOut/SDSMSYhist.png", sep=""), width=7, height=7, units="in", res=500)
+par(cex.axis=1.5, cex.lab=1.5)
+hist(SDKFlSmsy[which(use>0)], breaks=5, main="", xlab="SD of time-varying SMSY", col="light blue")
+dev.off()
 medSDlogSmsy <- median(SDKFlSmsy[which(use >0)], na.rm=T) # OR better yet use this a min bound on sigmaDelta
 
 # Include on those stocks where AICc of KF model is < or within 2 units of AICc of linear model

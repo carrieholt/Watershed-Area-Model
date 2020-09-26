@@ -221,10 +221,6 @@ if (mod=="Liermann_HalfNormRicVar_NormDeltaSig"){
   data$HalfNormMeanA <- 0#0.44#TMB_Inputs$Tau_sigma
   data$HalfNormSigA <- 1#0.5#TMB_Inputs$Tau_sigma
   
-  #data$logDeltaSigma <- log(0.47)# See KFrun.R, "medSDlogSmsy" = log(0.21)
-  ## Or take Parken et al. (2006) WA sigmas, averaging var of straeam and ocean type models, and taking sqrt = log(sqrt((0.293+0.146)/2)=0.47)
-  #data$logNuSigma <- log(0.43)# See KFrun.R, "medSDlogSrep" = log(0.29)
-  ## Or take Parken et al. (2006) WA sigmas, averaging var of straeam and ocean type models, and taking sqrt = log(sqrt((0.240+0.133)/2)=0.43)
   data$sigDelta_mean <- 0.80# See KFrun.R, #For half-normal use N(0,1)
   data$sigDelta_sig <- 0.28# See KFrun.R,
   data$sigNu_mean <- 0.84# See KFrun.R,
@@ -673,7 +669,7 @@ if (plot==TRUE){
 
 # Plot WA regression
 if(plot==TRUE){
-  png(paste("DataOut/WAregSMSY_", mod, "FixedDeltaMin.png", sep=""), width=7, height=7, units="in", res=500)
+  png(paste("DataOut/WAregSMSY_", mod, "FixedDeltaParken.png", sep=""), width=7, height=7, units="in", res=500)
   #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -691,7 +687,7 @@ if(plot==TRUE){
   plotWAregressionSMSY (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
   dev.off()
 
-  png(paste("DataOut/WAregSREP_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
+  png(paste("DataOut/WAregSREP_", mod, "fixedDeltaParken.png", sep=""), width=7, height=7, units="in", res=500)
   #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"

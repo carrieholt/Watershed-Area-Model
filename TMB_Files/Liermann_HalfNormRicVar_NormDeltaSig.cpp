@@ -59,13 +59,13 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(Scale);
   DATA_IVECTOR(Stream);
   //DATA_SCALAR(Tau_D_dist);
-  DATA_SCALAR(logDeltaSigma);
-  DATA_SCALAR(logNuSigma);
+  //DATA_SCALAR(logDeltaSigma);
+  //DATA_SCALAR(logNuSigma);
   
-  //DATA_SCALAR(sigDelta_mean);
-  //DATA_SCALAR(sigDelta_sig);
-  //DATA_SCALAR(sigNu_mean);
-  //DATA_SCALAR(sigNu_sig);
+  DATA_SCALAR(sigDelta_mean);
+  DATA_SCALAR(sigDelta_sig);
+  DATA_SCALAR(sigNu_mean);
+  DATA_SCALAR(sigNu_sig);
   
   //DATA_INTEGER(N_stream);
   //DATA_INTEGER(N_ocean);
@@ -89,13 +89,13 @@ Type objective_function<Type>:: operator() ()
   PARAMETER(logDelta1ocean);
   PARAMETER(logDelta2);
   PARAMETER(Delta2ocean);
-  //PARAMETER(logDeltaSigma);
+  PARAMETER(logDeltaSigma);
   
   PARAMETER(logNu1);
   PARAMETER(logNu1ocean);
   PARAMETER(logNu2);
   PARAMETER(Nu2ocean);
-  //PARAMETER(logNuSigma);
+  PARAMETER(logNuSigma);
   
 
   
@@ -286,12 +286,12 @@ Type objective_function<Type>:: operator() ()
   
   // sigma_delta prior
   //ans += -dgamma(pow(sigma_delta,-2), Tau_D_dist, 1/Tau_D_dist, true);
-  //ans += -dnorm(sigma_delta, sigDelta_mean, sigDelta_sig, true);
+  ans += -dnorm(sigma_delta, sigDelta_mean, sigDelta_sig, true);
   //ans += -abs( dt( sigma_delta, Type(1), true));
   
   // sigma_delta prior
   //ans += -dgamma(pow(sigma_nu,-2), Tau_D_dist, 1/Tau_D_dist, true);
-  //ans += -dnorm(sigma_nu, sigNu_mean, sigNu_sig, true);
+  ans += -dnorm(sigma_nu, sigNu_mean, sigNu_sig, true);
   //ans += - abs( dt( sigma_nu, Type(1), true ));
   
   // Get predicted values for plotting  WA regresssion with CIs

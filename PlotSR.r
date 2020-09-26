@@ -36,8 +36,9 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
     S <- SRDat %>% filter (Stocknumber==i) %>% select(Sp) 
     # what is the scale of Ricker b estimate?
     Sc <- SRDat %>% filter (Stocknumber==i) %>% select(Scale) %>% distinct() %>% as.numeric()
-    if(name$Name != "Skagit") plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(R$Rec) ) )
+    if(name$Name != "Skagit" & name$Name != "KSR") plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(R$Rec) ) )
     if(name$Name == "Skagit") plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(R$Rec) ) )
+    if(name$Name == "KSR") plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,500), ylim=c(0,max(R$Rec) ) )
     
     a <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
       summarise(A=exp(Estimate)) %>% as.numeric()
@@ -69,8 +70,9 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
     
     if(removeSkagit==FALSE){
       for (j in 1:100){
-        if (i!=22) SS[j] <- j*(max(S$Sp)/100)
+        if (i!=22 & i!=7) SS[j] <- j*(max(S$Sp)/100)
         if (i==22) SS[j] <- j*(max(S$Sp*3)/100)
+        if (i==7) SS[j] <- j*(500/100)
         RR[j] <- a * SS[j] * exp(-b * SS[j])
         if(i==22) {RR_skagit[j] <- skagit_alpha * SS[j] * exp(-skagit_beta * SS[j])}
         #if (i %in% stks_ar) {RR_std[j] <- A_std$A[which(A_std$Stocknumber==i)] * SS[j] *  exp(-B_std$B[which(B_std$Stocknumber==i)] * SS[j])}

@@ -70,7 +70,9 @@ Type objective_function<Type>:: operator() ()
   //DATA_INTEGER(N_stream);
   //DATA_INTEGER(N_ocean);
   DATA_VECTOR(PredlnWA);
-
+  DATA_VECTOR(TestlnWAs);
+  DATA_VECTOR(TestlnWAo);
+  
   PARAMETER_VECTOR(logA_std);
   PARAMETER_VECTOR(logB_std);
   PARAMETER_VECTOR(logSigma_std);
@@ -308,6 +310,25 @@ Type objective_function<Type>:: operator() ()
     PredlnSREPo_CI(i) = logNu1 + logNu1ocean + (exp(logNu2) + Nu2ocean) * PredlnWA(i);
   }
   
+  // Get predicted values for stream-type Test stocks with CIs
+  int N_tests = TestlnWAs.size();
+  vector <Type> TestlnSMSYs(N_tests);
+  vector <Type> TestlnSREPs(N_tests);
+  
+  for (int i=0; i<N_tests; i++){
+    TestlnSMSYs(i) = logDelta1 + exp(logDelta2) * TestlnWAs(i);
+    TestlnSREPs(i) = logNu1 + exp(logNu2) * TestlnWAs(i);
+  }
+  // Get predicted values for stream-type Test stocks with CIs
+  int N_testo = TestlnWAo.size();
+  vector <Type> TestlnSMSYo(N_testo);
+  vector <Type> TestlnSREPo(N_testo);
+  
+  for (int i=0; i<N_testo; i++){
+    TestlnSMSYo(i) = logDelta1 + exp(logDelta2) * TestlnWAo(i);
+    TestlnSREPo(i) = logNu1 + exp(logNu2) * TestlnWAo(i);
+  }
+
   ADREPORT(SMSY_std);
   ADREPORT(SREP_std);
   ADREPORT(LogRS_Pred_std);
@@ -315,6 +336,10 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(PredlnSMSYo_CI);
   ADREPORT(PredlnSREPs_CI);
   ADREPORT(PredlnSREPo_CI);
+  ADREPORT(TestlnSMSYs);
+  ADREPORT(TestlnSREPs);
+  ADREPORT(TestlnSMSYo);
+  ADREPORT(TestlnSREPo);
   //REPORT(stkNumber_lhOrder);//This is the order of stocks in the output (different from order in input!)
   REPORT(nLL_std);
   //REPORT(nLL_o);

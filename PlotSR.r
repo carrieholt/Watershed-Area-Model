@@ -593,3 +593,27 @@ plotTestStocks <- function(data = TestSMSY){
 # png(paste("DataOut/TestStock_ParkenFixedDeltaPI.png", sep=""), width=9, height=7, units="in", res=500)
 # plotTestStocks()
 # dev.off()
+
+
+plotSMSY <- function(data = WCVISMSY){
+  #model order: 2  6 11 12 13 14 15 16 17 20  1  3  5  7  8  9 18 19 21  4 10
+  order <- c(2,  6, 11, 12, 13, 14, 15, 16, 17, 20 , 1 , 3 , 5,  7,  8 , 9, 18 ,19, 21,  4, 10)
+  #order <- c("Bedwell/Ursus","Cypre", "Megin","Moyeha", "Nahmint", "Nitinat", "San Juan", "Sarita", "Somass","Tranquil", "Artlish",
+  #           "Burman","Conuma","Gold","Kaouk", "Leiner","Tahsis", "Tahsish","Zeballos","Cayeghle","Marble")
+  #ggplot(data, aes(x=reorder(as.factor(Stock),order), y=SMSY, colour=CU)) + 
+  ggplot(data, aes(x=Stock, y=SMSY, colour=CU)) + 
+    geom_point(size=2) +
+    geom_errorbar(aes(ymin=LL, ymax=UL), width=0.1, size=1) + 
+    #coord_cartesian(ylim = c(0, 5000)) +
+    #ylim(0,51000) + 
+    theme(axis.text = element_text(angle = 90, vjust = 0.5, hjust=1, size=12) ) + 
+    xlab("") + ylab("SMSY") + 
+    theme(
+      #plot.title = element_text(color="black", size=14, face="bold.italic"),
+      axis.title.x = element_text(size=14),
+      axis.title.y = element_text(size=14))
+}
+
+png(paste("DataOut/WCVI_MinFixedDeltaPI.png", sep=""), width=9, height=7, units="in", res=500)
+plotSMSY()
+dev.off()

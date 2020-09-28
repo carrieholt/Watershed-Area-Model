@@ -310,6 +310,7 @@ Type objective_function<Type>:: operator() ()
     PredlnSREPo_CI(i) = logNu1 + logNu1ocean + (exp(logNu2) + Nu2ocean) * PredlnWA(i);
   }
   
+  
   // Get predicted values for stream-type Test stocks with CIs
   int N_tests = TestlnWAs.size();
   vector <Type> TestlnSMSYs(N_tests);
@@ -325,13 +326,20 @@ Type objective_function<Type>:: operator() ()
   vector <Type> TestlnSREPo(N_testo);
   
   for (int i=0; i<N_testo; i++){
-    TestlnSMSYo(i) = logDelta1 + exp(logDelta2) * TestlnWAo(i);
-    TestlnSREPo(i) = logNu1 + exp(logNu2) * TestlnWAo(i);
+    TestlnSMSYo(i) = logDelta1 + + logDelta1ocean + (exp(logDelta2) + Delta2ocean) * TestlnWAo(i);
+    TestlnSREPo(i) = logNu1 + logNu1ocean + (exp(logNu2) + Nu2ocean) * TestlnWAo(i);
   }
 
+  vector <Type> lnSMSY = log(SMSY_std*Scale);
+  vector <Type> lnSREP = log(SREP_std*Scale);
+  
   ADREPORT(SMSY_std);
   ADREPORT(SREP_std);
+  ADREPORT(lnSMSY);
+  ADREPORT(lnSREP);
   ADREPORT(LogRS_Pred_std);
+  ADREPORT(PredlnSMSY);
+  ADREPORT(PredlnSREP);
   ADREPORT(PredlnSMSYs_CI);
   ADREPORT(PredlnSMSYo_CI);
   ADREPORT(PredlnSREPs_CI);

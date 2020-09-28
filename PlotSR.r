@@ -559,3 +559,37 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
 #png(paste("DataOut/RicADist_ComparePriors.png", sep=""), width=7, height=7, units="in", res=500)
 #plotRicA()
 #dev.off()
+
+plotTestStocks <- function(data = TestSMSY){
+  
+  pd <- position_dodge(0.4)
+  #data$Stock <- as.factor(data$Stock)
+  ggplot(data, aes(x=Stock, y=SMSY, group=Source, colour=Source)) + 
+    geom_point(position=pd, size=1.5) +
+    geom_errorbar(aes(ymin=LL, ymax=UL), width=0.1, size=1, position=pd) + 
+    coord_cartesian(ylim = c(0, 25000)) +
+    #ylim(0,51000) + 
+    theme(axis.text = element_text(angle = 90, vjust = 0.5, hjust=1, size=12) ) + 
+    xlab("") + ylab("SMSY") + 
+    theme(
+      #plot.title = element_text(color="black", size=14, face="bold.italic"),
+      axis.title.x = element_text(size=14),
+      axis.title.y = element_text(size=14))
+  
+
+}
+ 
+#South Thompson values are > y-axis upper limit
+#TestSMSY %>% filter(Stock=="S.Thompson" ) 
+# For Fixed Delta at Parken et al. (2006)
+#Stock     SMSY       UL       LL Source
+# S.Thompson 52788.82 201410.1 13835.75   IWAM
+# S.Thompson 57600.00  87000.0 37300.00 Parken
+
+# png(paste("DataOut/TestStock_MinFixedDeltaPI.png", sep=""), width=9, height=7, units="in", res=500)
+# plotTestStocks()
+# dev.off()
+# 
+# png(paste("DataOut/TestStock_ParkenFixedDeltaPI.png", sep=""), width=9, height=7, units="in", res=500)
+# plotTestStocks()
+# dev.off()

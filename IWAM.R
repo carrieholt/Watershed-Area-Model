@@ -24,6 +24,34 @@ library(hrbrthemes)
 count.dig <- function(x) {floor(log10(x)) + 1}
 '%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
 
+#----------------------------------------------------------------------------
+# A function to do calculate prediction intervals
+# x = independent variable
+# y = dependenet variable
+# Newx = x variables for which you'd like the prediction intervals
+# Predy = Predicted y variable at those Newx's
+
+
+PredInt <- function(x,y,Newx=x, Predy){
+  sumXErr <- sum( (x-mean(x))^2 )
+  sumYErr <- sum( (y-mean(y))^2 )
+  sumXYErr <- sum( (y - mean(y)) * (x - mean(x)) ) ^2
+  STEYX <- sqrt( (1/(length(x)-2)) * (sumYErr - sumXYErr/sumXErr) )
+  
+  # SE of the prediction from http://www.real-statistics.com/regression/confidence-and-prediction-intervals/
+  SE.pred <- STEYX * sqrt( (1 + 1/length(x) + ((Newx - mean(x))^2)/sumXErr) ) 
+  t.crit <- qt(0.975,df=length(x)-2) #95% intervals
+  
+  upr <- Predy + SE.pred*t.crit
+  lwr <- Predy - SE.pred*t.crit
+  PI <- list()
+  PI$upr <- upr
+  PI$lwr <- lwr
+  return(PI)
+  
+}
+
+#---------------------------------------------------------------------------------
 plot <- FALSE#TRUE
 removeSkagit <- FALSE#TRUE
 mod <- "Liermann_HalfNormRicVar_FixedDelta"#"Liermann_HalfNormRicVar_NormDeltaSig"#"Liermann_HalfNormRicVar"#"Liermann_HalfCauchyRicVar"#"Liermann_HalfNormRicVar"#"Liermann_SepRicA"##"Ricker_AllMod"#"Liermann_SepRicA"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
@@ -237,9 +265,9 @@ if (mod=="Liermann_HalfNormRicVar_FixedDelta"){
   data$HalfNormMeanA <- 0#0.44#TMB_Inputs$Tau_sigma
   data$HalfNormSigA <- 1#0.5#TMB_Inputs$Tau_sigma
   
-  data$logDeltaSigma <- log(0.21)# See KFrun.R, "medSDlogSmsy" = log(0.21)
+  data$logDeltaSigma <- log(0.47)# See KFrun.R, "medSDlogSmsy" = log(0.21)
   ## Or take Parken et al. (2006) WA sigmas, averaging var of straeam and ocean type models, and taking sqrt = log(sqrt((0.293+0.146)/2)=0.47)
-  data$logNuSigma <- log(0.29)# See KFrun.R, "medSDlogSrep" = log(0.29)
+  data$logNuSigma <- log(0.43)# See KFrun.R, "medSDlogSrep" = log(0.29)
   ## Or take Parken et al. (2006) WA sigmas, averaging var of straeam and ocean type models, and taking sqrt = log(sqrt((0.240+0.133)/2)=0.43)
   data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
   data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
@@ -625,14 +653,48 @@ PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O", 
 PredlnSREP <- data.frame() 
 PredlnSREP <- All_Ests %>% filter (Param %in% c("PredlnSREP_S", "PredlnSREP_O", "PredlnSREP_CI", "PredlnSREPs_CI", "PredlnSREPo_CI"))
 
-# Get predicted test values and their SEs to plot CIs
-TestlnSMSY <- data.frame() 
-TestlnSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYs", "TestlnSMSYo"))
-# get +/- 95% SE from TestlnSMSY values, and then exponentiate.  Compare with 5th and 95th bootstrap?
+# Get predicted values to estimate prediction intervals
+PredlnSMSY_PI <- data.frame()
+PredlnSMSY_PI <- All_Ests %>% filter (Param %in% c("PredlnSMSY", "lnSMSY"))
+PredlnSREP_PI <- data.frame()
+PredlnSREP_PI <- All_Ests %>% filter (Param %in% c("PredlnSREP", "lnSREP"))
 
-ParkenTestlnSMSY <- read.csv("DataIn/ParkenTestStocks.csv") %>% add_column(TestSMSY=exp(TestlnSMSY$Estimate))
+PredlnSMSY_PI$Stocknumber <- rep(SN_std)
+PredlnSREP_PI$Stocknumber <- rep(SN_std)
+
+Scale_PI <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
+PredlnSMSY_PI <- PredlnSMSY_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
+PredlnSREP_PI <- PredlnSREP_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
+
+Plsmsy <- (PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% pull(Estimate)) #Predicted lnSMSY from WA regression
+Olsmsy <- (PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% pull(Estimate)) # "observed" lnSMSY data output from SR models
 
 
+
+
+
+# Get predicted test values and their SEs 
+TestSMSY <- data.frame() 
+TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYs", "TestlnSMSYo"))  
+#TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYs", "TestlnSMSYo")) %>% 
+#  add_column(TestlnWA = c(data$TestlnWAs,data$TestlnWAo))
+TestSMSYpull <- TestSMSY %>% pull(Estimate)
+TestSMSY_PI <- PredInt(x=log(WA$WA), y=Olsmsy, Predy=TestSMSYpull, Newx= c(data$TestlnWAs,data$TestlnWAo))
+
+#  mutate (TestSMSY = exp(Estimate), UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error))
+StockNames <- read.csv("DataIn/ParkenTestStocks.csv") %>% pull(Stock)
+TestSMSY <- TestSMSY %>% add_column(Stock=StockNames) %>% mutate(SMSY=exp(Estimate))
+TestSMSY <- TestSMSY %>% select(-Std..Error, - Param, -Estimate) %>% 
+  add_column(UL = exp(TestSMSY_PI$upr), LL=exp(TestSMSY_PI$lwr), Source="IWAM")
+  
+
+ 
+
+# Load in Parken SMSY estimates with UL and LL (these are 5th and 95th bootstrap estimates not CIs)
+ParkenTestSMSY <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>% 
+  select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
+
+TestSMSY <- full_join(TestSMSY, ParkenTestSMSY)
 
 # Calculate standardized residuals
 if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){

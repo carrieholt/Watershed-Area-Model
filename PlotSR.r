@@ -614,6 +614,6 @@ plotSMSY <- function(data = WCVISMSY){
       axis.title.y = element_text(size=14))
 }
 
-png(paste("DataOut/WCVI_MinFixedDeltaPI.png", sep=""), width=9, height=7, units="in", res=500)
-plotSMSY()
-dev.off()
+# png(paste("DataOut/WCVI_MinFixedDeltaPI.png", sep=""), width=9, height=7, units="in", res=500)
+# plotSMSY()
+# dev.off()

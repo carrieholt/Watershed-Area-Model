@@ -15,3 +15,4 @@ library(hrbrthemes)
 
 
 SRDatwNA <- read.csv("DataIn/PSE_ChinookData.csv")
+#need to sort out missing years, and mayabe add year column to csv

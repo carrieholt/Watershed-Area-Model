@@ -1,0 +1,687 @@
+parameter,location,species,year,datavalue
+Recruits,Bella Coola-Bentinck,Chinook,1982,26506
+Recruits,Bella Coola-Bentinck,Chinook,1983,23351
+Recruits,Bella Coola-Bentinck,Chinook,1984,27857
+Recruits,Bella Coola-Bentinck,Chinook,1985,29810
+Recruits,Bella Coola-Bentinck,Chinook,1986,27966
+Recruits,Bella Coola-Bentinck,Chinook,1987,35439
+Recruits,Bella Coola-Bentinck,Chinook,1988,45071
+Recruits,Bella Coola-Bentinck,Chinook,1989,42049
+Recruits,Bella Coola-Bentinck,Chinook,1990,41202
+Recruits,Bella Coola-Bentinck,Chinook,1991,36706
+Recruits,Bella Coola-Bentinck,Chinook,1992,31126
+Recruits,Bella Coola-Bentinck,Chinook,1993,32601
+Recruits,Bella Coola-Bentinck,Chinook,1994,34596
+Recruits,Bella Coola-Bentinck,Chinook,1995,35460
+Recruits,Bella Coola-Bentinck,Chinook,1996,35317
+Recruits,Bella Coola-Bentinck,Chinook,1997,29791
+Recruits,Bella Coola-Bentinck,Chinook,1998,28555
+Recruits,Bella Coola-Bentinck,Chinook,1999,31383
+Recruits,Bella Coola-Bentinck,Chinook,2000,36480
+Recruits,Bella Coola-Bentinck,Chinook,2001,37971
+Recruits,Bella Coola-Bentinck,Chinook,2002,28469
+Recruits,Bella Coola-Bentinck,Chinook,2003,18779
+Recruits,Bella Coola-Bentinck,Chinook,2004,18746
+Recruits,Bella Coola-Bentinck,Chinook,2005,22857
+Recruits,Bella Coola-Bentinck,Chinook,2006,22034
+Recruits,Bella Coola-Bentinck,Chinook,2007,17188
+Recruits,Bella Coola-Bentinck,Chinook,2008,26625
+Recruits,Bella Coola-Bentinck,Chinook,2009,34812
+Recruits,Bella Coola-Bentinck,Chinook,2010,49832
+Recruits,Bella Coola-Bentinck,Chinook,2011,45860
+Recruits,Dean River,Chinook,1982,2163
+Recruits,Dean River,Chinook,1983,1847
+Recruits,Dean River,Chinook,1984,2587
+Recruits,Dean River,Chinook,1985,2901
+Recruits,Dean River,Chinook,1986,2964
+Recruits,Dean River,Chinook,1987,3073
+Recruits,Dean River,Chinook,1988,1664
+Recruits,Dean River,Chinook,1989,1400
+Recruits,Dean River,Chinook,1990,1421
+Recruits,Dean River,Chinook,1991,1820
+Recruits,Dean River,Chinook,1992,1974
+Recruits,Dean River,Chinook,1993,2815
+Recruits,Dean River,Chinook,1994,2254
+Recruits,Dean River,Chinook,1995,2001
+Recruits,Dean River,Chinook,1996,3634
+Recruits,Dean River,Chinook,1997,4489
+Recruits,Dean River,Chinook,1998,4718
+Recruits,Dean River,Chinook,1999,4356
+Recruits,Dean River,Chinook,2000,3753
+Recruits,Dean River,Chinook,2001,4041
+Recruits,Dean River,Chinook,2002,3055
+Recruits,Dean River,Chinook,2003,1780
+Recruits,Dean River,Chinook,2004,1693
+Recruits,Dean River,Chinook,2005,1828
+Recruits,Dean River,Chinook,2006,1334
+Recruits,Dean River,Chinook,2007,1618
+Recruits,Dean River,Chinook,2008,3407
+Recruits,Dean River,Chinook,2009,3553
+Recruits,Dean River,Chinook,2010,2785
+Recruits,Dean River,Chinook,2011,3460
+Recruits,Kalum-Late,Chinook,1981,33713
+Recruits,Kalum-Late,Chinook,1982,52873
+Recruits,Kalum-Late,Chinook,1983,52173
+Recruits,Kalum-Late,Chinook,1984,44889
+Recruits,Kalum-Late,Chinook,1985,36819
+Recruits,Kalum-Late,Chinook,1986,30355
+Recruits,Kalum-Late,Chinook,1987,30592
+Recruits,Kalum-Late,Chinook,1988,29915
+Recruits,Kalum-Late,Chinook,1989,23905
+Recruits,Kalum-Late,Chinook,1990,21036
+Recruits,Kalum-Late,Chinook,1991,15827
+Recruits,Kalum-Late,Chinook,1992,13570
+Recruits,Kalum-Late,Chinook,1993,17081
+Recruits,Kalum-Late,Chinook,1994,22895
+Recruits,Kalum-Late,Chinook,1995,34570
+Recruits,Kalum-Late,Chinook,1996,41357
+Recruits,Kalum-Late,Chinook,1997,41249
+Recruits,Kalum-Late,Chinook,1998,41005
+Recruits,Kalum-Late,Chinook,1999,35029
+Recruits,Kalum-Late,Chinook,2000,27750
+Recruits,Kalum-Late,Chinook,2001,25820
+Recruits,Kalum-Late,Chinook,2002,25032
+Recruits,Kalum-Late,Chinook,2003,21315
+Recruits,Kalum-Late,Chinook,2004,20506
+Recruits,Kalum-Late,Chinook,2005,21533
+Recruits,Kalum-Late,Chinook,2006,19051
+Recruits,Lower Skeena,Chinook,1981,4711
+Recruits,Lower Skeena,Chinook,1982,3280
+Recruits,Lower Skeena,Chinook,1983,2588
+Recruits,Lower Skeena,Chinook,1984,3126
+Recruits,Lower Skeena,Chinook,1985,3324
+Recruits,Lower Skeena,Chinook,1986,3654
+Recruits,Lower Skeena,Chinook,1987,4401
+Recruits,Lower Skeena,Chinook,1988,4180
+Recruits,Lower Skeena,Chinook,1989,3283
+Recruits,Lower Skeena,Chinook,1990,3210
+Recruits,Lower Skeena,Chinook,1991,3024
+Recruits,Lower Skeena,Chinook,1992,3750
+Recruits,Lower Skeena,Chinook,1993,4989
+Recruits,Lower Skeena,Chinook,1994,4164
+Recruits,Lower Skeena,Chinook,1995,3062
+Recruits,Lower Skeena,Chinook,1996,2880
+Recruits,Lower Skeena,Chinook,1997,2713
+Recruits,Lower Skeena,Chinook,1998,2676
+Recruits,Lower Skeena,Chinook,1999,2470
+Recruits,Lower Skeena,Chinook,2000,2344
+Recruits,Lower Skeena,Chinook,2001,2672
+Recruits,Lower Skeena,Chinook,2006,685
+Recruits,Lower Skeena,Chinook,2007,731
+Recruits,Middle Skeena-Large Lakes,Chinook,1981,92221
+Recruits,Middle Skeena-Large Lakes,Chinook,1982,65978
+Recruits,Middle Skeena-Large Lakes,Chinook,1983,82110
+Recruits,Middle Skeena-Large Lakes,Chinook,1984,75862
+Recruits,Middle Skeena-Large Lakes,Chinook,1985,72669
+Recruits,Middle Skeena-Large Lakes,Chinook,1986,103181
+Recruits,Middle Skeena-Large Lakes,Chinook,1987,92867
+Recruits,Middle Skeena-Large Lakes,Chinook,1988,94578
+Recruits,Middle Skeena-Large Lakes,Chinook,1989,54934
+Recruits,Middle Skeena-Large Lakes,Chinook,1990,64701
+Recruits,Middle Skeena-Large Lakes,Chinook,1991,96031
+Recruits,Middle Skeena-Large Lakes,Chinook,1992,80695
+Recruits,Middle Skeena-Large Lakes,Chinook,1993,58096
+Recruits,Middle Skeena-Large Lakes,Chinook,1994,59908
+Recruits,Middle Skeena-Large Lakes,Chinook,1995,69637
+Recruits,Middle Skeena-Large Lakes,Chinook,1996,73778
+Recruits,Middle Skeena-Large Lakes,Chinook,1997,48431
+Recruits,Middle Skeena-Large Lakes,Chinook,1998,39051
+Recruits,Middle Skeena-Large Lakes,Chinook,1999,28205
+Recruits,Middle Skeena-Large Lakes,Chinook,2000,27855
+Recruits,Middle Skeena-Large Lakes,Chinook,2001,38990
+Recruits,Middle Skeena-Large Lakes,Chinook,2002,39856
+Recruits,Middle Skeena-Large Lakes,Chinook,2003,51488
+Recruits,Middle Skeena-Large Lakes,Chinook,2004,51141
+Recruits,Middle Skeena-Large Lakes,Chinook,2005,47266
+Recruits,Middle Skeena-Large Lakes,Chinook,2006,46761
+Recruits,Middle Skeena-Large Lakes,Chinook,2007,46300
+Recruits,Middle Skeena-Large Lakes,Chinook,2008,36581
+Recruits,Middle Skeena-Large Lakes,Chinook,2009,34963
+Recruits,Middle Skeena-Large Lakes,Chinook,2010,48687
+Recruits,Middle Skeena-Large Lakes,Chinook,2011,48623
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1981,16356
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1982,19589
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1983,22225
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1984,21029
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1985,21713
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1986,30707
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1987,35790
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1988,26402
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1989,17707
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1990,16165
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1991,16878
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1992,17763
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1993,19768
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1994,23223
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1995,27075
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1996,26228
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1997,21267
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1998,19118
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,1999,20596
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2000,26729
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2001,33001
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2002,31674
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2003,22281
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2004,13272
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2005,10345
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2006,9903
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2007,9181
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2008,9014
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2009,9815
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2010,9779
+Recruits,Middle Skeena-Mainstem Tributaries,Chinook,2011,8329
+Recruits,North & Central Coast-Early,Chinook,1982,1249
+Recruits,North & Central Coast-Early,Chinook,1983,983
+Recruits,North & Central Coast-Early,Chinook,1984,875
+Recruits,North & Central Coast-Early,Chinook,1985,1265
+Recruits,North & Central Coast-Early,Chinook,1986,942
+Recruits,North & Central Coast-Early,Chinook,1987,732
+Recruits,North & Central Coast-Early,Chinook,1988,1000
+Recruits,North & Central Coast-Early,Chinook,1989,925
+Recruits,North & Central Coast-Early,Chinook,1990,674
+Recruits,North & Central Coast-Early,Chinook,1991,678
+Recruits,North & Central Coast-Early,Chinook,1992,712
+Recruits,North & Central Coast-Early,Chinook,1993,883
+Recruits,North & Central Coast-Early,Chinook,1994,668
+Recruits,North & Central Coast-Early,Chinook,1995,647
+Recruits,North & Central Coast-Early,Chinook,1996,858
+Recruits,North & Central Coast-Early,Chinook,1997,1079
+Recruits,North & Central Coast-Early,Chinook,1998,1021
+Recruits,North & Central Coast-Early,Chinook,1999,802
+Recruits,North & Central Coast-Early,Chinook,2000,836
+Recruits,North & Central Coast-Early,Chinook,2001,1338
+Recruits,North & Central Coast-Early,Chinook,2002,3090
+Recruits,North & Central Coast-Early,Chinook,2003,2396
+Recruits,North & Central Coast-Early,Chinook,2004,2214
+Recruits,North & Central Coast-Early,Chinook,2005,1340
+Recruits,North & Central Coast-Early,Chinook,2006,419
+Recruits,North & Central Coast-Early,Chinook,2007,218
+Recruits,North & Central Coast-Early,Chinook,2008,528
+Recruits,North & Central Coast-Early,Chinook,2009,950
+Recruits,North & Central Coast-Early,Chinook,2010,1568
+Recruits,North & Central Coast-Early,Chinook,2011,1239
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1983,2043
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1984,1802
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1985,2216
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1986,1947
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1987,1742
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1988,2099
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1989,3617
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1990,2995
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1991,2416
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1992,2337
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1993,2438
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1994,2238
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1995,2381
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1996,3467
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1997,3231
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1998,3209
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1999,2913
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2000,3229
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2001,4421
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2002,4195
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2003,3724
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2004,3560
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2005,3074
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2006,2301
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2007,1702
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2008,1552
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2009,1953
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2010,2466
+Recruits,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2011,2081
+Recruits,Rivers Inlet,Chinook,1980,1432
+Recruits,Rivers Inlet,Chinook,1981,1159
+Recruits,Rivers Inlet,Chinook,1982,1674
+Recruits,Rivers Inlet,Chinook,1983,1368
+Recruits,Rivers Inlet,Chinook,1984,1052
+Recruits,Rivers Inlet,Chinook,1985,1200
+Recruits,Rivers Inlet,Chinook,1986,967
+Recruits,Rivers Inlet,Chinook,1987,1407
+Recruits,Rivers Inlet,Chinook,1988,1333
+Recruits,Rivers Inlet,Chinook,1989,993
+Recruits,Rivers Inlet,Chinook,1990,697
+Recruits,Rivers Inlet,Chinook,1991,1466
+Recruits,Rivers Inlet,Chinook,1992,3012
+Recruits,Rivers Inlet,Chinook,1993,4636
+Recruits,Rivers Inlet,Chinook,1994,6021
+Recruits,Rivers Inlet,Chinook,1995,6905
+Recruits,Rivers Inlet,Chinook,1996,7639
+Recruits,Rivers Inlet,Chinook,1997,7344
+Recruits,Rivers Inlet,Chinook,1998,4772
+Recruits,Rivers Inlet,Chinook,1999,4017
+Recruits,Rivers Inlet,Chinook,2000,3948
+Recruits,Rivers Inlet,Chinook,2001,3487
+Recruits,Rivers Inlet,Chinook,2002,2424
+Recruits,Rivers Inlet,Chinook,2003,2002
+Recruits,Rivers Inlet,Chinook,2004,1815
+Recruits,Rivers Inlet,Chinook,2005,1427
+Recruits,Rivers Inlet,Chinook,2006,1837
+Recruits,Rivers Inlet,Chinook,2007,1658
+Recruits,Rivers Inlet,Chinook,2008,2456
+Recruits,Rivers Inlet,Chinook,2009,2431
+Recruits,Rivers Inlet,Chinook,2010,1851
+Recruits,Rivers Inlet,Chinook,2011,1094
+Recruits,Upper Nass,Chinook,1983,24314
+Recruits,Upper Nass,Chinook,1984,30582
+Recruits,Upper Nass,Chinook,1985,29170
+Recruits,Upper Nass,Chinook,1986,20185
+Recruits,Upper Nass,Chinook,1987,29351
+Recruits,Upper Nass,Chinook,1988,39310
+Recruits,Upper Nass,Chinook,1989,36679
+Recruits,Upper Nass,Chinook,1990,27919
+Recruits,Upper Nass,Chinook,1991,34058
+Recruits,Upper Nass,Chinook,1992,36162
+Recruits,Upper Nass,Chinook,1993,39001
+Recruits,Upper Nass,Chinook,1994,32330
+Recruits,Upper Nass,Chinook,1995,32162
+Recruits,Upper Nass,Chinook,1996,36995
+Recruits,Upper Nass,Chinook,1997,32431
+Recruits,Upper Nass,Chinook,1998,35723
+Recruits,Upper Nass,Chinook,1999,32499
+Recruits,Upper Nass,Chinook,2000,28898
+Recruits,Upper Nass,Chinook,2001,34122
+Recruits,Upper Nass,Chinook,2002,34760
+Recruits,Upper Nass,Chinook,2003,30786
+Recruits,Upper Nass,Chinook,2004,32187
+Recruits,Upper Nass,Chinook,2005,26870
+Recruits,Upper Nass,Chinook,2006,19506
+Recruits,Upper Nass,Chinook,2007,15612
+Recruits,Upper Nass,Chinook,2008,15612
+Recruits,Upper Nass,Chinook,2009,19728
+Recruits,Upper Nass,Chinook,2010,24671
+Recruits,Upper Nass,Chinook,2011,18846
+Recruits,Wannock,Chinook,1980,5694
+Recruits,Wannock,Chinook,1981,13154
+Recruits,Wannock,Chinook,1982,14147
+Recruits,Wannock,Chinook,1983,11411
+Recruits,Wannock,Chinook,1984,9096
+Recruits,Wannock,Chinook,1985,8824
+Recruits,Wannock,Chinook,1986,10691
+Recruits,Wannock,Chinook,1987,16236
+Recruits,Wannock,Chinook,1988,20288
+Recruits,Wannock,Chinook,1989,13916
+Recruits,Wannock,Chinook,1990,7776
+Recruits,Wannock,Chinook,1991,6294
+Recruits,Wannock,Chinook,1992,8823
+Recruits,Wannock,Chinook,1993,9393
+Recruits,Wannock,Chinook,1994,4599
+Recruits,Wannock,Chinook,1995,7219
+Recruits,Wannock,Chinook,1996,9279
+Recruits,Wannock,Chinook,1997,7737
+Recruits,Wannock,Chinook,1998,4775
+Recruits,Wannock,Chinook,1999,6507
+Recruits,Wannock,Chinook,2000,11145
+Recruits,Wannock,Chinook,2001,10510
+Recruits,Wannock,Chinook,2002,10507
+Recruits,Wannock,Chinook,2003,11835
+Recruits,Wannock,Chinook,2004,10788
+Recruits,Wannock,Chinook,2005,10866
+Recruits,Wannock,Chinook,2006,13762
+Recruits,Wannock,Chinook,2007,9949
+Recruits,Wannock,Chinook,2008,8116
+Recruits,Wannock,Chinook,2009,8763
+Recruits,Wannock,Chinook,2010,16914
+Recruits,Wannock,Chinook,2011,18169
+Spawners,Bella Coola-Bentinck,Chinook,1985,27560
+Spawners,Bella Coola-Bentinck,Chinook,1986,21300
+Spawners,Bella Coola-Bentinck,Chinook,1987,14425
+Spawners,Bella Coola-Bentinck,Chinook,1988,15000
+Spawners,Bella Coola-Bentinck,Chinook,1989,22000
+Spawners,Bella Coola-Bentinck,Chinook,1990,17000
+Spawners,Bella Coola-Bentinck,Chinook,1991,17800
+Spawners,Bella Coola-Bentinck,Chinook,1992,27000
+Spawners,Bella Coola-Bentinck,Chinook,1993,35000
+Spawners,Bella Coola-Bentinck,Chinook,1994,26800
+Spawners,Bella Coola-Bentinck,Chinook,1995,32000
+Spawners,Bella Coola-Bentinck,Chinook,1996,25000
+Spawners,Bella Coola-Bentinck,Chinook,1997,18000
+Spawners,Bella Coola-Bentinck,Chinook,1998,22000
+Spawners,Bella Coola-Bentinck,Chinook,1999,25000
+Spawners,Bella Coola-Bentinck,Chinook,2000,25000
+Spawners,Bella Coola-Bentinck,Chinook,2001,24000
+Spawners,Bella Coola-Bentinck,Chinook,2002,14000
+Spawners,Bella Coola-Bentinck,Chinook,2003,15000
+Spawners,Bella Coola-Bentinck,Chinook,2004,17500
+Spawners,Bella Coola-Bentinck,Chinook,2005,17500
+Spawners,Bella Coola-Bentinck,Chinook,2006,26000
+Spawners,Bella Coola-Bentinck,Chinook,2007,11000
+Spawners,Bella Coola-Bentinck,Chinook,2008,9000
+Spawners,Bella Coola-Bentinck,Chinook,2009,10600
+Spawners,Bella Coola-Bentinck,Chinook,2010,13389
+Spawners,Bella Coola-Bentinck,Chinook,2011,9100
+Spawners,Bella Coola-Bentinck,Chinook,2012,5800
+Spawners,Bella Coola-Bentinck,Chinook,2013,24777
+Spawners,Bella Coola-Bentinck,Chinook,2014,20800
+Spawners,Bella Coola-Bentinck,Chinook,2015,44594
+Spawners,Dean River,Chinook,1985,4000
+Spawners,Dean River,Chinook,1986,3300
+Spawners,Dean River,Chinook,1987,1144
+Spawners,Dean River,Chinook,1988,1300
+Spawners,Dean River,Chinook,1989,2300
+Spawners,Dean River,Chinook,1990,2000
+Spawners,Dean River,Chinook,1991,2400
+Spawners,Dean River,Chinook,1992,3000
+Spawners,Dean River,Chinook,1993,700
+Spawners,Dean River,Chinook,1994,1300
+Spawners,Dean River,Chinook,1995,1100
+Spawners,Dean River,Chinook,1996,2000
+Spawners,Dean River,Chinook,1997,1400
+Spawners,Dean River,Chinook,1998,3000
+Spawners,Dean River,Chinook,1999,1800
+Spawners,Dean River,Chinook,2000,1200
+Spawners,Dean River,Chinook,2001,3795
+Spawners,Dean River,Chinook,2002,3700
+Spawners,Dean River,Chinook,2003,3700
+Spawners,Dean River,Chinook,2004,3500
+Spawners,Dean River,Chinook,2005,2200
+Spawners,Dean River,Chinook,2006,3700
+Spawners,Dean River,Chinook,2007,2300
+Spawners,Dean River,Chinook,2008,1100
+Spawners,Dean River,Chinook,2009,1400
+Spawners,Dean River,Chinook,2010,1600
+Spawners,Dean River,Chinook,2011,750
+Spawners,Dean River,Chinook,2012,909
+Spawners,Dean River,Chinook,2013,3885
+Spawners,Dean River,Chinook,2014,3262
+Spawners,Dean River,Chinook,2015,1500
+Spawners,Kalum-Late,Chinook,1980,4445
+Spawners,Kalum-Late,Chinook,1981,9842
+Spawners,Kalum-Late,Chinook,1982,5821
+Spawners,Kalum-Late,Chinook,1983,11313
+Spawners,Kalum-Late,Chinook,1984,12514
+Spawners,Kalum-Late,Chinook,1985,8792
+Spawners,Kalum-Late,Chinook,1986,10743
+Spawners,Kalum-Late,Chinook,1987,25937
+Spawners,Kalum-Late,Chinook,1988,24082
+Spawners,Kalum-Late,Chinook,1989,21060
+Spawners,Kalum-Late,Chinook,1990,21166
+Spawners,Kalum-Late,Chinook,1991,9736
+Spawners,Kalum-Late,Chinook,1992,14816
+Spawners,Kalum-Late,Chinook,1993,15874
+Spawners,Kalum-Late,Chinook,1994,14816
+Spawners,Kalum-Late,Chinook,1995,6680
+Spawners,Kalum-Late,Chinook,1996,12540
+Spawners,Kalum-Late,Chinook,1997,5653
+Spawners,Kalum-Late,Chinook,1998,10076
+Spawners,Kalum-Late,Chinook,1999,10583
+Spawners,Kalum-Late,Chinook,2000,15380
+Spawners,Kalum-Late,Chinook,2001,25480
+Spawners,Kalum-Late,Chinook,2002,25239
+Spawners,Kalum-Late,Chinook,2003,24984
+Spawners,Kalum-Late,Chinook,2004,27269
+Spawners,Kalum-Late,Chinook,2005,15923
+Spawners,Kalum-Late,Chinook,2006,13089
+Spawners,Kalum-Late,Chinook,2007,17213
+Spawners,Kalum-Late,Chinook,2008,10979
+Spawners,Kalum-Late,Chinook,2009,11327
+Spawners,Kalum-Late,Chinook,2010,14511
+Spawners,Kalum-Late,Chinook,2011,12811
+Spawners,Kalum-Late,Chinook,2012,9909
+Spawners,Kalum-Late,Chinook,2015,7609
+Spawners,Lower Skeena,Chinook,1980,892
+Spawners,Lower Skeena,Chinook,1981,1416
+Spawners,Lower Skeena,Chinook,1982,1511
+Spawners,Lower Skeena,Chinook,1983,511
+Spawners,Lower Skeena,Chinook,1984,639
+Spawners,Lower Skeena,Chinook,1985,1674
+Spawners,Lower Skeena,Chinook,1986,2899
+Spawners,Lower Skeena,Chinook,1987,1256
+Spawners,Lower Skeena,Chinook,1988,612
+Spawners,Lower Skeena,Chinook,1989,2094
+Spawners,Lower Skeena,Chinook,1990,1346
+Spawners,Lower Skeena,Chinook,1991,1256
+Spawners,Lower Skeena,Chinook,1992,2292
+Spawners,Lower Skeena,Chinook,1993,2722
+Spawners,Lower Skeena,Chinook,1994,688
+Spawners,Lower Skeena,Chinook,1995,1645
+Spawners,Lower Skeena,Chinook,1996,1496
+Spawners,Lower Skeena,Chinook,1997,1418
+Spawners,Lower Skeena,Chinook,1998,5235
+Spawners,Lower Skeena,Chinook,1999,1765
+Spawners,Lower Skeena,Chinook,2000,1328
+Spawners,Lower Skeena,Chinook,2001,1999
+Spawners,Lower Skeena,Chinook,2002,1261
+Spawners,Lower Skeena,Chinook,2003,1878
+Spawners,Lower Skeena,Chinook,2004,1664
+Spawners,Lower Skeena,Chinook,2005,1003
+Spawners,Lower Skeena,Chinook,2006,1745
+Spawners,Lower Skeena,Chinook,2007,1852
+Spawners,Lower Skeena,Chinook,2009,1087
+Spawners,Lower Skeena,Chinook,2010,522
+Spawners,Lower Skeena,Chinook,2011,313
+Spawners,Lower Skeena,Chinook,2012,433
+Spawners,Lower Skeena,Chinook,2013,606
+Spawners,Middle Skeena-Large Lakes,Chinook,1980,19258
+Spawners,Middle Skeena-Large Lakes,Chinook,1981,12284
+Spawners,Middle Skeena-Large Lakes,Chinook,1982,8990
+Spawners,Middle Skeena-Large Lakes,Chinook,1983,11803
+Spawners,Middle Skeena-Large Lakes,Chinook,1984,23872
+Spawners,Middle Skeena-Large Lakes,Chinook,1985,43990
+Spawners,Middle Skeena-Large Lakes,Chinook,1986,42367
+Spawners,Middle Skeena-Large Lakes,Chinook,1987,23828
+Spawners,Middle Skeena-Large Lakes,Chinook,1988,36655
+Spawners,Middle Skeena-Large Lakes,Chinook,1989,33085
+Spawners,Middle Skeena-Large Lakes,Chinook,1990,31484
+Spawners,Middle Skeena-Large Lakes,Chinook,1991,43189
+Spawners,Middle Skeena-Large Lakes,Chinook,1992,38329
+Spawners,Middle Skeena-Large Lakes,Chinook,1993,56921
+Spawners,Middle Skeena-Large Lakes,Chinook,1994,9631
+Spawners,Middle Skeena-Large Lakes,Chinook,1995,27463
+Spawners,Middle Skeena-Large Lakes,Chinook,1996,69182
+Spawners,Middle Skeena-Large Lakes,Chinook,1997,38271
+Spawners,Middle Skeena-Large Lakes,Chinook,1998,33670
+Spawners,Middle Skeena-Large Lakes,Chinook,1999,32545
+Spawners,Middle Skeena-Large Lakes,Chinook,2000,41118
+Spawners,Middle Skeena-Large Lakes,Chinook,2001,47410
+Spawners,Middle Skeena-Large Lakes,Chinook,2002,17529
+Spawners,Middle Skeena-Large Lakes,Chinook,2003,27466
+Spawners,Middle Skeena-Large Lakes,Chinook,2004,13426
+Spawners,Middle Skeena-Large Lakes,Chinook,2005,14970
+Spawners,Middle Skeena-Large Lakes,Chinook,2006,26682
+Spawners,Middle Skeena-Large Lakes,Chinook,2007,21448
+Spawners,Middle Skeena-Large Lakes,Chinook,2008,27892
+Spawners,Middle Skeena-Large Lakes,Chinook,2009,31046
+Spawners,Middle Skeena-Large Lakes,Chinook,2010,30700
+Spawners,Middle Skeena-Large Lakes,Chinook,2011,26808
+Spawners,Middle Skeena-Large Lakes,Chinook,2012,29780
+Spawners,Middle Skeena-Large Lakes,Chinook,2013,18830
+Spawners,Middle Skeena-Large Lakes,Chinook,2014,19709
+Spawners,Middle Skeena-Large Lakes,Chinook,2015,32318
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1980,566
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1981,1639
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1983,1130
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1984,1942
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1985,5226
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1986,8711
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1987,8711
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1988,10453
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1989,7840
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1990,11324
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1991,8188
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1992,28745
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1993,7622
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1994,9582
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1995,5052
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1996,10975
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1997,9233
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1998,13927
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,1999,12195
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2000,15409
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2001,18263
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2002,8281
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2003,14225
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2004,10299
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2005,15970
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2006,20022
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2007,22916
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2008,9616
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2009,5465
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2010,7325
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2011,5604
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2012,5624
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2013,5027
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2014,6413
+Spawners,Middle Skeena-Mainstem Tributaries,Chinook,2015,5949
+Spawners,North & Central Coast-Early,Chinook,1985,823
+Spawners,North & Central Coast-Early,Chinook,1986,1164
+Spawners,North & Central Coast-Early,Chinook,1987,927
+Spawners,North & Central Coast-Early,Chinook,1988,627
+Spawners,North & Central Coast-Early,Chinook,1989,672
+Spawners,North & Central Coast-Early,Chinook,1990,1124
+Spawners,North & Central Coast-Early,Chinook,1991,389
+Spawners,North & Central Coast-Early,Chinook,1992,602
+Spawners,North & Central Coast-Early,Chinook,1993,1012
+Spawners,North & Central Coast-Early,Chinook,1994,622
+Spawners,North & Central Coast-Early,Chinook,1995,478
+Spawners,North & Central Coast-Early,Chinook,1996,727
+Spawners,North & Central Coast-Early,Chinook,1997,602
+Spawners,North & Central Coast-Early,Chinook,1998,923
+Spawners,North & Central Coast-Early,Chinook,1999,329
+Spawners,North & Central Coast-Early,Chinook,2000,672
+Spawners,North & Central Coast-Early,Chinook,2001,871
+Spawners,North & Central Coast-Early,Chinook,2002,967
+Spawners,North & Central Coast-Early,Chinook,2003,702
+Spawners,North & Central Coast-Early,Chinook,2004,510
+Spawners,North & Central Coast-Early,Chinook,2005,606
+Spawners,North & Central Coast-Early,Chinook,2006,1253
+Spawners,North & Central Coast-Early,Chinook,2007,3636
+Spawners,North & Central Coast-Early,Chinook,2008,830
+Spawners,North & Central Coast-Early,Chinook,2009,2342
+Spawners,North & Central Coast-Early,Chinook,2010,330
+Spawners,North & Central Coast-Early,Chinook,2011,29
+Spawners,North & Central Coast-Early,Chinook,2012,218
+Spawners,North & Central Coast-Early,Chinook,2013,675
+Spawners,North & Central Coast-Early,Chinook,2014,967
+Spawners,North & Central Coast-Early,Chinook,2015,1656
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1986,2138
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1987,1930
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1988,1503
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1989,1068
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1990,2460
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1991,1019
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1992,908
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1993,1039
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1994,3703
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1995,973
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1996,1108
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1997,1635
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1998,1462
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,1999,982
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2000,1302
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2001,4011
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2002,1452
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2003,2425
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2004,1691
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2005,1865
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2006,4467
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2007,2828
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2008,2508
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2009,3350
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2010,2348
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2011,1226
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2012,1110
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2013,1023
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2014,1470
+Spawners,Portland Sound-Observatory Inlet-Lower Nass,Chinook,2015,2333
+Spawners,Rivers Inlet,Chinook,1980,1409
+Spawners,Rivers Inlet,Chinook,1981,302
+Spawners,Rivers Inlet,Chinook,1982,2327
+Spawners,Rivers Inlet,Chinook,1983,3236
+Spawners,Rivers Inlet,Chinook,1984,1463
+Spawners,Rivers Inlet,Chinook,1985,775
+Spawners,Rivers Inlet,Chinook,1986,565
+Spawners,Rivers Inlet,Chinook,1987,1584
+Spawners,Rivers Inlet,Chinook,1988,877
+Spawners,Rivers Inlet,Chinook,1989,543
+Spawners,Rivers Inlet,Chinook,1990,1158
+Spawners,Rivers Inlet,Chinook,1991,326
+Spawners,Rivers Inlet,Chinook,1992,1353
+Spawners,Rivers Inlet,Chinook,1993,942
+Spawners,Rivers Inlet,Chinook,1994,758
+Spawners,Rivers Inlet,Chinook,1995,253
+Spawners,Rivers Inlet,Chinook,1996,1263
+Spawners,Rivers Inlet,Chinook,1997,2369
+Spawners,Rivers Inlet,Chinook,1998,3922
+Spawners,Rivers Inlet,Chinook,1999,4742
+Spawners,Rivers Inlet,Chinook,2000,5431
+Spawners,Rivers Inlet,Chinook,2001,5604
+Spawners,Rivers Inlet,Chinook,2002,6017
+Spawners,Rivers Inlet,Chinook,2003,2369
+Spawners,Rivers Inlet,Chinook,2004,2576
+Spawners,Rivers Inlet,Chinook,2005,2760
+Spawners,Rivers Inlet,Chinook,2006,2403
+Spawners,Rivers Inlet,Chinook,2007,1429
+Spawners,Rivers Inlet,Chinook,2008,1515
+Spawners,Rivers Inlet,Chinook,2009,1537
+Spawners,Rivers Inlet,Chinook,2010,568
+Spawners,Rivers Inlet,Chinook,2011,1280
+Spawners,Rivers Inlet,Chinook,2012,709
+Spawners,Rivers Inlet,Chinook,2013,2086
+Spawners,Rivers Inlet,Chinook,2014,1251
+Spawners,Rivers Inlet,Chinook,2015,715
+Spawners,Upper Nass,Chinook,1986,36523
+Spawners,Upper Nass,Chinook,1987,19540
+Spawners,Upper Nass,Chinook,1988,15345
+Spawners,Upper Nass,Chinook,1989,28133
+Spawners,Upper Nass,Chinook,1990,24051
+Spawners,Upper Nass,Chinook,1991,6907
+Spawners,Upper Nass,Chinook,1992,16808
+Spawners,Upper Nass,Chinook,1993,24814
+Spawners,Upper Nass,Chinook,1994,21169
+Spawners,Upper Nass,Chinook,1995,7844
+Spawners,Upper Nass,Chinook,1996,21842
+Spawners,Upper Nass,Chinook,1997,18702
+Spawners,Upper Nass,Chinook,1998,23213
+Spawners,Upper Nass,Chinook,1999,11544
+Spawners,Upper Nass,Chinook,2000,18047
+Spawners,Upper Nass,Chinook,2001,28329
+Spawners,Upper Nass,Chinook,2002,13352
+Spawners,Upper Nass,Chinook,2003,25848
+Spawners,Upper Nass,Chinook,2004,15185
+Spawners,Upper Nass,Chinook,2005,13706
+Spawners,Upper Nass,Chinook,2006,23594
+Spawners,Upper Nass,Chinook,2007,22136
+Spawners,Upper Nass,Chinook,2008,19630
+Spawners,Upper Nass,Chinook,2009,26226
+Spawners,Upper Nass,Chinook,2010,18381
+Spawners,Upper Nass,Chinook,2011,9600
+Spawners,Upper Nass,Chinook,2012,8688
+Spawners,Upper Nass,Chinook,2013,8011
+Spawners,Upper Nass,Chinook,2014,11509
+Spawners,Upper Nass,Chinook,2015,18262
+Spawners,Wannock,Chinook,1980,3885
+Spawners,Wannock,Chinook,1981,5827
+Spawners,Wannock,Chinook,1982,1457
+Spawners,Wannock,Chinook,1983,3399
+Spawners,Wannock,Chinook,1984,1457
+Spawners,Wannock,Chinook,1985,5827
+Spawners,Wannock,Chinook,1986,11654
+Spawners,Wannock,Chinook,1987,8740
+Spawners,Wannock,Chinook,1988,7769
+Spawners,Wannock,Chinook,1989,5827
+Spawners,Wannock,Chinook,1990,6798
+Spawners,Wannock,Chinook,1991,7769
+Spawners,Wannock,Chinook,1992,14567
+Spawners,Wannock,Chinook,1993,15538
+Spawners,Wannock,Chinook,1994,6798
+Spawners,Wannock,Chinook,1995,5827
+Spawners,Wannock,Chinook,1996,4856
+Spawners,Wannock,Chinook,1997,7769
+Spawners,Wannock,Chinook,1998,6798
+Spawners,Wannock,Chinook,1999,971
+Spawners,Wannock,Chinook,2000,8740
+Spawners,Wannock,Chinook,2001,5827
+Spawners,Wannock,Chinook,2002,5438
+Spawners,Wannock,Chinook,2003,1942
+Spawners,Wannock,Chinook,2004,5827
+Spawners,Wannock,Chinook,2005,8740
+Spawners,Wannock,Chinook,2006,5827
+Spawners,Wannock,Chinook,2007,8740
+Spawners,Wannock,Chinook,2008,9711
+Spawners,Wannock,Chinook,2009,7381
+Spawners,Wannock,Chinook,2010,7769
+Spawners,Wannock,Chinook,2011,8157
+Spawners,Wannock,Chinook,2012,4200
+Spawners,Wannock,Chinook,2013,6400
+Spawners,Wannock,Chinook,2014,3960
+Spawners,Wannock,Chinook,2015,9540

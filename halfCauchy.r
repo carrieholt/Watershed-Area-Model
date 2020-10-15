@@ -23,6 +23,9 @@ t_col <- function(color, percent = 50, name = NULL) {
 }
 
 plotPriors <- function (plot_inv_gamma_only, Delta){
+  #plot_inv_gamma_only TRUE = then only plot inverse gamma distributions and not cauchy, normal or uniform
+  #Delta TRUE = plot priors for the SD of the Watershed-area model
+  #Delta FALSE = plot priors for the SD of the Ricker model 
   
   test <- seq(0.00001,9,len=10000)
   
@@ -33,9 +36,19 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
   
   if(!Delta){
     # Add histogram of Ricker sigmas
-    RicSig <- read.csv("DataIn/ParkenRicSig.csv") # Ricker sigmas, excluding Upper Columbia and Siluetz, where they included AR(1) term in model
-    hist_out <- hist(RicSig$RicSig, plot=FALSE)
-    barplot(height = (hist_out$density)*0.2, width=0.1, col=grey(0.97), border=grey(0.9), space=0, add=TRUE)
+    
+    # Ricker sigma from Parken data, excluding Upper Columbia and Siluetz, where they included AR(1) term in model
+    # RicSig <- read.csv("DataIn/ParkenRicSig.csv") 
+    
+    # Ricker sigma from PSE Chinook SR data extracted 15 Oct 2020. See sigR_metaanalysis.R
+    RicSig <- exp(read.table("DataOut/PSE_sigma.csv")$Estimate) 
+    hist_out <- hist(RicSig, plot=FALSE)
+    lowlimit <- hist_out$breaks[1] # Indicates where bars should start on the plot, assuming units of 0.1
+    barplot(height =  c( rep(0,lowlimit*10),(hist_out$density)*0.2), width=0.1, col=grey(0.8), border=grey(0.7), space=0, add=TRUE)
+    RicSig_Thorson <- 0.69 #Thorson et al. 2014 marginal sigma from predictive distribution from hierarchical Ricker model of 20 salmonid stocks from Myers et al 1995
+    RicSigSD_Thorson <- 0.27
+    abline(v=RicSig_Thorson, lwd=2, lty="dotted", col=grey(0.8))
+    #polgyon(x=c(RicSig_Thorson-RigSig_Thorson))
   }
   
   # Better to use external data to form priors, 
@@ -58,27 +71,28 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
   lines(sqrt(test), sqrt(dinvgamma(test,shape=shape, rate=rate)), lwd=4, col=t_col(color=cols[1], percent=30))
   
   if (!plot_inv_gamma_only){
-    #Half-Normal on sigma
-    #lines(x=test, y=abs(dnorm(test,0,1)), col=cols[2], lwd=4)
-    
-    
-    # Half-cauchy on sigma, as implemented in TMB
-    # student T, reduced to cauchy with scale=1. Adapted from Kasper Kristensen
-    # https://www.stockassessment.org/datadisk/stockassessment/userdirs/user80/WBSS_HAWG_2018/TMB/include/distributions_R.hpp
-    dt<- function(x, df=1, give_log=FALSE)
-    {
-      logres <- lgamma((df+1)/2) - 1/2*log(df*pi) -lgamma(df/2) - (df+1)/2*log(1+x*x/df)
-      #logres <- log(1/(pi*(1+x^2)))  #Equivalent ( see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/TStandardcauchy.pdf)
-      if(!give_log) return (exp(logres))
-      else return (logres)  
-    }
-    
-    #lines(x=test, y=dt(test), col=cols[3], lwd=4)
-    
-    #Altrenative, equivalent half cauchy using R function
-    #lines(x=test, y=abs(dcauchy(test,0,1)), lwd=2, col="red")
     
     if(!Delta){
+      #Half-Normal on sigma
+      lines(x=test, y=abs(dnorm(test,0,1)), col=cols[2], lwd=4)
+    
+    
+      # Half-cauchy on sigma, as implemented in TMB
+      # student T, reduced to cauchy with scale=1. Adapted from Kasper Kristensen
+      # https://www.stockassessment.org/datadisk/stockassessment/userdirs/user80/WBSS_HAWG_2018/TMB/include/distributions_R.hpp
+      dt<- function(x, df=1, give_log=FALSE)
+      {
+        logres <- lgamma((df+1)/2) - 1/2*log(df*pi) -lgamma(df/2) - (df+1)/2*log(1+x*x/df)
+        #logres <- log(1/(pi*(1+x^2)))  #Equivalent ( see http://www.math.wm.edu/~leemis/chart/UDR/PDFs/TStandardcauchy.pdf)
+        if(!give_log) return (exp(logres))
+        else return (logres)  
+      }
+    
+      lines(x=test, y=dt(test), col=cols[3], lwd=4)
+    
+      #Altrenative, equivalent half cauchy using R function
+      #lines(x=test, y=abs(dcauchy(test,0,1)), lwd=2, col="red")
+    
       #Uniform 0-1
       lines(x=c(0,2,2,3), y=c(0.5,0.5,0,0), col=cols[4], lwd=2)
     }
@@ -156,11 +170,11 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
 # plot(x=test, y=sigma.theta, type="l")
 
 
-  
+par(mfrow=c(1,1))  
 
-#png(paste("DataOut/RicPriors_InvGamma.png", sep=""), width=7, height=7, units="in", res=500)
-#plotPriors(plot_inv_gamma_only=TRUE, Delta=FALSE)
-#dev.off()
+png(paste("DataOut/RicPriors_InvGamma.png", sep=""), width=7, height=7, units="in", res=500)
+plotPriors(plot_inv_gamma_only=TRUE, Delta=FALSE)
+dev.off()
 
 #png(paste("DataOut/DeltaPriors_InvGamma.png", sep=""), width=7, height=7, units="in", res=500)
 #plotPriors(plot_inv_gamma_only=TRUE, Delta=TRUE)
@@ -171,6 +185,6 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
 #dev.off()
 
 
-png(paste("DataOut/DeltaPriors.png", sep=""), width=7, height=7, units="in", res=500)
-plotPriors(plot_inv_gamma_only=FALSE, Delta=TRUE)
-dev.off()
+#png(paste("DataOut/DeltaPriors.png", sep=""), width=7, height=7, units="in", res=500)
+#plotPriors(plot_inv_gamma_only=FALSE, Delta=TRUE)
+#dev.off()

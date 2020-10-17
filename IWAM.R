@@ -258,10 +258,14 @@ if (mod=="Liermann_HalfNormRicVar_PriorDeltaSig"){
   data$sigDelta_sig <- 0.28# See KFrun.R,
   data$sigNu_mean <- 0.84# See KFrun.R,
   data$sigNu_sig <- 0.275# See KFrun.R,
+  data$SigRicPriorNorm <- as.numeric(T)
+  data$SigRicPriorGamma <- as.numeric(F)
+  data$SigRicPriorCauchy <- as.numeric(F)
   data$SigDeltaPriorNorm <- as.numeric(F)
   data$SigDeltaPriorGamma <- as.numeric(T)
   data$SigDeltaPriorCauchy <- as.numeric(F)
   data$Tau_D_dist <- 1
+  data$Tau_dist <- 0.1
   data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
   
   
@@ -731,12 +735,13 @@ SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 
 
 #Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
+# if using a Liermann model, use SRDat=SRDat_std; otherwise SRDat=SRDat
 if (plot==TRUE){
   png(paste("DataOut/SR_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
-  PlotSRCurve(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit, mod=mod)
+  PlotSRCurve(SRDat=SRDat_std, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit, mod=mod)
   dev.off()
   png(paste("DataOut/SRLin_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
-  PlotSRLinear(SRDat=SRDat, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit) 
+  PlotSRLinear(SRDat=SRDat_std, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit) 
   dev.off()
   png(paste("DataOut/StdResid_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   PlotStdResid(SRes)

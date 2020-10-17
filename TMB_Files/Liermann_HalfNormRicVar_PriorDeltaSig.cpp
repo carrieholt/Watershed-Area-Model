@@ -58,9 +58,13 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(WA); 
   DATA_VECTOR(Scale);
   DATA_IVECTOR(Stream);
+  DATA_INTEGER(SigRicPriorNorm);
+  DATA_INTEGER(SigRicPriorGamma);
+  DATA_INTEGER(SigRicPriorCauchy);
   DATA_INTEGER(SigDeltaPriorNorm);
   DATA_INTEGER(SigDeltaPriorGamma);
   DATA_INTEGER(SigDeltaPriorCauchy);
+  DATA_SCALAR(Tau_dist);
   DATA_SCALAR(Tau_D_dist);
   //DATA_SCALAR(logDeltaSigma);
   //DATA_SCALAR(logNuSigma);
@@ -203,8 +207,15 @@ Type objective_function<Type>:: operator() ()
     // add prior on logA_std, 
     ans += -dnorm(logA_std(i), logMuAs + logMuAo * Stream(i), sigmaA, true );
      // add prior on sigma 
-    //ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
-    ans += -abs( dnorm( sigma_std(i), HalfNormMean, HalfNormSig, true) );
+    if (SigRicPriorGamma == 1) {
+       ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
+    }
+    if (SigRicPriorNorm == 1) {
+      ans += -abs( dnorm( sigma_std(i), HalfNormMean, HalfNormSig, true) );
+    }
+    if (SigRicPriorCauchy == 1) {
+    ans += - abs( dt( sigma_std(i), Type(1), true ));
+    }
   }
   
   //// Add hierarchical structure to A: stream ==============
@@ -228,13 +239,15 @@ Type objective_function<Type>:: operator() ()
   // MuA prior for ocean type
   ans += -dnorm(logMuAo, logMuAo_mean, logMuAo_sig, true);
   // sigmaA prior
-  //ans += -dgamma(pow(sigmaA,-2), Tau_A_dist, 1/Tau_A_dist, true);
-  ans += -abs( dnorm( sigmaA, HalfNormMeanA, HalfNormSigA, true) );
-  
-  //// sigmaA prior stream type
-  //ans += -dgamma(pow(sigmaAs,-2), Tau_A_dist, 1/Tau_A_dist, true);
-  //// sigmaA prior ocean type
-  ///ans += -dgamma(pow(sigmaAo,-2), Tau_A_dist, 1/Tau_A_dist, true);
+  if (SigRicPriorGamma == 1) {
+    ans += -dgamma(pow(sigmaA,-2), Tau_dist, 1/Tau_dist, true);
+  }
+  if (SigRicPriorNorm == 1) {
+    ans += -abs( dnorm( sigmaA, HalfNormMeanA, HalfNormSigA, true) );
+  }
+  if (SigRicPriorCauchy == 1) {
+    ans += - abs(dt( sigmaA, Type(1), true));
+  }
   
   
   //// First aggregate Ricker parameters into a single vector, and other co-variates in life-history order

@@ -237,8 +237,10 @@ if (mod=="Liermann_PriorRicSig_PriorDeltaSig"){
   data$SigDeltaPriorGamma <- as.numeric(T)
   data$SigDeltaPriorCauchy <- as.numeric(F)
   data$Tau_D_dist <- 1
-  data$Tau_dist <- 0.01
-  data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
+  data$Tau_dist <- 0.1
+  #data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
+  data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
+  data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
   
   
 }
@@ -595,16 +597,18 @@ TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYs", "TestlnSMSYo"))
 #  add_column(TestlnWA = c(data$TestlnWAs,data$TestlnWAo))
 TestSMSYpull <- TestSMSY %>% pull(Estimate)
 TestSMSY_PI <- PredInt(x=log(WA$WA), y=Olsmsy, Predy=TestSMSYpull, Newx= c(data$TestlnWAs,data$TestlnWAo))
+#Split this out by stream and ocean type as they have different linear regerssions?
 
-#  mutate (TestSMSY = exp(Estimate), UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error))
-#StockNames <- read.csv("DataIn/ParkenTestStocks.csv") %>% pull(Stock)
-StockNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(Stock)
-CUNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(CU)
+#To get confidence intervals:   mutate (TestSMSY = exp(Estimate), UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error))
+StockNames <- read.csv("DataIn/ParkenTestStocks.csv") %>% pull(Stock)
+#StockNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(Stock)
+#CUNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(CU)
 TestSMSY <- TestSMSY %>% add_column(Stock=StockNames) %>% mutate(SMSY=exp(Estimate))
 TestSMSY <- TestSMSY %>% select(-Std..Error, - Param, -Estimate) %>% 
   add_column(LL=exp(TestSMSY_PI$lwr), UL = exp(TestSMSY_PI$upr), Source="IWAM")
   
-WCVISMSY <- TestSMSY %>% mutate(SMSY=round(SMSY, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
+# If Test stock = WCVI stocks
+#WCVISMSY <- TestSMSY %>% mutate(SMSY=round(SMSY, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
  
 
 # If Test stock = Parken et al Test stocks

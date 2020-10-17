@@ -583,26 +583,44 @@ Scale_PI <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
 PredlnSMSY_PI <- PredlnSMSY_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
 PredlnSREP_PI <- PredlnSREP_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
 
-Plsmsy <- (PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% pull(Estimate)) #Predicted lnSMSY from WA regression
-Olsmsy <- (PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% pull(Estimate)) # "observed" lnSMSY data output from SR models
+Plsmsys <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% filter(lh==1) %>% pull(Estimate) #Predicted lnSMSY from WA regression- Stream
+Plsmsyo <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% filter(lh==0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- ocean
+Olsmsys <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% filter(lh==1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- stream
+Olsmsyo <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% filter(lh==0) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
 
 
 
 # Get predicted test values and their SEs 
 TestSMSY <- data.frame() 
-TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYs", "TestlnSMSYo"))  
+TestSMSYs <- data.frame() 
+TestSMSYo <- data.frame() 
+
+#For Parken test data set
+StockNames <- read.csv("DataIn/ParkenTestStocks.csv") %>% pull(Stock)
+TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYs", "TestlnSMSYo")) %>% add_column(Stock=StockNames)
+
+TestSMSYs <- TestSMSY %>% filter (Param %in% c("TestlnSMSYs"))  
+TestSMSYo <- TestSMSY %>% filter (Param %in% c("TestlnSMSYo"))  
 TestSMSYpull <- TestSMSY %>% pull(Estimate)
 
 #Split this out by stream and ocean type as they have different linear regerssions
+WAs <- WA %>% left_join(Stream) %>% filter(lh==1) %>% pull(WA)
+WAo <- WA %>% left_join(Stream) %>% filter(lh==0) %>% pull(WA)
 TestSMSY_PI <- PredInt(x=log(WA$WA), y=Olsmsy, Predy=TestSMSYpull, Newx= c(data$TestlnWAs,data$TestlnWAo))
+TestSMSYs_PI <- PredInt(x=log(WAs), y=Olsmsys, Predy=TestSMSYs$Estimate, Newx= c(data$TestlnWAs))
+TestSMSYo_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYo$Estimate, Newx= c(data$TestlnWAo))
+TestSMSYs <- TestSMSYs %>% add_column(LL=exp(TestSMSYs_PI$lwr), UL=exp(TestSMSYs_PI$upr))
+TestSMSYo <- TestSMSYo %>% add_column(LL=exp(TestSMSYo_PI$lwr), UL=exp(TestSMSYo_PI$upr))
+TestSMSY <- TestSMSYs %>% bind_rows(TestSMSYo)
+TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% select(-Std..Error, - Param, -Estimate) %>% 
+  add_column( Source="IWAM")
 
 #To get confidence intervals:   TestSMSY <- TestSMSY %>% mutate (UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error)) %>% add_column(Source="IWAM")
-StockNames <- read.csv("DataIn/ParkenTestStocks.csv") %>% pull(Stock)
 #StockNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(Stock)
 #CUNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(CU)
-TestSMSY <- TestSMSY %>% add_column(Stock=StockNames) %>% mutate(SMSY=exp(Estimate))
-TestSMSY <- TestSMSY %>% select(-Std..Error, - Param, -Estimate) %>% 
-  add_column(LL=exp(TestSMSY_PI$lwr), UL = exp(TestSMSY_PI$upr), Source="IWAM")
+#TestSMSY <- TestSMSY %>% add_column(Stock=StockNames) %>% mutate(SMSY=exp(Estimate))
+#TestSMSY <- TestSMSY %>% select(-Std..Error, - Param, -Estimate) %>% 
+#  add_column(LL=exp(TestSMSY_PI$lwr), UL = exp(TestSMSY_PI$upr), Source="IWAM")
   
 # If Test stock = WCVI stocks
 #WCVISMSY <- TestSMSY %>% mutate(SMSY=round(SMSY, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
@@ -612,7 +630,7 @@ TestSMSY <- TestSMSY %>% select(-Std..Error, - Param, -Estimate) %>%
 # Compare IWAM estiamates of SMSY with those in Parken et al for test stocks (with UL and LL (these are 5th and 95th bootstrap estimates not CIs)
 ParkenTestSMSY <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>% 
   select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
-#TestSMSY <- full_join(TestSMSY, ParkenTestSMSY)
+TestSMSY <- full_join(TestSMSY, ParkenTestSMSY)
 
 
 # Calculate standardized residuals

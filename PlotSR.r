@@ -579,9 +579,9 @@ plotTestStocks <- function(data = TestSMSY){
 #South Thompson values are > y-axis upper limit
 #TestSMSY %>% filter(Stock=="S.Thompson" ) 
 # For Inv Gammma (0.1, 0.1) Ric Sig and InvGamma(1,1) deltaSig
-#Stock     SMSY       UL       LL Source
-# S.Thompson 62834.9487 17463.09029 226090.0398   IWAM
-# S.Thompson 57600.00  87000.0 37300.00 Parken
+#Stock     LL    UL    SMSY       Source
+# S.Thompson 31092.91 126981.7 62834.95    IWAM
+# S.Thompson 37300.00  87000.0 57600.00 Parken
 
 # png(paste("DataOut/TestStock_PI.png", sep=""), width=9, height=7, units="in", res=500)
 # plotTestStocks()

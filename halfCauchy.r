@@ -38,13 +38,15 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
     # Add histogram of Ricker sigmas
     
     # Ricker sigma from Parken data, excluding Upper Columbia and Siluetz, where they included AR(1) term in model
-    # RicSig <- read.csv("DataIn/ParkenRicSig.csv") 
+    RicSigPark <- read.csv("DataIn/ParkenRicSig.csv")$RicSig 
     
     # Ricker sigma from PSE Chinook SR data extracted 15 Oct 2020. See sigR_metaanalysis.R
     RicSig <- exp(read.table("DataOut/PSE_sigma.csv")$Estimate) 
     hist_out <- hist(RicSig, plot=FALSE)
+    hist_outPark <- hist(RicSigPark, plot=FALSE)
     lowlimit <- hist_out$breaks[1] # Indicates where bars should start on the plot, assuming units of 0.1
-    barplot(height =  c( rep(0,lowlimit*10),(hist_out$density)*0.2), width=0.1, col=grey(0.8), border=grey(0.7), space=0, add=TRUE)
+    barplot(height =  c( rep(0,lowlimit*10),(hist_out$density)*0.2), width=0.1, col="light blue", border=grey(0.7), space=0, add=TRUE)
+    barplot(height= hist_outPark$density*0.2, width=0.1, col=grey(0.8, alpha=0.5), border=grey(0.7, alpha=0.5), space=0, add=TRUE)
     RicSig_Thorson <- 0.69 #Thorson et al. 2014 marginal sigma from predictive distribution from hierarchical Ricker model of 20 salmonid stocks from Myers et al 1995
     RicSigSD_Thorson <- 0.27
     abline(v=RicSig_Thorson, lwd=2, lty="dotted", col=grey(0.8))
@@ -60,7 +62,7 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
   #Inverse gamma on sqrt(variance)=sigma
   if(!Delta){
     shape<-rate<-0.001
-    lines(sqrt(test), sqrt(dinvgamma(test,shape=shape, rate=rate)), lwd=2, col=t_col(color=cols[1], percent=90))
+    lines(sqrt(test), sqrt(dinvgamma(test,shape=shape, rate=rate)), lwd=4, col=t_col(color=cols[1], percent=90))
   }
   
   shape<-rate<-0.01
@@ -140,9 +142,11 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
   
   if (plot_inv_gamma_only){
     if(!Delta){
-      legend(x=1.1, y=0.78, legend=c("Inverse gamma(1,1)", "Inverse gamma(0.1,0.1)", "Inverse gamma(0.01,0.01)", 
-                                     "Inverse gamma(0.001,0.001)"),
-             col=c(t_col(cols[1], 30), t_col(cols[1], 50), t_col(cols[1], 70), t_col(cols[1], 90)), bty="n", lwd=2)
+      legend(x=1, y=0.78, legend=c("Inverse gamma(1,1)", "Inverse gamma(0.1,0.1)", "Inverse gamma(0.01,0.01)", 
+                                     "Inverse gamma(0.001,0.001)", "Distribution of Ricker Sigma Parken", 
+                                     "Distribution of Ricker Sigma PSE"),
+             col=c(t_col(cols[1], 30), t_col(cols[1], 50), t_col(cols[1], 70), t_col(cols[1], 90), grey(0.7, alpha=0.5), "light blue"), 
+             bty="n", pch=c(NA,NA,NA,NA, 22,22), pt.bg= c(NA, NA, NA, NA, grey(0.7, alpha=0.5), "light blue"), lwd=c(rep(2,4),NA,NA) )
     }
     if(Delta){
       # For Delta sigma, vertical line SD of SMSY among 25 stocks

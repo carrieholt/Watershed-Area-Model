@@ -496,7 +496,8 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   All_Est_Liermann_SepRicA_uniformSigmaPrior <- readRDS("DataOut/All_Est_Liermann_SepRicA_uniformSigmaPrior.RDS")
   All_Est_Liermann_SepRicA_noSigmaPrior <- readRDS("DataOut/All_Est_Liermann_SepRicA_noSigmaPrior.RDS")
   All_Est_Liermann_SepRicA_invGamma0.001 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.001.RDS")
-  All_Est_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.1.RDS")
+  #All_Est_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.1.RDS")
+  All_Est_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_invGamma0.1.RDS")
   All_Est_Liermann_SepRicA_invGamma0.01_invGammaA0.001 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.01_invGammaA0.001.RDS")
   All_Est_Liermann_SepRicA_invGamma0.001_invGammaA0.01 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.001_invGammaA0.01.RDS")
   
@@ -577,19 +578,14 @@ plotTestStocks <- function(data = TestSMSY){
  
 #South Thompson values are > y-axis upper limit
 #TestSMSY %>% filter(Stock=="S.Thompson" ) 
-# For Fixed Delta at Parken et al. (2006)
+# For Inv Gammma (0.1, 0.1) Ric Sig and InvGamma(1,1) deltaSig
 #Stock     SMSY       UL       LL Source
-# S.Thompson 52788.82 201410.1 13835.75   IWAM
+# S.Thompson 62834.9487 17463.09029 226090.0398   IWAM
 # S.Thompson 57600.00  87000.0 37300.00 Parken
 
-# png(paste("DataOut/TestStock_MinFixedDeltaPI.png", sep=""), width=9, height=7, units="in", res=500)
+# png(paste("DataOut/TestStock_PI.png", sep=""), width=9, height=7, units="in", res=500)
 # plotTestStocks()
 # dev.off()
-# 
-# png(paste("DataOut/TestStock_ParkenFixedDeltaPI.png", sep=""), width=9, height=7, units="in", res=500)
-# plotTestStocks()
-# dev.off()
-
 
 plotSMSY <- function(data = WCVISMSY){
   #model order: 2  6 11 12 13 14 15 16 17 20  1  3  5  7  8  9 18 19 21  4 10

@@ -588,18 +588,15 @@ Olsmsy <- (PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% pull(Estimate)) # "obse
 
 
 
-
-
 # Get predicted test values and their SEs 
 TestSMSY <- data.frame() 
 TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYs", "TestlnSMSYo"))  
-#TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYs", "TestlnSMSYo")) %>% 
-#  add_column(TestlnWA = c(data$TestlnWAs,data$TestlnWAo))
 TestSMSYpull <- TestSMSY %>% pull(Estimate)
-TestSMSY_PI <- PredInt(x=log(WA$WA), y=Olsmsy, Predy=TestSMSYpull, Newx= c(data$TestlnWAs,data$TestlnWAo))
-#Split this out by stream and ocean type as they have different linear regerssions?
 
-#To get confidence intervals:   mutate (TestSMSY = exp(Estimate), UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error))
+#Split this out by stream and ocean type as they have different linear regerssions
+TestSMSY_PI <- PredInt(x=log(WA$WA), y=Olsmsy, Predy=TestSMSYpull, Newx= c(data$TestlnWAs,data$TestlnWAo))
+
+#To get confidence intervals:   TestSMSY <- TestSMSY %>% mutate (UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error)) %>% add_column(Source="IWAM")
 StockNames <- read.csv("DataIn/ParkenTestStocks.csv") %>% pull(Stock)
 #StockNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(Stock)
 #CUNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(CU)
@@ -652,6 +649,7 @@ if (plot==TRUE){
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_Ricker_std.RDS", sep="") )# mod "IWAM_FixedSep_RicStd"
 
+#saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.1.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.1.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.001.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.01_invGammaA0.001.RDS", sep="") )

@@ -238,9 +238,9 @@ if (mod=="Liermann_PriorRicSig_PriorDeltaSig"){
   data$SigDeltaPriorCauchy <- as.numeric(F)
   data$Tau_D_dist <- 1
   data$Tau_dist <- 0.1
-  #data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
-  data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
-  data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
+  data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
+  #data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
+  #data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
   
   
 }
@@ -587,52 +587,77 @@ Plsmsys <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %
 Plsmsyo <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% filter(lh==0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- ocean
 Olsmsys <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% filter(lh==1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- stream
 Olsmsyo <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% filter(lh==0) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
+Plsreps <- PredlnSREP_PI %>% filter(Param=="PredlnSREP") %>% left_join(Stream) %>% filter(lh==1) %>% pull(Estimate) #Predicted lnSMSY from WA regression- Stream
+Plsrepo <- PredlnSREP_PI %>% filter(Param=="PredlnSREP") %>% left_join(Stream) %>% filter(lh==0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- ocean
+Olsreps <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>% filter(lh==1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- stream
+Olsrepo <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>% filter(lh==0) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
 
 
-
-# Get predicted test values and their SEs 
+#---------------------------------------------------------------------------------
+# Get Predicted SMSY values for test stocks and their Prediction Intervals
 TestSMSY <- data.frame() 
 TestSMSYs <- data.frame() 
 TestSMSYo <- data.frame() 
+TestSMSY_SREP <- data.frame() 
 
-#For Parken test data set
-StockNames <- read.csv("DataIn/ParkenTestStocks.csv") %>% pull(Stock)
-TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYs", "TestlnSMSYo")) %>% add_column(Stock=StockNames)
+# #For Parken Test stocks
+# StockNames <- read.csv("DataIn/ParkenTestStocks.csv") %>% pull(Stock)
+# #To get confidence intervals:   TestSMSY <- TestSMSY %>% mutate (UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error)) %>% add_column(Source="IWAM")
+# 
+# #Split this out by stream and ocean type as they have different linear regerssions
+# TestSMSYs <- TestSMSY %>% filter (Param %in% c("TestlnSMSYs"))  
+# TestSMSYo <- TestSMSY %>% filter (Param %in% c("TestlnSMSYo"))  
+# WAs <- WA %>% left_join(Stream) %>% filter(lh==1) %>% pull(WA)
+# WAo <- WA %>% left_join(Stream) %>% filter(lh==0) %>% pull(WA)
+# TestSMSYs_PI <- PredInt(x=log(WAs), y=Olsmsys, Predy=TestSMSYs$Estimate, Newx= c(data$TestlnWAs))
+# ##Compare my calculations of prediction intervals to those from Stan: quite close, but STAN didn't fully converge..?strange
+# #  #PredInt(x=log(WAs), y=Olsmsys, Predy=Plsmsys, Newx= log(WAs))
+# #  #stantest <- stan("stan_Files/linreg.stan", data = list(x = log(WAs), y = Olsmsys, N = length(WAs)), iter = 8000)
+# TestSMSYo_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYo$Estimate, Newx= c(data$TestlnWAo))
+# TestSMSYs <- TestSMSYs %>% add_column(LL=exp(TestSMSYs_PI$lwr), UL=exp(TestSMSYs_PI$upr))
+# TestSMSYo <- TestSMSYo %>% add_column(LL=exp(TestSMSYo_PI$lwr), UL=exp(TestSMSYo_PI$upr))
+# TestSMSY <- TestSMSYs %>% bind_rows(TestSMSYo)
+# TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% select(-Std..Error, - Param, -Estimate) %>% 
+#   add_column( Source="IWAM")
+# # Compare IWAM estiamates of SMSY with those in Parken et al for test stocks (with UL and LL (these are 5th and 95th bootstrap estimates not CIs)
+# ParkenTestStocks <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>% 
+#   select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
+# ParkenTestSMSY <- full_join(TestSMSY, ParkenTestStocks)
 
-TestSMSYs <- TestSMSY %>% filter (Param %in% c("TestlnSMSYs"))  
-TestSMSYo <- TestSMSY %>% filter (Param %in% c("TestlnSMSYo"))  
+
+# If Test stock = WCVI stocks
+
+StockNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(Stock)
+CUNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(CU)
+TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYo")) %>% add_column(Stock = StockNames)
+TestSREP <- All_Ests %>% filter (Param %in% c("TestlnSREPo")) %>% add_column(Stock = StockNames)
 TestSMSYpull <- TestSMSY %>% pull(Estimate)
+TestSREPpull <- TestSREP %>% pull(Estimate)
+TestSMSY_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYpull, Newx= data$TestlnWAo)
+TestSREP_PI <- PredInt(x=log(WAo), y=Olsrepo, Predy=TestSREPpull, Newx= data$TestlnWAo)
+TestSMSY <- TestSMSY %>% add_column(LL=exp(TestSMSY_PI$lwr), UL=exp(TestSMSY_PI$upr))
+TestSREP <- TestSREP %>% add_column(LL=exp(TestSREP_PI$lwr), UL=exp(TestSREP_PI$upr))
+TestSMSY <- TestSMSY %>% mutate (Estimate = exp(Estimate)) %>% select(-Std..Error, - Param) %>% 
+  add_column(Param = "SMSY")
+TestSREP <- TestSREP %>% mutate (Estimate = exp(Estimate)) %>% select(-Std..Error, - Param) %>% 
+  add_column(Param = "SREP")
+WCVISMSY <- TestSMSY %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
+WCVISREP <- TestSREP %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
+WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
+write.csv(WCVISMSY, "DataOut/WCVI_SMSY.csv")
 
-#Split this out by stream and ocean type as they have different linear regerssions
-WAs <- WA %>% left_join(Stream) %>% filter(lh==1) %>% pull(WA)
-WAo <- WA %>% left_join(Stream) %>% filter(lh==0) %>% pull(WA)
-TestSMSY_PI <- PredInt(x=log(WA$WA), y=Olsmsy, Predy=TestSMSYpull, Newx= c(data$TestlnWAs,data$TestlnWAo))
-TestSMSYs_PI <- PredInt(x=log(WAs), y=Olsmsys, Predy=TestSMSYs$Estimate, Newx= c(data$TestlnWAs))
-TestSMSYo_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYo$Estimate, Newx= c(data$TestlnWAo))
-TestSMSYs <- TestSMSYs %>% add_column(LL=exp(TestSMSYs_PI$lwr), UL=exp(TestSMSYs_PI$upr))
-TestSMSYo <- TestSMSYo %>% add_column(LL=exp(TestSMSYo_PI$lwr), UL=exp(TestSMSYo_PI$upr))
-TestSMSY <- TestSMSYs %>% bind_rows(TestSMSYo)
+
+TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYo")) %>% add_column(Stock=StockNames)
+TestSMSYpull <- TestSMSY %>% pull(Estimate)
+TestSMSY_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYpull, Newx= data$TestlnWAo)
+TestSMSY <- TestSMSY %>% add_column(LL=exp(TestSMSY_PI$lwr), UL=exp(TestSMSY_PI$upr))
 TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% select(-Std..Error, - Param, -Estimate) %>% 
   add_column( Source="IWAM")
+WCVISMSY <- TestSMSY %>% mutate(SMSY=round(SMSY, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
+saveRDS(WCVISMSY, "DataOut/WCVISMSY.RDS") 
+readRDS("DataOut/WCVISMSY.RDS")
 
-#To get confidence intervals:   TestSMSY <- TestSMSY %>% mutate (UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error)) %>% add_column(Source="IWAM")
-#StockNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(Stock)
-#CUNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(CU)
-#TestSMSY <- TestSMSY %>% add_column(Stock=StockNames) %>% mutate(SMSY=exp(Estimate))
-#TestSMSY <- TestSMSY %>% select(-Std..Error, - Param, -Estimate) %>% 
-#  add_column(LL=exp(TestSMSY_PI$lwr), UL = exp(TestSMSY_PI$upr), Source="IWAM")
-  
-# If Test stock = WCVI stocks
-#WCVISMSY <- TestSMSY %>% mutate(SMSY=round(SMSY, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
- 
-
-# If Test stock = Parken et al Test stocks
-# Compare IWAM estiamates of SMSY with those in Parken et al for test stocks (with UL and LL (these are 5th and 95th bootstrap estimates not CIs)
-ParkenTestSMSY <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>% 
-  select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
-TestSMSY <- full_join(TestSMSY, ParkenTestSMSY)
-
-
+#---------------------------------------------------------------------------------
 # Calculate standardized residuals
 if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
   SRes <- bind_rows(Preds_std, Preds_ar, Preds_surv) %>% arrange (Stocknumber)
@@ -646,6 +671,7 @@ SRes <- SRes %>% left_join(sigma) %>% rename(logSig = Estimate)
 SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 
 
+#---------------------------------------------------------------------------------
 #Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
 # if using a Liermann model, use SRDat=SRDat_std; otherwise SRDat=SRDat
 if (plot==TRUE){
@@ -664,6 +690,8 @@ if (plot==TRUE){
   
 }
 
+#---------------------------------------------------------------------------------
+# Save parameter estimates to plot distribution of logA values (box plots)
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_Ricker_std.RDS", sep="") )# mod "IWAM_FixedSep_RicStd"
 
@@ -678,6 +706,7 @@ if (plot==TRUE){
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_noSigmaPrior.RDS", sep="") )
 #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") ) #For Liermann_HalfCauchyRicVar and Liermann_HalfNormalRicVar
 
+#---------------------------------------------------------------------------------
 # Plot WA regression
 if(plot==TRUE){
   png(paste("DataOut/WAregSMSY_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
@@ -713,6 +742,7 @@ if(plot==TRUE){
 }
 
 
+#---------------------------------------------------------------------------------
 # What initial values to use for WA model parameters?
 
 SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))

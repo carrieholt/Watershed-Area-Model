@@ -1,9 +1,26 @@
 # Code to compare methods for estimating prediction intervals using a simple linear regression
 library(TMB)
+library(rstan)
 
 # Create Data
 y=c(2,1,4,2,8,5,8,10,7,9)
 x=1:10
+
+
+# Pure Stan (ah, that's simple :) )
+rstan_options(auto_write = TRUE)
+stantest <- stan("stan_Files/linreg.stan",
+                 data = list(x = x, y = y, N = length(x)), iter = 8000)
+stantest
+
+# Same as doing it ourselves in R:
+post <- as.data.frame(stantest)
+Y_Preds <- matrix(nrow = nrow(post), ncol = length(x))
+for (i in 1:nrow(post)) {
+  Y_Preds[i, ] <- rnorm(length(x), post$a[i] + post$b[i] * x, post$sigma[i])
+}
+round(t(apply(Y_Preds, 2, quantile, probs = c(0.025, 0.5, 0.975))), 2)
+
 
 # Look at data
 plot(x,y)
@@ -100,3 +117,83 @@ PredInt <- function(x,y,Newx=x, Predy){
 }
 
 PredInt(x=x,y=y,Predy=predict(lmtest))
+
+
+#--------------------------------------------
+# For Sean ANderson: # Proof that what TMB is doing is adding observation error from the MLE:
+compile("linreg.cpp")
+dyn.load(dynlib("linreg"))
+data <- list()
+data$x <- x
+data$y <- y
+param <- list()
+param$a <- 1
+param$b <- 1
+param$sd <- 1
+obj <- MakeADFun(data, param, DLL = "linreg")
+opt <- nlminb(obj$par, obj$fn, obj$gr)
+pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
+
+Y_Preds <- matrix(nrow = 1000, ncol = length(x))
+for (i in 1:1000) {
+  Y_Preds[i, ] <- obj$simulate()$y
+}
+apply(Y_Preds, 2, quantile, probs = c(0.025, 0.5, 0.975))
+
+# These are simulations at the MLE:
+library(dplyr)
+purrr::map_dfr(1:1000, function(i) {
+  data.frame(
+    x = x,
+    y_rep = rnorm(length(x),
+                  mean = pl$a + pl$b * x, sd = rep(pl$sd, length(x))
+    )
+  )
+}) %>%
+  group_by(x) %>%
+  summarize(
+    lwr = quantile(y_rep, probs = 0.025),
+    upr = quantile(y_rep, probs = 0.975)
+  )
+
+
+# tmbstan (with Jacobian adjustment):
+compile("TMB_Files/linreg2.cpp")
+dyn.load(dynlib("linreg2"))
+data <- list(x = x, y = y)
+param <- list(a = 1, b = 1, log_sd = 0)
+obj2 <- MakeADFun(data, param, DLL = "linreg2")
+opt2 <- nlminb(obj2$par, obj2$fn, obj2$gr)
+
+library(tmbstan)
+m2 <- tmbstan(obj = obj2, iter = 6000)
+post <- as.data.frame(m2)
+Y_Preds <- matrix(nrow = nrow(post), ncol = length(x))
+for (i in 1:nrow(post)) {
+  Y_Preds[i, ] <- rnorm(length(x), post$a[i] + post$b[i] * x, exp(post$log_sd[i]))
+}
+round(t(apply(Y_Preds, 2, quantile, probs = c(0.025, 0.5, 0.975))), 2)
+
+# estimate prediction intervals using R function predict.lm()
+lmtest <- lm(y~x)
+predict.lm(lmtest, interval="predict")
+
+# tmbstan (original):
+compile("TMB_Files/linreg.cpp")
+dyn.load(dynlib("linreg"))
+data <- list(x = x, y = y)
+param <- list(a = 1, b = 1, sd = 1)
+obj <- MakeADFun(data, param, DLL = "linreg")
+opt <- nlminb(obj$par, obj$fn, obj$gr)
+
+m <- tmbstan(obj = obj, iter = 6000)
+post <- as.data.frame(m)
+Y_Preds <- matrix(nrow = nrow(post), ncol = length(x))
+for (i in 1:nrow(post)) {
+  Y_Preds[i, ] <- rnorm(length(x), post$a[i] + post$b[i] * x, post$sd[i])
+}
+round(t(apply(Y_Preds, 2, quantile, probs = c(0.025, 0.5, 0.975))), 2)
+
+# estimate prediction intervals using R function predict.lm()
+lmtest <- lm(y~x)
+predict.lm(lmtest, interval="predict")

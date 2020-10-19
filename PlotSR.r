@@ -609,3 +609,16 @@ plotSMSY <- function(data = WCVISMSY){
 # png(paste("DataOut/WCVI_MinFixedDeltaPI.png", sep=""), width=9, height=7, units="in", res=500)
 # plotSMSY()
 # dev.off()
+
+
+WCVIEsc <- as.data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr"))
+
+WCVIEscQuant <- t(data.frame (apply(WCVIEsc, 2, quantile, probs = c(0.025,0.25, 0.5,0.75, 0.975), na.rm=T)))
+#Make a column of stock names and rename Bedwell.Ursus to Bedwell/Ursus, and San.Juan and Little.Zeballos...
+#then combine with SMSYs and Sreps below in ggplot. Not sure how best, in long format or short. Short might be easier?
+
+
+WCVISMSY <- as.data.frame(read.csv("DataOut/WCVI_SMSY.csv"))
+
+
+

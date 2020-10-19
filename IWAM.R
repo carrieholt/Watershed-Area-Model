@@ -607,8 +607,8 @@ TestSMSY_SREP <- data.frame()
 # #Split this out by stream and ocean type as they have different linear regerssions
 # TestSMSYs <- TestSMSY %>% filter (Param %in% c("TestlnSMSYs"))  
 # TestSMSYo <- TestSMSY %>% filter (Param %in% c("TestlnSMSYo"))  
-# WAs <- WA %>% left_join(Stream) %>% filter(lh==1) %>% pull(WA)
-# WAo <- WA %>% left_join(Stream) %>% filter(lh==0) %>% pull(WA)
+ WAs <- WA %>% left_join(Stream) %>% filter(lh==1) %>% pull(WA)
+ WAo <- WA %>% left_join(Stream) %>% filter(lh==0) %>% pull(WA)
 # TestSMSYs_PI <- PredInt(x=log(WAs), y=Olsmsys, Predy=TestSMSYs$Estimate, Newx= c(data$TestlnWAs))
 # ##Compare my calculations of prediction intervals to those from Stan: quite close, but STAN didn't fully converge..?strange
 # #  #PredInt(x=log(WAs), y=Olsmsys, Predy=Plsmsys, Newx= log(WAs))
@@ -644,18 +644,8 @@ TestSREP <- TestSREP %>% mutate (Estimate = exp(Estimate)) %>% select(-Std..Erro
 WCVISMSY <- TestSMSY %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
 WCVISREP <- TestSREP %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
 WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
-write.csv(WCVISMSY, "DataOut/WCVI_SMSY.csv")
+#write.csv(WCVISMSY, "DataOut/WCVI_SMSY.csv")
 
-
-TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYo")) %>% add_column(Stock=StockNames)
-TestSMSYpull <- TestSMSY %>% pull(Estimate)
-TestSMSY_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYpull, Newx= data$TestlnWAo)
-TestSMSY <- TestSMSY %>% add_column(LL=exp(TestSMSY_PI$lwr), UL=exp(TestSMSY_PI$upr))
-TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% select(-Std..Error, - Param, -Estimate) %>% 
-  add_column( Source="IWAM")
-WCVISMSY <- TestSMSY %>% mutate(SMSY=round(SMSY, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
-saveRDS(WCVISMSY, "DataOut/WCVISMSY.RDS") 
-readRDS("DataOut/WCVISMSY.RDS")
 
 #---------------------------------------------------------------------------------
 # Calculate standardized residuals

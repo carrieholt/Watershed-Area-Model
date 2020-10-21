@@ -612,13 +612,38 @@ plotSMSY <- function(data = WCVISMSY){
 
 
 WCVIEsc <- as.data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr"))
+WCVI_RPs <- as.data.frame(read.csv("DataOut/WCVI_SMSY.csv")) %>% select (-X)
 
-WCVIEscQuant <- t(data.frame (apply(WCVIEsc, 2, quantile, probs = c(0.025,0.25, 0.5,0.75, 0.975), na.rm=T)))
-#Make a column of stock names and rename Bedwell.Ursus to Bedwell/Ursus, and San.Juan and Little.Zeballos...
-#then combine with SMSYs and Sreps below in ggplot. Not sure how best, in long format or short. Short might be easier?
+WCVIEscQuant <- data.frame(t(data.frame (apply(WCVIEsc, 2, quantile, probs = c(0.025,0.25, 0.5,0.75, 0.975), na.rm=T))))
+WCVIEscQuant$Stock <- row.names(WCVIEscQuant)
+WCVIEscQuant$Stock <- sapply(WCVIEscQuant$Stock, function(x) (gsub(".", " ", x, fixed=TRUE) ) )
+WCVIEscQuant$Stock <- sapply(WCVIEscQuant$Stock, function(x) (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
+stockCU <- WCVI_RPs %>% select (Stock, CU)
+WCVIEscQuant <- WCVIEscQuant %>%  left_join(stockCU)
+WCVIEscQuant <- WCVIEscQuant %>% rename(Estimate=X50., LL=X25., UL=X75.) %>% select (-X2.5., -X97.5.) %>% add_column(Param="Quant")
+
+WCVIEscQuant <- WCVIEscQuant %>% bind_rows(WCVI_RPs)
+#write.csv(WCVIEscQuant, "DataOut/WCVIbenchmarks.csv")
+#read.csv("DataOut/WCVIbenchmarks.csv")
 
 
-WCVISMSY <- as.data.frame(read.csv("DataOut/WCVI_SMSY.csv"))
+plotWCVIBenchmarks <- function(data = WCVIEscQuant){
+  
+  pd <- position_dodge(0.4)
+  
+  ggplot(data, aes(x=Stock, y=Estimate, group=Param, colour=Param)) + 
+    geom_point(position=pd, size=2) +
+    geom_errorbar(aes(ymin=LL, ymax=UL), position=pd, width=0.1, size=1) + 
+    #coord_cartesian(ylim = c(0, 5000)) +
+    #ylim(0,51000) + 
+    theme(axis.text = element_text(angle = 90, vjust = 0.5, hjust=1, size=12) ) + 
+    xlab("") + ylab("Benchmarks") + 
+    theme(
+      #plot.title = element_text(color="black", size=14, face="bold.italic"),
+      axis.title.x = element_text(size=14),
+      axis.title.y = element_text(size=14))
+}
 
-
-
+#png(paste("DataOut/WCVIbenchmarks.png", sep=""), width=9, height=7, units="in", res=500)
+#plotWCVIBenchmarks()
+#dev.off()

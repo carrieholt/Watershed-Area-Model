@@ -55,9 +55,9 @@ PredInt <- function(x,y,Newx=x, Predy){
 plot <- FALSE#TRUE
 removeSkagit <- FALSE#TRUE
 mod <- "Liermann_PriorRicSig_PriorDeltaSig"##"Liermann_HalfNormRicVar_FixedDelta"#"Ricker_AllMod"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
+source ("PlotSR.r")# Plotting functions
 
 if( plot== TRUE) {
-  source ("PlotSR.r")# Plotting functions
   source ("CheckAR1.r")# For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
 }
 

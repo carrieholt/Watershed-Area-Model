@@ -238,6 +238,7 @@ if (mod=="Liermann_PriorRicSig_PriorDeltaSig"){
   data$SigDeltaPriorCauchy <- as.numeric(F)
   data$Tau_D_dist <- 1
   data$Tau_dist <- 0.1
+  # To fix: lh should be ==1 for ocean type
   data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
   #data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
   #data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)

@@ -352,7 +352,7 @@ Type objective_function<Type>:: operator() ()
   vector <Type> TestlnSREPo(N_testo);
   
   for (int i=0; i<N_testo; i++){
-    TestlnSMSYo(i) = logDelta1 + + logDelta1ocean + (exp(logDelta2) + Delta2ocean) * TestlnWAo(i);
+    TestlnSMSYo(i) = logDelta1 + logDelta1ocean + (exp(logDelta2) + Delta2ocean) * TestlnWAo(i);
     TestlnSREPo(i) = logNu1 + logNu1ocean + (exp(logNu2) + Nu2ocean) * TestlnWAo(i);
   }
   

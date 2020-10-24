@@ -79,28 +79,38 @@ Sgen.fn <- function ( SMSY, SREP, half.a = FALSE, const.SMAX =FALSE, explicit = 
     if (half.a) sMSY <-(1 - gsl::lambert_W0(exp(1 - log(a.par) ))) / b.par
   }
 
+  sgen.out <- sGenSolver( log(a.par), b.par )
+  
   if(plot){
     Rpred <- NA
     for (i in 1:1000){ Rpred[i]<- a.par * i * exp (- b.par * i)}
-    plot(1:1000, Rpred, type="l", ylim = c (0, 1400), xlab = "Spawners",  ylab = "Recruits" )
+    if (const.SMAX) xlab <- "Spawners" else xlab <- ""
+    plot(1:1000, Rpred, type="l", ylim = c (0, 1400), xlab = xlab,  ylab = "Recruits", lwd=2 )
     abline(a=0, b=1)
     abline(v=sgen.out, lty="dotted")
     abline(v=SMSY, lty="dashed")
     abline(v=(1/b.par), lty="dotdash")
     abline(v=SREP)
+    legend( x = 700, y = 600, legend = c("Sgen", "SMSY", "SMAX", "SREP" ), lty=c("dotted","dashed", "dotdash", "solid"), bty="n" )
+    if (!half.a) title("Constant productivity")
+    if (half.a) if(!const.SMAX) title("Half productivity; constant SREP")
+    if (half.a) if(const.SMAX) title("Half productivity; constant SMAX")
   }
   
-  sgen.out <- sGenSolver( log(a.par), b.par )
   return( list( SGEN = sgen.out , SMSY = SMSY, SREP = SREP, apar = a.par, bpar = b.par) )
   
 }
 
-#SMSY <- 345
-#SREP <- 971
-Sgen.fn(SMSY, SREP, half.a = FALSE, const.SMAX = FALSE, plot=TRUE)
-Sgen.fn(SMSY, SREP)
-#Sgen.fn(SMSY, SREP, half.a = TRUE, const.SMAX = FALSE, plot=TRUE)
-
+# # Example: Artlish
+# SMSY <- 345 
+# SREP <- 971
+# 
+# png(paste("DataOut/Artlish_WCVI_SRcurve.png", sep=""), width=4, height=7, units="in", res=500)
+#   par(mfcol=c(3,1),  mar = c(4, 4, 2.5, 2) + 0.1)
+#   Sgen.fn(SMSY, SREP, half.a = FALSE, const.SMAX = FALSE, plot=TRUE)
+#   Sgen.fn(SMSY, SREP, half.a = TRUE, const.SMAX = FALSE, plot=TRUE)
+#   Sgen.fn(SMSY, SREP, half.a = TRUE, const.SMAX = TRUE, plot=TRUE)
+# dev.off()
 
 wcviRPs_long <- read.csv("DataOut/WCVI_SMSY.csv")
 
@@ -113,28 +123,36 @@ wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
 # Sgen.fn_v <- Vectorize(Sgen.fn)
 # wcviRPs %>% mutate( SGEN = Sgen.fn_v, SMSY, SREP )
 # apply doesn work:
-#SgenList <- apply (X = wcviRPs[,c('SMSY','SREP')], MARGIN = 1, FUN = Sgen.fn, SMSY=SMSY, SREP=SREP)
-# Could try purrr package, and map function
-
+# SgenList <- apply (X = wcviRPs[,c('SMSY','SREP')], MARGIN = 1, FUN = Sgen.fn, SMSY=SMSY, SREP=SREP)
 # This works, but is clunky:
 # Sgen <- unlist(t(mapply(FUN=Sgen.fn, wcviRPs$SMSY, wcviRPs$SREP))[,1])
 # SMSY <- unlist(t(mapply(FUN=Sgen.fn, wcviRPs$SMSY, wcviRPs$SREP))[,2])
-#SREP <- unlist(t(mapply(FUN=Sgen.fn, wcviRPs$SMSY, wcviRPs$SREP))[,3])
+# SREP <- unlist(t(mapply(FUN=Sgen.fn, wcviRPs$SMSY, wcviRPs$SREP))[,3])
 # wcviRPs <- wcviRPs %>% mutate (SGEN=Sgen) %>% mutate(SGEN=round(SGEN,0))
 
 # This is better (using PURRR)
 SGENcalcs <- map2_dfr (wcviRPs$SMSY,wcviRPs$SREP, Sgen.fn)
 wcviRPs <- wcviRPs %>% mutate (SGEN = SGENcalcs$SGEN) %>% mutate(SGEN=round(SGEN,0))
-wcviRPs <- wcviRPs %>% mutate (SMSYrev = SGENcalcs$SMSY) %>% mutate(SMSYrev=round(SMSYrev,0))
-wcviRPs <- wcviRPs %>% mutate (SREPrev = SGENcalcs$SREP) %>% mutate(SREPrev=round(SREPrev,0))
 wcviRPs <- wcviRPs %>% mutate (a.par = SGENcalcs$apar) %>% mutate(a.par=round(a.par,2))
-wcviRPs <- wcviRPs %>% mutate (SMAXrev = 1/SGENcalcs$bpar) %>% mutate(SMAXrev=round(SMAXrev,0))
 
+wcviRPs <- wcviRPs[c("Stock", "CU", "SGEN", "SMSY", "SMSYLL", "SMSYUL", "SREP", "SREPLL", "SREPUL", "a.par")]
 
+SGENcalcsv2 <- map2_dfr (wcviRPs$SMSY,wcviRPs$SREP, Sgen.fn, half.a = TRUE, const.SMAX = FALSE)
+wcviRPs <- wcviRPs %>% mutate (SGENha.cSREP = SGENcalcsv2$SGEN) %>% mutate( SGENha.cSREP = round( SGENha.cSREP, 0 ) )
+wcviRPs <- wcviRPs %>% mutate (SMSYha.cSREP = SGENcalcsv2$SMSY) %>% mutate( SMSYha.cSREP = round( SMSYha.cSREP, 0 ) )
+wcviRPs <- wcviRPs %>% mutate (SREPha.cSREP = SGENcalcsv2$SREP) %>% mutate( SREPha.cSREP = round( SREPha.cSREP, 0 ) )
+#wcviRPs <- wcviRPs %>% mutate (SMAXrev = 1/SGENcalcs$bpar) %>% mutate(SMAXrev=round(SMAXrev,0))
+
+SGENcalcsv3 <- map2_dfr (wcviRPs$SMSY,wcviRPs$SREP, Sgen.fn, half.a = TRUE, const.SMAX = TRUE)
+wcviRPs <- wcviRPs %>% mutate (SGENha.cSMAX = SGENcalcsv3$SGEN) %>% mutate( SGENha.cSMAX = round( SGENha.cSMAX, 0 ) )
+wcviRPs <- wcviRPs %>% mutate (SMSYha.cSMAX = SGENcalcsv3$SMSY) %>% mutate( SMSYha.cSMAX = round( SMSYha.cSMAX, 0 ) )
+wcviRPs <- wcviRPs %>% mutate (SREPha.cSMAX = SGENcalcsv3$SREP) %>% mutate( SREPha.cSMAX = round( SREPha.cSMAX, 0 ) )
+
+wcviRPs 
 # Add Sgen, SMSY, SREP under half.alpha scnearios for constSREP and constSMAX. Rename columns, and re-arrange. Send to WCVI staff.
 # print a plot with 3 panels and legend to show impact on half alpha on an example stocks to show staff
 # Code a.par and b.par (using non-explicit calcs) and estimation of Sgen in TMB to get  SE for SGEN. Add a switch for 1/2 alpha
 # Check results against R code
 
 
-%>% group_by(CU)
+

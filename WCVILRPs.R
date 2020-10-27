@@ -118,6 +118,9 @@ stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% filter (Param == "SM
 stock_SREP <- wcviRPs_long %>% filter(Stock != "Cypre") %>% filter (Param == "SREP") %>% rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% select (-Param, -X)
 wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
 
+write.csv(wcviRPs, "DataOut/wcviRPs.csv")
+#read.csv("DataOut/wcviRPs.csv")
+
 
 # Not sure how to add a function to mutatte. I tried vecorizting Sgen.fn, but it doesn't work
 # Sgen.fn_v <- Vectorize(Sgen.fn)

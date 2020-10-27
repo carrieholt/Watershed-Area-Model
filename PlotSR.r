@@ -557,7 +557,7 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
 #plotRicA()
 #dev.off()
 
-plotTestStocks <- function(data = TestSMSY){
+plotTestStocks <- function(data = ParkenTestSMSY){
   
   pd <- position_dodge(0.4)
   #data$Stock <- as.factor(data$Stock)
@@ -588,6 +588,8 @@ plotTestStocks <- function(data = TestSMSY){
 # dev.off()
 
 plotSMSY <- function(data = WCVISMSY){
+  
+  data <- data %>% filter(Param == "SMSY") %>% rename(SMSY = Estimate)
   #model order: 2  6 11 12 13 14 15 16 17 20  1  3  5  7  8  9 18 19 21  4 10
   order <- c(2,  6, 11, 12, 13, 14, 15, 16, 17, 20 , 1 , 3 , 5,  7,  8 , 9, 18 ,19, 21,  4, 10)
   #order <- c("Bedwell/Ursus","Cypre", "Megin","Moyeha", "Nahmint", "Nitinat", "San Juan", "Sarita", "Somass","Tranquil", "Artlish",
@@ -618,14 +620,17 @@ WCVIEscQuant <- data.frame(t(data.frame (apply(WCVIEsc, 2, quantile, probs = c(0
 WCVIEscQuant$Stock <- row.names(WCVIEscQuant)
 WCVIEscQuant$Stock <- sapply(WCVIEscQuant$Stock, function(x) (gsub(".", " ", x, fixed=TRUE) ) )
 WCVIEscQuant$Stock <- sapply(WCVIEscQuant$Stock, function(x) (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
-stockCU <- WCVI_RPs %>% select (Stock, CU)
-WCVIEscQuant <- WCVIEscQuant %>%  left_join(stockCU)
+WCVIEscQuant$Stock <- as.character(WCVIEscQuant$Stock)
+stockCU <- WCVI_RPs %>% filter (Param == "SMSY") %>% select (Stock, CU)
+stockCU$Stock <- as.character(stockCU$Stock)
+
+WCVIEscQuant <- WCVIEscQuant %>%  left_join(stockCU, by = "Stock") 
 WCVIEscQuant <- WCVIEscQuant %>% rename(Estimate=X50., LL=X25., UL=X75.) %>% select (-X2.5., -X97.5.) %>% add_column(Param="Quant")
 
 WCVIEscQuant <- WCVIEscQuant %>% bind_rows(WCVI_RPs)
+WCVIEscQuant <- WCVIEscQuant %>% mutate(Estimate = round(Estimate, 0), LL = round(LL, 0), UL = round(UL, 0))
 #write.csv(WCVIEscQuant, "DataOut/WCVIbenchmarks.csv")
 #read.csv("DataOut/WCVIbenchmarks.csv")
-
 
 plotWCVIBenchmarks <- function(data = WCVIEscQuant){
   

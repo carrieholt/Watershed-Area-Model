@@ -238,10 +238,9 @@ if (mod=="Liermann_PriorRicSig_PriorDeltaSig"){
   data$SigDeltaPriorCauchy <- as.numeric(F)
   data$Tau_D_dist <- 1
   data$Tau_dist <- 0.1
-  # To fix: lh should be ==1 for ocean type
-  data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
-  #data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
-  #data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
+  data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
+  #data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
+  #data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
   
   
 }
@@ -260,10 +259,10 @@ if (mod=="Liermann_HalfNormRicVar_FixedDelta"){
   ## Or take Parken et al. (2006) WA sigmas, averaging var of straeam and ocean type models, and taking sqrt = log(sqrt((0.293+0.146)/2)=0.47)
   data$logNuSigma <- log(0.29)# See KFrun.R, "medSDlogSrep" = log(0.29)
   ## Or take Parken et al. (2006) WA sigmas, averaging var of straeam and ocean type models, and taking sqrt = log(sqrt((0.240+0.133)/2)=0.43)
-  #data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
-  #data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
+  #data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
+  #data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
   
-  data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
+  data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
   
 }
 
@@ -584,14 +583,22 @@ Scale_PI <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
 PredlnSMSY_PI <- PredlnSMSY_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
 PredlnSREP_PI <- PredlnSREP_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
 
-Plsmsys <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% filter(lh==1) %>% pull(Estimate) #Predicted lnSMSY from WA regression- Stream
-Plsmsyo <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% filter(lh==0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- ocean
-Olsmsys <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% filter(lh==1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- stream
-Olsmsyo <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% filter(lh==0) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
-Plsreps <- PredlnSREP_PI %>% filter(Param=="PredlnSREP") %>% left_join(Stream) %>% filter(lh==1) %>% pull(Estimate) #Predicted lnSMSY from WA regression- Stream
-Plsrepo <- PredlnSREP_PI %>% filter(Param=="PredlnSREP") %>% left_join(Stream) %>% filter(lh==0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- ocean
-Olsreps <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>% filter(lh==1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- stream
-Olsrepo <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>% filter(lh==0) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
+Plsmsys <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% 
+  filter(lh == 0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- Stream
+Plsmsyo <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% 
+  filter(lh == 1) %>% pull(Estimate) #Predicted lnSMSY from WA regression- ocean
+Olsmsys <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% 
+  filter( lh== 0) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- stream
+Olsmsyo <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% 
+  filter(lh == 1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
+Plsreps <- PredlnSREP_PI %>% filter(Param=="PredlnSREP") %>% left_join(Stream) %>% 
+  filter(lh == 0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- Stream
+Plsrepo <- PredlnSREP_PI %>% filter(Param=="PredlnSREP") %>% left_join(Stream) %>% 
+  filter(lh == 1) %>% pull(Estimate) #Predicted lnSMSY from WA regression- ocean
+Olsreps <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>% 
+  filter(lh == 0) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- stream
+Olsrepo <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>% 
+  filter(lh == 1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
 
 
 #---------------------------------------------------------------------------------
@@ -601,29 +608,31 @@ TestSMSYs <- data.frame()
 TestSMSYo <- data.frame() 
 TestSMSY_SREP <- data.frame() 
 
-# #For Parken Test stocks
-# StockNames <- read.csv("DataIn/ParkenTestStocks.csv") %>% pull(Stock)
-# #To get confidence intervals:   TestSMSY <- TestSMSY %>% mutate (UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error)) %>% add_column(Source="IWAM")
-# 
-# #Split this out by stream and ocean type as they have different linear regerssions
-# TestSMSYs <- TestSMSY %>% filter (Param %in% c("TestlnSMSYs"))  
-# TestSMSYo <- TestSMSY %>% filter (Param %in% c("TestlnSMSYo"))  
- WAs <- WA %>% left_join(Stream) %>% filter(lh==1) %>% pull(WA)
- WAo <- WA %>% left_join(Stream) %>% filter(lh==0) %>% pull(WA)
-# TestSMSYs_PI <- PredInt(x=log(WAs), y=Olsmsys, Predy=TestSMSYs$Estimate, Newx= c(data$TestlnWAs))
-# ##Compare my calculations of prediction intervals to those from Stan: quite close, but STAN didn't fully converge..?strange
-# #  #PredInt(x=log(WAs), y=Olsmsys, Predy=Plsmsys, Newx= log(WAs))
-# #  #stantest <- stan("stan_Files/linreg.stan", data = list(x = log(WAs), y = Olsmsys, N = length(WAs)), iter = 8000)
-# TestSMSYo_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYo$Estimate, Newx= c(data$TestlnWAo))
-# TestSMSYs <- TestSMSYs %>% add_column(LL=exp(TestSMSYs_PI$lwr), UL=exp(TestSMSYs_PI$upr))
-# TestSMSYo <- TestSMSYo %>% add_column(LL=exp(TestSMSYo_PI$lwr), UL=exp(TestSMSYo_PI$upr))
-# TestSMSY <- TestSMSYs %>% bind_rows(TestSMSYo)
-# TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% select(-Std..Error, - Param, -Estimate) %>% 
-#   add_column( Source="IWAM")
-# # Compare IWAM estiamates of SMSY with those in Parken et al for test stocks (with UL and LL (these are 5th and 95th bootstrap estimates not CIs)
-# ParkenTestStocks <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>% 
-#   select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
-# ParkenTestSMSY <- full_join(TestSMSY, ParkenTestStocks)
+# # #For Parken Test stocks
+#  StockNamess <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 0) %>% pull(Stock)
+#  StockNameso <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 1) %>% pull(Stock)
+#  
+# # #To get confidence intervals:   TestSMSY <- TestSMSY %>% mutate (UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error)) %>% add_column(Source="IWAM")
+# # 
+# # #Split this out by stream and ocean type as they have different linear regerssions
+#  TestSMSYs <- All_Ests %>% filter (Param %in% c("TestlnSMSYs"))  %>% add_column(Stock = StockNamess)
+#  TestSMSYo <- All_Ests %>% filter (Param %in% c("TestlnSMSYo"))  %>% add_column(Stock = StockNameso)
+WAs <- WA %>% left_join(Stream) %>% filter(lh == 0) %>% pull(WA)
+WAo <- WA %>% left_join(Stream) %>% filter(lh == 1) %>% pull(WA)
+#  TestSMSYs_PI <- PredInt(x=log(WAs), y=Olsmsys, Predy=TestSMSYs$Estimate, Newx= c(data$TestlnWAs))
+# # ##Compare my calculations of prediction intervals to those from Stan: quite close, but STAN didn't fully converge..?strange
+# # #  #PredInt(x=log(WAs), y=Olsmsys, Predy=Plsmsys, Newx= log(WAs))
+# # #  #stantest <- stan("stan_Files/linreg.stan", data = list(x = log(WAs), y = Olsmsys, N = length(WAs)), iter = 8000)
+#  TestSMSYo_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYo$Estimate, Newx= c(data$TestlnWAo))
+#  TestSMSYs <- TestSMSYs %>% add_column(LL=exp(TestSMSYs_PI$lwr), UL=exp(TestSMSYs_PI$upr))
+#  TestSMSYo <- TestSMSYo %>% add_column(LL=exp(TestSMSYo_PI$lwr), UL=exp(TestSMSYo_PI$upr))
+#  TestSMSY <- TestSMSYs %>% bind_rows(TestSMSYo)
+#  TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% select(-Std..Error, - Param, -Estimate) %>% 
+#    add_column( Source="IWAM")
+# # # Compare IWAM estiamates of SMSY with those in Parken et al for test stocks (with UL and LL (these are 5th and 95th bootstrap estimates not CIs)
+#  ParkenTestStocks <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>% 
+#    select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
+#  ParkenTestSMSY <- full_join(TestSMSY, ParkenTestStocks)
 
 
 # If Test stock = WCVI stocks

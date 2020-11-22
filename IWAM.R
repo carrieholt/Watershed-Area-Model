@@ -1,14 +1,23 @@
-#---------------------------------------------------------
+#-------------------------------------------------------------------------
 # Integrated Watershed Area Model
-# Steps
-# 1. Read in stock-recruitment data
+# Steps:
+# 1. Read in stock-recruitment data, life-history type, and watershed areas
+#   for synoptic survey data, and watershed area and life-history type for 
+#   additional stocks
 # 2. Create data and parameter lists for TMB
-# 3. Estimate SR parameters and SMSY & SREP for synoptic data sets in TMB
-# 4. Caldulate diagnostics for SR models and plot SR curves, etc.
-# 5. Read in watershed areas
-
+# 3. Run TMB model to estimate Ricker parameters and SMSY & SREP for synoptic 
+#   data sets, estimate paraemeters of watershed-area regression, and 
+#   estimate SMSY and SREP for additional stocks 
+# 4. Compile model outputs
+# 5. Calculate diagnostics for SR models in synoptic data set and plot SR 
+#   curves, etc.
+# 6. Calculate prediction intervals for SMSY and SREP estimates for additional 
+#   stocks
 #---------------------------------------------------------
+
+#----------------------------------------------------------------------------
 # Libaries
+#----------------------------------------------------------------------------
 
 library(rsample)
 library(tidyverse)
@@ -20,54 +29,29 @@ library(zoo)
 library(viridis)
 library(hrbrthemes)
 
-# Functions
-count.dig <- function(x) {floor(log10(x)) + 1}
-'%not in%' <- function (x, table) is.na(match(x, table, nomatch=NA_integer_))
-
-#----------------------------------------------------------------------------
-# A function to do calculate prediction intervals
-# x = independent variable
-# y = dependenet variable
-# Newx = x variables for which you'd like the prediction intervals
-# Predy = Predicted y variable at those Newx's
-
-
-PredInt <- function(x,y,Newx=x, Predy){
-  sumXErr <- sum( (x-mean(x))^2 )
-  sumYErr <- sum( (y-mean(y))^2 )
-  sumXYErr <- sum( (y - mean(y)) * (x - mean(x)) ) ^2
-  STEYX <- sqrt( (1/(length(x)-2)) * (sumYErr - sumXYErr/sumXErr) )
-  
-  # SE of the prediction from http://www.real-statistics.com/regression/confidence-and-prediction-intervals/
-  SE.pred <- STEYX * sqrt( (1 + 1/length(x) + ((Newx - mean(x))^2)/sumXErr) ) 
-  t.crit <- qt(0.975,df=length(x)-2) #95% intervals
-  
-  upr <- Predy + SE.pred*t.crit
-  lwr <- Predy - SE.pred*t.crit
-  PI <- list()
-  PI$upr <- upr
-  PI$lwr <- lwr
-  return(PI)
-  
-}
-
+#---------------------------------------------------------------------------------
+# Main switches and functions
 #---------------------------------------------------------------------------------
 plot <- FALSE#TRUE
 removeSkagit <- FALSE#TRUE
 mod <- "Liermann_PriorRicSig_PriorDeltaSig"##"Liermann_HalfNormRicVar_FixedDelta"#"Ricker_AllMod"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 source ("PlotSR.r")# Plotting functions
-
+source ("helperFunctions.R")
 if( plot== TRUE) {
   source ("CheckAR1.r")# For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
 }
 
+
 #---------------------------------------------------------
 # 1. Read in data
+# -----------------------------------------------------------------------
 
 SRDatwNA <- read.csv("DataIn/SRinputfile.csv")
-SRDatwNA <- SRDatwNA %>% filter(Name != "Hoko" & Name != "Hoh") #remove two stocks not used in Parken et al, and not documented in Liermann et al.
+SRDatwNA <- SRDatwNA %>% filter(Name != "Hoko" & Name != "Hoh") 
+#remove two stocks not used in Parken et al, and not documented in Liermann et al.
 if (removeSkagit==TRUE) {
-  SRDatwNA <- SRDatwNA %>% filter(Name != "Skagit")#Stocknumber=22. Need to re-align stock numbers of last two stocks, 23 and 24
+  SRDatwNA <- SRDatwNA %>% filter(Name != "Skagit")
+  # Skagit is Stocknumber=22. Need to re-align stock numbers of last two stocks, 23 and 24
   SRDatwNA [which(SRDatwNA$Stocknumber==23),2] = 22
   SRDatwNA [which(SRDatwNA$Stocknumber==24),2] = 23
 }
@@ -77,7 +61,7 @@ stockwNA <- SRDatwNA %>% filter (is.na(Rec) == TRUE) %>% select (Stocknumber) %>
 #Do not use AR(1) model on  stocks with NAs, Humptulips and Queets (20 and 21)
 
 # Remove years with NAs
-SRDat <- SRDatwNA %>% filter(Rec != "NA") #%>% filter(Stocknumber <= 24)
+SRDat <- SRDatwNA %>% filter(Rec != "NA") 
 
 # Revise yr_num list where NAs have been removed
 test <- SRDat %>% filter(Stocknumber == stockwNA[1]| Stocknumber == stockwNA[2])
@@ -96,7 +80,8 @@ SRDat <- left_join(SRDat, digits)
 SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1))
 
 
-stks_ar <- c("Chikamin", "Keta", "Blossom", "Situk", "Siletz", "Columbia Sp")#Cowichan, stk-23, not included here becuase modelled as per Tompkins with a surival covariate
+stks_ar <- c("Chikamin", "Keta", "Blossom", "Situk", "Siletz", "Columbia Sp")
+#Cowichan, stk-23, not included here becuase modelled as per Tompkins with a surival covariate
 stksNum_ar <- c(4,5,6,10,11,16)
 
 # Ricker with a surival co-variate. 
@@ -105,7 +90,8 @@ stks_surv <- c("Harrison", "Cowichan")
 if (removeSkagit==TRUE) {stksNum_surv <- c(0,22)}
 
 len_stk <- length(unique(SRDat$Stocknumber))
-stksNum_std <- which(0:(len_stk-1) %not in%c(stksNum_ar, stksNum_surv)==TRUE)-1 # Assuming there are only 25 stocks (0:24 StockNumber)
+stksNum_std <- which(0:(len_stk-1) %not in%c(stksNum_ar, stksNum_surv)==TRUE)-1 
+# Assuming there are only 25 stocks (0:24 StockNumber)
 
 # When aggregated standard, ar1, surv, "ModelOrder" is the order of stocks for aligning with WA and life-history data
 stksOrder <- data.frame(Stocknumber =  c(stksNum_std, stksNum_ar, stksNum_surv), ModelOrder = 0:(len_stk-1))
@@ -172,7 +158,9 @@ Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrd
 if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") Stream <- Stream  %>% arrange(Stocknumber)
 
 
+# -----------------------------------------------------------------------
 # 2. Create data and parameter lists for TMB
+# -----------------------------------------------------------------------
 
 TMB_Inputs <- list(rho_Start = 0.0, logDelta1_start=3.00, logDelta2_start =log(0.72), logDeltaSigma_start = -0.412, 
                    logMuDelta1_mean= 5, logMuDelta1_sig= 10, logMuDelta2_mean=-0.5, logMuDelta2_sig= 10, 
@@ -225,24 +213,30 @@ if (mod=="Liermann_PriorRicSig_PriorDeltaSig"){
   data$HalfNormSig <- 1#TMB_Inputs$Tau_sigma
   data$HalfNormMeanA <- 0#0.44#TMB_Inputs$Tau_sigma
   data$HalfNormSigA <- 1#0.5#TMB_Inputs$Tau_sigma
+  data$SigRicPriorNorm <- as.numeric(F)
+  data$SigRicPriorGamma <- as.numeric(T)
+  data$SigRicPriorCauchy <- as.numeric(F)
+  data$Tau_dist <- 0.1
   
   data$sigDelta_mean <- 0.80# See KFrun.R, #For half-normal use N(0,1)
   data$sigDelta_sig <- 0.28# See KFrun.R,
   data$sigNu_mean <- 0.84# See KFrun.R,
   data$sigNu_sig <- 0.275# See KFrun.R,
-  data$SigRicPriorNorm <- as.numeric(F)
-  data$SigRicPriorGamma <- as.numeric(T)
-  data$SigRicPriorCauchy <- as.numeric(F)
   data$SigDeltaPriorNorm <- as.numeric(F)
   data$SigDeltaPriorGamma <- as.numeric(T)
   data$SigDeltaPriorCauchy <- as.numeric(F)
   data$Tau_D_dist <- 1
-  data$Tau_dist <- 0.1
   data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
-  #data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
+  # Add aggregated WAs at inlet level
+  InletlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% group_by(Inlet) %>% 
+    summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>% filter(Inlet !="Nitinat")
+  data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA )
+   #data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
   #data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
   
+  # Sum WAs over inlets. Remove San Juan, becuase that Inlet has only 1 stock = San Juan
   
+
 }
 
 if (mod=="Liermann_HalfNormRicVar_FixedDelta"){
@@ -266,29 +260,15 @@ if (mod=="Liermann_HalfNormRicVar_FixedDelta"){
   
 }
 
-if (mod=="IWAM_FixedSep"){
-  #data$Tau_D_dist <- 0.001#TMB_Inputs$Tau_sigma
-}
 
-
-# Read in wateshed area data and life-history type....
+# Read in wateshed area data and life-history type and scale
 if (mod!="Ricker_AllMod") data$WA <- WA$WA
-data$Scale <- SRDat_Scale #ordered by std, AR1, surv, if all 3 Ricker models uses. Otherwise ordered by Stocknumber
-##data$Tau_dist <- TMB_Inputs$Tau_dist
-# What does inv gamma prior look like? library(invgamma); plot(x=seq(0,1,0.001), y=dinvgamma(seq(0,1,0.001),0.01,0.01), type="l")
 if (mod!="Ricker_AllMod") data$Stream <- Stream$lh
-#data$N_stream <-length(which(data$Stream==0))
-#data$N_ocean <- length(which(data$Stream==1))
-#data$N_stks_short <- 17
+data$Scale <- SRDat_Scale #ordered by std, AR1, surv, if all 3 Ricker models uses. Otherwise ordered by Stocknumber
 if (mod=="IWAM_FixedSep") data$order_noChick <- c(0:23)##c(0:15,19)#, 17:23)
 
-#data$logMuDelta1_mean <- TMB_Inputs$logMuDelta1_mean
-#data$logMuDelta1_sig <- TMB_Inputs$logMuDelta1_sig
-#data$logMuDelta2_mean <- TMB_Inputs$logMuDelta2_mean
-#data$logMuDelta2_sig <- TMB_Inputs$logMuDelta2_sig
-#data$Tau_Delta1_dist <- TMB_Inputs$Tau_Delta1_dist
-#data$Tau_Delta2_dist <- TMB_Inputs$Tau_Delta2_dist
-  
+
+# Read in log(watershed area) for additional stocks
 if (mod!="Ricker_AllMod") data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1) #predicated lnWA for plottig CIs
 
 # Parameters
@@ -423,15 +403,11 @@ if (mod=="IWAM_FixedSep_Constyi"){
 #param$SigmaDelta2 <- 1
 
 
-
+# -----------------------------------------------------------------------
 # 3. Estimate SR parameters from synoptic data set and SMSY and SREPs
+# -----------------------------------------------------------------------
 
 # Compile model if changed:
-#dyn.unload(dynlib("TMB_Files/Ricker_AllMod"))
-#compile("TMB_Files/Ricker_AllMod.cpp")
-#dyn.load(dynlib("TMB_Files/Ricker_AllMod"))
-#obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE)#random = c( "logDelta2"), 
-
 #dyn.unload(dynlib(paste("TMB_Files/", mod, sep="")))
 #compile(paste("TMB_Files/", mod, ".cpp", sep=""))
 dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
@@ -440,15 +416,14 @@ if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|m
 }
 
 if(mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta"){
-  #obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"), lower=lower, upper= upper )#c("logA_s", "logA_o")) 
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
   
 }
 
 
-# For Phase 1, fix Delta parameters. Do not need to fix Delta's beccause initlal values are lm fits, so very close
-#map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
-#obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
+# For phasing, I could fix Delta parameters. However, not needed as initlal values are ~ Parken estimates, so very close
+# map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
+# obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 
 
 upper<-unlist(obj$par)
@@ -469,12 +444,16 @@ if(mod=="Liermann_PriorRicSig_PriorDeltaSig"){
 
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5), lower=lower, upper=upper)#lower=as.vector(lower), upper=as.vector(upper))
-pl <- obj$env$parList(opt$par) # Parameter estimate after phase 1
-
+pl <- obj$env$parList(opt$par) 
 #summary(sdreport(obj), p.value=TRUE)
 
 #library(tmbstan)
 #fitmcmc <- tmbstan(obj, chains=3, iter=1000, init=list(opt$par), control = list(adapt_delta = 0.95))
+#fitmcmc <- tmbstan(obj, chains=3, iter=1000, init=list("last.par.best"), control = list(adapt_delta = 0.95))
+
+# -----------------------------------------------------------------------
+# 4. Compile model outputs
+# -----------------------------------------------------------------------
 
 # Create Table of outputs
 All_Ests <- data.frame(summary(sdreport(obj)))
@@ -525,7 +504,9 @@ All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_
                                                 "logDelta1ocean", "logDelta2ocean", "Delta2ocean", "logNu1", 
                                                 "logNu2", "sigma_nu", "logNu1ocean", "Nu2ocean"))
 
-# 4. Calculate diagnostics and plot SR curves, etc.
+# -----------------------------------------------------------------------
+# 5. Calculate diagnostics and plot SR curves, etc.
+# -----------------------------------------------------------------------
 
 # Calculate AIC
 
@@ -570,94 +551,7 @@ PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O", 
 PredlnSREP <- data.frame() 
 PredlnSREP <- All_Ests %>% filter (Param %in% c("PredlnSREP_S", "PredlnSREP_O", "PredlnSREP_CI", "PredlnSREPs_CI", "PredlnSREPo_CI"))
 
-# Get predicted values to estimate prediction intervals
-PredlnSMSY_PI <- data.frame()
-PredlnSMSY_PI <- All_Ests %>% filter (Param %in% c("PredlnSMSY", "lnSMSY"))
-PredlnSREP_PI <- data.frame()
-PredlnSREP_PI <- All_Ests %>% filter (Param %in% c("PredlnSREP", "lnSREP"))
 
-PredlnSMSY_PI$Stocknumber <- rep(SN_std)
-PredlnSREP_PI$Stocknumber <- rep(SN_std)
-
-Scale_PI <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
-PredlnSMSY_PI <- PredlnSMSY_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
-PredlnSREP_PI <- PredlnSREP_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
-
-Plsmsys <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% 
-  filter(lh == 0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- Stream
-Plsmsyo <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% 
-  filter(lh == 1) %>% pull(Estimate) #Predicted lnSMSY from WA regression- ocean
-Olsmsys <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% 
-  filter( lh== 0) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- stream
-Olsmsyo <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% 
-  filter(lh == 1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
-Plsreps <- PredlnSREP_PI %>% filter(Param=="PredlnSREP") %>% left_join(Stream) %>% 
-  filter(lh == 0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- Stream
-Plsrepo <- PredlnSREP_PI %>% filter(Param=="PredlnSREP") %>% left_join(Stream) %>% 
-  filter(lh == 1) %>% pull(Estimate) #Predicted lnSMSY from WA regression- ocean
-Olsreps <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>% 
-  filter(lh == 0) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- stream
-Olsrepo <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>% 
-  filter(lh == 1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
-
-
-#---------------------------------------------------------------------------------
-# Get Predicted SMSY values for test stocks and their Prediction Intervals
-TestSMSY <- data.frame() 
-TestSMSYs <- data.frame() 
-TestSMSYo <- data.frame() 
-TestSMSY_SREP <- data.frame() 
-
-# # #For Parken Test stocks
-#  StockNamess <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 0) %>% pull(Stock)
-#  StockNameso <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 1) %>% pull(Stock)
-#  
-# # #To get confidence intervals:   TestSMSY <- TestSMSY %>% mutate (UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error)) %>% add_column(Source="IWAM")
-# # 
-# # #Split this out by stream and ocean type as they have different linear regerssions
-#  TestSMSYs <- All_Ests %>% filter (Param %in% c("TestlnSMSYs"))  %>% add_column(Stock = StockNamess)
-#  TestSMSYo <- All_Ests %>% filter (Param %in% c("TestlnSMSYo"))  %>% add_column(Stock = StockNameso)
-WAs <- WA %>% left_join(Stream) %>% filter(lh == 0) %>% pull(WA)
-WAo <- WA %>% left_join(Stream) %>% filter(lh == 1) %>% pull(WA)
-#  TestSMSYs_PI <- PredInt(x=log(WAs), y=Olsmsys, Predy=TestSMSYs$Estimate, Newx= c(data$TestlnWAs))
-# # ##Compare my calculations of prediction intervals to those from Stan: quite close, but STAN didn't fully converge..?strange
-# # #  #PredInt(x=log(WAs), y=Olsmsys, Predy=Plsmsys, Newx= log(WAs))
-# # #  #stantest <- stan("stan_Files/linreg.stan", data = list(x = log(WAs), y = Olsmsys, N = length(WAs)), iter = 8000)
-#  TestSMSYo_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYo$Estimate, Newx= c(data$TestlnWAo))
-#  TestSMSYs <- TestSMSYs %>% add_column(LL=exp(TestSMSYs_PI$lwr), UL=exp(TestSMSYs_PI$upr))
-#  TestSMSYo <- TestSMSYo %>% add_column(LL=exp(TestSMSYo_PI$lwr), UL=exp(TestSMSYo_PI$upr))
-#  TestSMSY <- TestSMSYs %>% bind_rows(TestSMSYo)
-#  TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% select(-Std..Error, - Param, -Estimate) %>% 
-#    add_column( Source="IWAM")
-# # # Compare IWAM estiamates of SMSY with those in Parken et al for test stocks (with UL and LL (these are 5th and 95th bootstrap estimates not CIs)
-#  ParkenTestStocks <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>% 
-#    select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
-#  ParkenTestSMSY <- full_join(TestSMSY, ParkenTestStocks)
-
-
-# If Test stock = WCVI stocks
-
-StockNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(Stock)
-CUNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(CU)
-TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYo")) %>% add_column(Stock = StockNames)
-TestSREP <- All_Ests %>% filter (Param %in% c("TestlnSREPo")) %>% add_column(Stock = StockNames)
-TestSMSYpull <- TestSMSY %>% pull(Estimate)
-TestSREPpull <- TestSREP %>% pull(Estimate)
-TestSMSY_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYpull, Newx= data$TestlnWAo)
-TestSREP_PI <- PredInt(x=log(WAo), y=Olsrepo, Predy=TestSREPpull, Newx= data$TestlnWAo)
-TestSMSY <- TestSMSY %>% add_column(LL=exp(TestSMSY_PI$lwr), UL=exp(TestSMSY_PI$upr))
-TestSREP <- TestSREP %>% add_column(LL=exp(TestSREP_PI$lwr), UL=exp(TestSREP_PI$upr))
-TestSMSY <- TestSMSY %>% mutate (Estimate = exp(Estimate)) %>% select(-Std..Error, - Param) %>% 
-  add_column(Param = "SMSY")
-TestSREP <- TestSREP %>% mutate (Estimate = exp(Estimate)) %>% select(-Std..Error, - Param) %>% 
-  add_column(Param = "SREP")
-WCVISMSY <- TestSMSY %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
-WCVISREP <- TestSREP %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0), CU=CUNames)
-WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
-#write.csv(WCVISMSY, "DataOut/WCVI_SMSY.csv")
-
-
-#---------------------------------------------------------------------------------
 # Calculate standardized residuals
 if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
   SRes <- bind_rows(Preds_std, Preds_ar, Preds_surv) %>% arrange (Stocknumber)
@@ -671,9 +565,9 @@ SRes <- SRes %>% left_join(sigma) %>% rename(logSig = Estimate)
 SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 
 
-#---------------------------------------------------------------------------------
 #Plot SR curves. linearized model, standardized residuals, autocorrleation plots for synoptic data set
 # if using a Liermann model, use SRDat=SRDat_std; otherwise SRDat=SRDat
+
 if (plot==TRUE){
   png(paste("DataOut/SR_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
   PlotSRCurve(SRDat=SRDat_std, All_Est=All_Est, SMSY_std=SMSY_std, stksNum_ar=stksNum_ar, stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit, mod=mod)
@@ -722,7 +616,7 @@ if(plot==TRUE){
   #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   plotWAregressionSMSY (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, title1=title_plot, mod)
   dev.off()
-
+  
   png(paste("DataOut/WAregSREP_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
   #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
@@ -742,6 +636,101 @@ if(plot==TRUE){
 }
 
 
+
+# -------------------------------------------------------------------------
+# 6. Calculate prediction intervals for SMSY and SREP for additional stocks
+# -------------------------------------------------------------------------
+
+# Get predicted values to estimate prediction intervals
+PredlnSMSY_PI <- data.frame()
+PredlnSMSY_PI <- All_Ests %>% filter (Param %in% c("PredlnSMSY", "lnSMSY"))
+PredlnSREP_PI <- data.frame()
+PredlnSREP_PI <- All_Ests %>% filter (Param %in% c("PredlnSREP", "lnSREP"))
+
+PredlnSMSY_PI$Stocknumber <- rep(SN_std)
+PredlnSREP_PI$Stocknumber <- rep(SN_std)
+
+Scale_PI <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
+PredlnSMSY_PI <- PredlnSMSY_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
+PredlnSREP_PI <- PredlnSREP_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
+
+Plsmsys <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% 
+  filter(lh == 0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- Stream
+Plsmsyo <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% 
+  filter(lh == 1) %>% pull(Estimate) #Predicted lnSMSY from WA regression- ocean
+Olsmsys <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% 
+  filter( lh== 0) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- stream
+Olsmsyo <- PredlnSMSY_PI %>% filter(Param=="lnSMSY") %>% left_join(Stream) %>% 
+  filter(lh == 1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
+Plsreps <- PredlnSREP_PI %>% filter(Param=="PredlnSREP") %>% left_join(Stream) %>% 
+  filter(lh == 0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- Stream
+Plsrepo <- PredlnSREP_PI %>% filter(Param=="PredlnSREP") %>% left_join(Stream) %>% 
+  filter(lh == 1) %>% pull(Estimate) #Predicted lnSMSY from WA regression- ocean
+Olsreps <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>% 
+  filter(lh == 0) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- stream
+Olsrepo <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>% 
+  filter(lh == 1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
+
+# Get Predicted SMSY values for test stocks and their Prediction Intervals
+TestSMSY <- data.frame() 
+TestSMSYs <- data.frame() 
+TestSMSYo <- data.frame() 
+TestSMSY_SREP <- data.frame() 
+
+# #For Parken Test stocks
+#  StockNamess <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 0) %>% pull(Stock)
+#  StockNameso <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 1) %>% pull(Stock)
+
+# #To get confidence intervals:   TestSMSY <- TestSMSY %>% mutate (UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error)) %>% add_column(Source="IWAM")
+
+#  #Split this out by stream and ocean type as they have different linear regerssions
+#  TestSMSYs <- All_Ests %>% filter (Param %in% c("TestlnSMSYs"))  %>% add_column(Stock = StockNamess)
+#  TestSMSYo <- All_Ests %>% filter (Param %in% c("TestlnSMSYo"))  %>% add_column(Stock = StockNameso)
+WAs <- WA %>% left_join(Stream) %>% filter(lh == 0) %>% pull(WA)
+WAo <- WA %>% left_join(Stream) %>% filter(lh == 1) %>% pull(WA)
+#  TestSMSYs_PI <- PredInt(x=log(WAs), y=Olsmsys, Predy=TestSMSYs$Estimate, Newx= c(data$TestlnWAs))
+# #Compare my calculations of prediction intervals to those from Stan: quite close, but STAN didn't fully converge..?strange
+# #PredInt(x=log(WAs), y=Olsmsys, Predy=Plsmsys, Newx= log(WAs))
+# #stantest <- stan("stan_Files/linreg.stan", data = list(x = log(WAs), y = Olsmsys, N = length(WAs)), iter = 8000)
+#  TestSMSYo_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYo$Estimate, Newx= c(data$TestlnWAo))
+#  TestSMSYs <- TestSMSYs %>% add_column(LL=exp(TestSMSYs_PI$lwr), UL=exp(TestSMSYs_PI$upr))
+#  TestSMSYo <- TestSMSYo %>% add_column(LL=exp(TestSMSYo_PI$lwr), UL=exp(TestSMSYo_PI$upr))
+#  TestSMSY <- TestSMSYs %>% bind_rows(TestSMSYo)
+#  TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% select(-Std..Error, - Param, -Estimate) %>% 
+#    add_column( Source="IWAM")
+# #Compare IWAM estiamates of SMSY with those in Parken et al for test stocks (with UL and LL (these are 5th and 95th bootstrap estimates not CIs)
+#  ParkenTestStocks <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>% 
+#    select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
+#  ParkenTestSMSY <- full_join(TestSMSY, ParkenTestStocks)
+
+
+# If Test stock = WCVI stocks
+
+StockNames <- c(as.vector(read.csv("DataIn/WCVIStocks.csv")$Stock), as.vector(InletlnWA$Inlet))#read.csv("DataIn/WCVIStocks.csv")$Stock
+
+
+#CUNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(CU)
+TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYo")) %>% add_column(Stock = StockNames)
+TestSREP <- All_Ests %>% filter (Param %in% c("TestlnSREPo")) %>% add_column(Stock = StockNames)
+TestSMSYpull <- TestSMSY %>% pull(Estimate)
+TestSREPpull <- TestSREP %>% pull(Estimate)
+TestSMSY_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYpull, Newx= data$TestlnWAo)
+TestSREP_PI <- PredInt(x=log(WAo), y=Olsrepo, Predy=TestSREPpull, Newx= data$TestlnWAo)
+TestSMSY <- TestSMSY %>% add_column(LL=exp(TestSMSY_PI$lwr), UL=exp(TestSMSY_PI$upr))
+TestSREP <- TestSREP %>% add_column(LL=exp(TestSREP_PI$lwr), UL=exp(TestSREP_PI$upr))
+TestSMSY <- TestSMSY %>% mutate (Estimate = exp(Estimate)) %>% select(-Std..Error, - Param) %>% 
+  add_column(Param = "SMSY")
+TestSREP <- TestSREP %>% mutate (Estimate = exp(Estimate)) %>% select(-Std..Error, - Param) %>% 
+  add_column(Param = "SREP")
+WCVISMSY <- TestSMSY %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0))#, CU=CUNames)
+WCVISREP <- TestSREP %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0))#, CU=CUNames)
+WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
+#write.csv(WCVISMSY, "DataOut/WCVI_SMSY.csv")
+
+
+
+#---------------------------------------------------------------------------------
+# Additional code; not currently needed 
 #---------------------------------------------------------------------------------
 # What initial values to use for WA model parameters?
 

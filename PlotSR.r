@@ -621,7 +621,7 @@ WCVIEscQuant$Stock <- row.names(WCVIEscQuant)
 WCVIEscQuant$Stock <- sapply(WCVIEscQuant$Stock, function(x) (gsub(".", " ", x, fixed=TRUE) ) )
 WCVIEscQuant$Stock <- sapply(WCVIEscQuant$Stock, function(x) (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
 WCVIEscQuant$Stock <- as.character(WCVIEscQuant$Stock)
-stockCU <- WCVI_RPs %>% filter (Param == "SMSY") %>% select (Stock, CU)
+stockCU <- WCVI_RPs %>% filter (Param == "SMSY") %>% select (Stock)#, CU)
 stockCU$Stock <- as.character(stockCU$Stock)
 
 WCVIEscQuant <- WCVIEscQuant %>%  left_join(stockCU, by = "Stock") 
@@ -652,3 +652,107 @@ plotWCVIBenchmarks <- function(data = WCVIEscQuant){
 #png(paste("DataOut/WCVIbenchmarks.png", sep=""), width=9, height=7, units="in", res=500)
 #plotWCVIBenchmarks()
 #dev.off()
+
+plotWCVI_timeseries <- function(){
+  WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% select (-"Little.Zeballos")
+  Years <- rownames(WCVIEsc)
+  # Add inlets, excluding San Juan and Nitinat, as they contain only one stock each
+  # NAs must be removed from the sums first
+  BarkleyNA <- apply( cbind( WCVIEsc$Sarita, WCVIEsc$Somass, WCVIEsc$Nahmint), 1, sum, na.rm=F)
+  ClayoquotNA <- apply( cbind( WCVIEsc$Bedwell.Ursus, WCVIEsc$Megin, WCVIEsc$Moyeha, WCVIEsc$Tranquil), 1, sum, na.rm=F)
+  Nootka.EsperanzaNA <- apply( cbind( WCVIEsc$Burman , WCVIEsc$Conuma, WCVIEsc$Gold, WCVIEsc$Leiner, WCVIEsc$Tahsis, 
+                                    WCVIEsc$Zeballos), 1, sum, na.rm=F)
+  KyuquotNA <- apply( cbind( WCVIEsc$Artlish, WCVIEsc$Kaouk, WCVIEsc$Tahsish), 1, sum, na.rm=F)
+  QuatsinoNA <- apply( cbind( WCVIEsc$Cayeghle, WCVIEsc$Marble), 1, sum,  na.rm=F)
+
+  WCVIEsc <- WCVIEsc %>% mutate(Barkley = BarkleyNA, Clayoquot = ClayoquotNA, Nootka.Esperanza =Nootka.EsperanzaNA,
+                                Kyuquot = KyuquotNA, Quatsino = QuatsinoNA )
+  
+  
+  WCVI_RPs <- as.data.frame(read.csv("DataOut/WCVI_SMSY.csv")) %>% select (-X)
+  # See WCVILRPs.R for calculation of Sgen
+  WCVI_sgen <- as.data.frame(read.csv("DataOut/wcviRPs.csv")) %>% rename(StockNames=Stock)
+  
+  
+  StockNames <- row.names(t(WCVIEsc))
+  StockNames <- sapply(StockNames, function(x) (gsub(".", " ", x, fixed=TRUE) ) )
+  StockNames <- sapply(StockNames, function(x) (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
+  StockNames <- sapply(StockNames, function(x) (gsub("Nootka Esperanza", "Nootka/Esperanza", x, fixed=TRUE) ) )
+  StockNames <- data.frame(StockNames) %>% filter(StockNames !="Little Zeballos")
+  
+  #as.character(as.data.frame(StockNames)$StockNames) 
+  
+  WCVI_smsy <- WCVI_RPs %>% rename(StockNames=Stock) %>% filter(Param=="SMSY") %>% filter (StockNames != "Little Zeballos")
+  WCVI_srep <- WCVI_RPs %>% rename(StockNames=Stock) %>% filter(Param=="SREP") %>% filter (StockNames != "Little Zeballos")
+  #  Reorder SMSY&SREP values so that they are aligned with StockNames from escapement time series
+  WCVI_smsy <- StockNames %>% left_join( WCVI_smsy, by = "StockNames") 
+  WCVI_srep <- as.data.frame(StockNames) %>% left_join( WCVI_srep, by = "StockNames") 
+  WCVI_sgen <- as.data.frame(StockNames) %>% left_join( WCVI_sgen, by = "StockNames") 
+  
+  
+    
+  col.pal <- viridis(4)
+  col.pal.light <- viridis(4, alpha=0.2)
+  ymax <- NA
+  N_stk <- length(StockNames$StockNames) - 5 #omit the 5 inlets
+  
+  par(mfrow=c(4,2), mar = c(2, 3, 2, 1) + 0.1)
+  for (i in 1:N_stk){
+    ymax[i] <- max(WCVI_srep$Estimate[i], WCVIEsc[,i], na.rm=T)
+    plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
+    axis(side=1, tick=FALSE, padj=-1.8)
+    abline(h=0)
+    axis(side=2)
+    mtext(StockNames$StockNames[i], side=3, line=0.5, at="1960")
+    legend(x="topleft", legend=NA, title= paste( "   Sgen=", WCVI_sgen$SGEN[i] ), bty="n" )
+    abline(h=WCVI_smsy$Estimate[i], col=col.pal[4], lwd=2)
+    abline(h=WCVI_srep$Estimate[i], col=col.pal[3], lwd=2)
+    abline(h=WCVI_sgen$SGEN[i], col=col.pal[2], lwd=2)
+    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_smsy$LL[i],2), rep(WCVI_smsy$UL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
+    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_srep$LL[i],2), rep(WCVI_srep$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
+  }
+  
+  for (i in (N_stk-2):N_stk){
+    ymax[i] <- max(WCVI_srep$Estimate[i], na.rm=T)
+    plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
+    axis(side=1, tick=FALSE, padj=-1.8)
+    abline(h=0)
+    axis(side=2)
+    mtext(paste(StockNames$StockNames[i], ": scaled"), side=3, line=0.5, at="1960")
+    legend(x="topright", legend=NA, title= paste( "   Sgen=", WCVI_sgen$SGEN[i] ), bty="n" )
+    abline(h=WCVI_smsy$Estimate[i], col=col.pal[4], lwd=2)
+    abline(h=WCVI_srep$Estimate[i], col=col.pal[3], lwd=2)
+    abline(h=WCVI_sgen$SGEN[i], col=col.pal[2], lwd=2)
+    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_smsy$LL[i],2), rep(WCVI_smsy$UL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
+    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_srep$LL[i],2), rep(WCVI_srep$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
+  }
+  
+  N_inlets <- 5 + N_stk
+  par(mfrow=c(4,2), mar = c(2, 3, 2, 1) + 0.1)
+  
+  for (i in c(1,20, 21:N_inlets)){
+    ymax[i] <- max(WCVI_srep$Estimate[i], WCVIEsc[,i], na.rm=T)
+    plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
+    axis(side=1, tick=FALSE, padj=-1.8)
+    abline(h=0)
+    axis(side=2)
+    mtext(StockNames$StockNames[i], side=3, line=0.5, at="1960")
+    legend(x="topleft", legend=NA, title= paste( "   Sgen=", WCVI_sgen$SGEN[i] ), bty="n" )
+    abline(h=WCVI_smsy$Estimate[i], col=col.pal[4], lwd=2)
+    abline(h=WCVI_srep$Estimate[i], col=col.pal[3], lwd=2)
+    abline(h=WCVI_sgen$SGEN[i], col=col.pal[2], lwd=2)
+    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_smsy$LL[i],2), rep(WCVI_smsy$UL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
+    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_srep$LL[i],2), rep(WCVI_srep$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
+  }
+  
+  
+}
+
+
+png(paste("DataOut/WCVItimeseries%02d.png", sep=""), width=9, height=7, units="in", res=500)
+plotWCVI_timeseries() 
+dev.off()
+
+pdf(paste("DataOut/WCVItimeseries.pdf", sep=""), width=9, height=7)
+plotWCVI_timeseries() 
+dev.off()

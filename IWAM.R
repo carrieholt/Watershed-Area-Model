@@ -33,6 +33,7 @@ library(hrbrthemes)
 # Main switches and functions
 #---------------------------------------------------------------------------------
 plot <- FALSE#TRUE
+remove.EnhStocks <- FALSE # in WCVI CK case study
 removeSkagit <- FALSE#TRUE
 mod <- "Liermann_PriorRicSig_PriorDeltaSig"##"Liermann_HalfNormRicVar_FixedDelta"#"Ricker_AllMod"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 source ("PlotSR.r")# Plotting functions
@@ -230,8 +231,14 @@ if (mod=="Liermann_PriorRicSig_PriorDeltaSig"){
   # Add aggregated WAs at inlet level
   InletlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% group_by(Inlet) %>% 
     summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>% filter(Inlet !="Nitinat")
-  data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA )
-   #data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
+  InletlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% filter(Enh==0) %>% group_by(Inlet) %>% 
+    summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>% filter(Inlet !="Nitinat")
+  CUlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% group_by(CU) %>% summarize(CUlnWA = log(sum(WA)))
+  CUlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% filter(Enh==0)  %>% group_by(CU) %>%
+    summarize(CUlnWA = log(sum(WA)))
+  if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA,  CUlnWAnoEnh$CUlnWA)
+  if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA, CUlnWA$CUlnWA )
+  #data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==0) %>% pull(lnWA)
   #data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% filter(lh==1) %>% pull(lnWA)
   
   # Sum WAs over inlets. Remove San Juan, becuase that Inlet has only 1 stock = San Juan
@@ -706,7 +713,9 @@ WAo <- WA %>% left_join(Stream) %>% filter(lh == 1) %>% pull(WA)
 
 # If Test stock = WCVI stocks
 
-StockNames <- c(as.vector(read.csv("DataIn/WCVIStocks.csv")$Stock), as.vector(InletlnWA$Inlet))#read.csv("DataIn/WCVIStocks.csv")$Stock
+sn <- read.csv("DataIn/WCVIStocks.csv")
+#if(remove.EnhStocks) sn <- sn %>% filter(Enh == 0) #Actually, all stocks are used
+StockNames <- c(as.vector(sn$Stock), as.vector(InletlnWA$Inlet), as.vector(CUlnWA$CU))#read.csv("DataIn/WCVIStocks.csv")$Stock
 
 
 #CUNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(CU)

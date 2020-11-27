@@ -1,7 +1,6 @@
 # Plot SR models: curves and linearized mddel
 
 # Functions
-# Functions
 t_col <- function(color, percent = 50, name = NULL) {
   #      color = color name
   #    percent = % transparency
@@ -612,25 +611,28 @@ plotSMSY <- function(data = WCVISMSY){
 # plotSMSY()
 # dev.off()
 
-
-WCVIEsc <- as.data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr"))
-WCVI_RPs <- as.data.frame(read.csv("DataOut/WCVI_SMSY.csv")) %>% select (-X)
-
-WCVIEscQuant <- data.frame(t(data.frame (apply(WCVIEsc, 2, quantile, probs = c(0.025,0.25, 0.5,0.75, 0.975), na.rm=T))))
-WCVIEscQuant$Stock <- row.names(WCVIEscQuant)
-WCVIEscQuant$Stock <- sapply(WCVIEscQuant$Stock, function(x) (gsub(".", " ", x, fixed=TRUE) ) )
-WCVIEscQuant$Stock <- sapply(WCVIEscQuant$Stock, function(x) (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
-WCVIEscQuant$Stock <- as.character(WCVIEscQuant$Stock)
-stockCU <- WCVI_RPs %>% filter (Param == "SMSY") %>% select (Stock)#, CU)
-stockCU$Stock <- as.character(stockCU$Stock)
-
-WCVIEscQuant <- WCVIEscQuant %>%  left_join(stockCU, by = "Stock") 
-WCVIEscQuant <- WCVIEscQuant %>% rename(Estimate=X50., LL=X25., UL=X75.) %>% select (-X2.5., -X97.5.) %>% add_column(Param="Quant")
-
-WCVIEscQuant <- WCVIEscQuant %>% bind_rows(WCVI_RPs)
-WCVIEscQuant <- WCVIEscQuant %>% mutate(Estimate = round(Estimate, 0), LL = round(LL, 0), UL = round(UL, 0))
+#==========================================================
+# Get Quantiles of escapement to plot against benchmarks
+# 
+# WCVIEsc <- as.data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr"))
+# WCVI_RPs <- as.data.frame(read.csv("DataOut/WCVI_SMSY.csv")) %>% select (-X)
+# 
+# WCVIEscQuant <- data.frame(t(data.frame (apply(WCVIEsc, 2, quantile, probs = c(0.025,0.25, 0.5,0.75, 0.975), na.rm=T))))
+# WCVIEscQuant$Stock <- row.names(WCVIEscQuant)
+# WCVIEscQuant$Stock <- sapply(WCVIEscQuant$Stock, function(x) (gsub(".", " ", x, fixed=TRUE) ) )
+# WCVIEscQuant$Stock <- sapply(WCVIEscQuant$Stock, function(x) (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
+# WCVIEscQuant$Stock <- as.character(WCVIEscQuant$Stock)
+# stockCU <- WCVI_RPs %>% filter (Param == "SMSY") %>% select (Stock)#, CU)
+# stockCU$Stock <- as.character(stockCU$Stock)
+# 
+# WCVIEscQuant <- WCVIEscQuant %>%  left_join(stockCU, by = "Stock") 
+# WCVIEscQuant <- WCVIEscQuant %>% rename(Estimate=X50., LL=X25., UL=X75.) %>% select (-X2.5., -X97.5.) %>% add_column(Param="Quant")
+# 
+# WCVIEscQuant <- WCVIEscQuant %>% bind_rows(WCVI_RPs)
+# WCVIEscQuant <- WCVIEscQuant %>% mutate(Estimate = round(Estimate, 0), LL = round(LL, 0), UL = round(UL, 0))
 #write.csv(WCVIEscQuant, "DataOut/WCVIbenchmarks.csv")
 #read.csv("DataOut/WCVIbenchmarks.csv")
+#==========================================================
 
 plotWCVIBenchmarks <- function(data = WCVIEscQuant){
   
@@ -653,25 +655,33 @@ plotWCVIBenchmarks <- function(data = WCVIEscQuant){
 #plotWCVIBenchmarks()
 #dev.off()
 
-plotWCVI_timeseries <- function(){
-  WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% select (-"Little.Zeballos")
-  Years <- rownames(WCVIEsc)
-  # Add inlets, excluding San Juan and Nitinat, as they contain only one stock each
-  # NAs must be removed from the sums first
-  BarkleyNA <- apply( cbind( WCVIEsc$Sarita, WCVIEsc$Somass, WCVIEsc$Nahmint), 1, sum, na.rm=F)
-  ClayoquotNA <- apply( cbind( WCVIEsc$Bedwell.Ursus, WCVIEsc$Megin, WCVIEsc$Moyeha, WCVIEsc$Tranquil), 1, sum, na.rm=F)
-  Nootka.EsperanzaNA <- apply( cbind( WCVIEsc$Burman , WCVIEsc$Conuma, WCVIEsc$Gold, WCVIEsc$Leiner, WCVIEsc$Tahsis, 
-                                    WCVIEsc$Zeballos), 1, sum, na.rm=F)
-  KyuquotNA <- apply( cbind( WCVIEsc$Artlish, WCVIEsc$Kaouk, WCVIEsc$Tahsish), 1, sum, na.rm=F)
-  QuatsinoNA <- apply( cbind( WCVIEsc$Cayeghle, WCVIEsc$Marble), 1, sum,  na.rm=F)
-
-  WCVIEsc <- WCVIEsc %>% mutate(Barkley = BarkleyNA, Clayoquot = ClayoquotNA, Nootka.Esperanza =Nootka.EsperanzaNA,
-                                Kyuquot = KyuquotNA, Quatsino = QuatsinoNA )
+plotWCVI_timeseries <- function(WCVIEsc){
+  # WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% select (-"Little.Zeballos")
+  # 
+  # Years <- rownames(WCVIEsc)
+  # 
+  # # Add inlets, excluding San Juan and Nitinat, as they contain only one stock each
+  # # NAs must be removed from the sums first
+  # BarkleyNA <- apply( cbind( WCVIEsc$Sarita, WCVIEsc$Somass, WCVIEsc$Nahmint), 1, sum, na.rm=F)
+  # ClayoquotNA <- apply( cbind( WCVIEsc$Bedwell.Ursus, WCVIEsc$Megin, WCVIEsc$Moyeha, WCVIEsc$Tranquil), 1, sum, na.rm=F)
+  # Nootka.EsperanzaNA <- apply( cbind( WCVIEsc$Burman , WCVIEsc$Conuma, WCVIEsc$Gold, WCVIEsc$Leiner, WCVIEsc$Tahsis, 
+  #                                   WCVIEsc$Zeballos), 1, sum, na.rm=F)
+  # KyuquotNA <- apply( cbind( WCVIEsc$Artlish, WCVIEsc$Kaouk, WCVIEsc$Tahsish), 1, sum, na.rm=F)
+  # QuatsinoNA <- apply( cbind( WCVIEsc$Cayeghle, WCVIEsc$Marble), 1, sum,  na.rm=F)
+  # 
+  # WCVIEsc <- WCVIEsc %>% mutate(Barkley = BarkleyNA, Clayoquot = ClayoquotNA, Nootka.Esperanza =Nootka.EsperanzaNA,
+  #                               Kyuquot = KyuquotNA, Quatsino = QuatsinoNA )
+  # 
+  
+  EnhStocks <- c("Artlish", "Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  "Somass",  "Zeballos", "San Juan")
+  remove.EnhStocks <- TRUE
   
   
   WCVI_RPs <- as.data.frame(read.csv("DataOut/WCVI_SMSY.csv")) %>% select (-X)
+  if (remove.EnhStocks) WCVI_RPs <- WCVI_RPs %>% filter(Stock %not in% c(EnhStocks)) 
   # See WCVILRPs.R for calculation of Sgen
   WCVI_sgen <- as.data.frame(read.csv("DataOut/wcviRPs.csv")) %>% rename(StockNames=Stock)
+  if (remove.EnhStocks) WCVI_sgen <- WCVI_sgen %>% filter(StockNames %not in% c(EnhStocks)) 
   
   
   StockNames <- row.names(t(WCVIEsc))
@@ -696,42 +706,43 @@ plotWCVI_timeseries <- function(){
   ymax <- NA
   N_stk <- length(StockNames$StockNames) - 5 #omit the 5 inlets
   
-  par(mfrow=c(4,2), mar = c(2, 3, 2, 1) + 0.1)
-  for (i in 1:N_stk){
-    ymax[i] <- max(WCVI_srep$Estimate[i], WCVIEsc[,i], na.rm=T)
-    plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
-    axis(side=1, tick=FALSE, padj=-1.8)
-    abline(h=0)
-    axis(side=2)
-    mtext(StockNames$StockNames[i], side=3, line=0.5, at="1960")
-    legend(x="topleft", legend=NA, title= paste( "   Sgen=", WCVI_sgen$SGEN[i] ), bty="n" )
-    abline(h=WCVI_smsy$Estimate[i], col=col.pal[4], lwd=2)
-    abline(h=WCVI_srep$Estimate[i], col=col.pal[3], lwd=2)
-    abline(h=WCVI_sgen$SGEN[i], col=col.pal[2], lwd=2)
-    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_smsy$LL[i],2), rep(WCVI_smsy$UL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
-    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_srep$LL[i],2), rep(WCVI_srep$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
-  }
+  # par(mfrow=c(7,3), mar = c(2, 3, 2, 1) + 0.1)
+  # for (i in 1:N_stk){
+  #   ymax[i] <- max(WCVI_srep$Estimate[i], WCVIEsc[,i], na.rm=T)#WCVI_sgen$SGEN[i]*4
+  #   plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
+  #   axis(side=1, tick=FALSE, padj=-1.8)
+  #   abline(h=0)
+  #   axis(side=2)
+  #   mtext(StockNames$StockNames[i], side=3, line=0.5, at="1960")
+  #   legend(x="topleft", legend=NA, title= paste( "   Sgen=", WCVI_sgen$SGEN[i] ), bty="n" )
+  #   abline(h=WCVI_smsy$Estimate[i], col=col.pal[4], lwd=2)
+  #   abline(h=WCVI_srep$Estimate[i], col=col.pal[3], lwd=2)
+  #   abline(h=WCVI_sgen$SGEN[i], col=col.pal[2], lwd=2)
+  #   polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_smsy$LL[i],2), rep(WCVI_smsy$UL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
+  #   polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_srep$LL[i],2), rep(WCVI_srep$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
+  # }
   
-  for (i in (N_stk-2):N_stk){
-    ymax[i] <- max(WCVI_srep$Estimate[i], na.rm=T)
-    plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
-    axis(side=1, tick=FALSE, padj=-1.8)
-    abline(h=0)
-    axis(side=2)
-    mtext(paste(StockNames$StockNames[i], ": scaled"), side=3, line=0.5, at="1960")
-    legend(x="topright", legend=NA, title= paste( "   Sgen=", WCVI_sgen$SGEN[i] ), bty="n" )
-    abline(h=WCVI_smsy$Estimate[i], col=col.pal[4], lwd=2)
-    abline(h=WCVI_srep$Estimate[i], col=col.pal[3], lwd=2)
-    abline(h=WCVI_sgen$SGEN[i], col=col.pal[2], lwd=2)
-    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_smsy$LL[i],2), rep(WCVI_smsy$UL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
-    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_srep$LL[i],2), rep(WCVI_srep$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
-  }
-  
+  # for (i in (N_stk-2):N_stk){
+  #   ymax[i] <- max(WCVI_srep$Estimate[i], na.rm=T)
+  #   plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
+  #   axis(side=1, tick=FALSE, padj=-1.8)
+  #   abline(h=0)
+  #   axis(side=2)
+  #   mtext(paste(StockNames$StockNames[i], ": scaled"), side=3, line=0.5, at="1960")
+  #   legend(x="topright", legend=NA, title= paste( "   Sgen=", WCVI_sgen$SGEN[i] ), bty="n" )
+  #   abline(h=WCVI_smsy$Estimate[i], col=col.pal[4], lwd=2)
+  #   abline(h=WCVI_srep$Estimate[i], col=col.pal[3], lwd=2)
+  #   abline(h=WCVI_sgen$SGEN[i], col=col.pal[2], lwd=2)
+  #   polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_smsy$LL[i],2), rep(WCVI_smsy$UL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
+  #   polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_srep$LL[i],2), rep(WCVI_srep$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
+  # }
+  # 
   N_inlets <- 5 + N_stk
   par(mfrow=c(4,2), mar = c(2, 3, 2, 1) + 0.1)
-  
-  for (i in c(1,20, 21:N_inlets)){
-    ymax[i] <- max(WCVI_srep$Estimate[i], WCVIEsc[,i], na.rm=T)
+
+  #for (i in c(1,20, 21:N_inlets)){#if remove.EnhStocks ==FALSE
+  for (i in c(16,12,14, 15, 13)) {#if remove.EnhStocks ==TRUE
+  ymax[i] <- max(WCVI_srep$Estimate[i], WCVIEsc[,i], na.rm=T)
     plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
     axis(side=1, tick=FALSE, padj=-1.8)
     abline(h=0)
@@ -749,10 +760,102 @@ plotWCVI_timeseries <- function(){
 }
 
 
-png(paste("DataOut/WCVItimeseries%02d.png", sep=""), width=9, height=7, units="in", res=500)
-plotWCVI_timeseries() 
-dev.off()
+#png(paste("DataOut/WCVItimeseries%02d.png", sep=""), width=9, height=7, units="in", res=500)
+# png(paste("DataOut/WCVItimeseries.png", sep=""), width=9, height=7, units="in", res=500)
+# plotWCVI_timeseries() 
+# dev.off()
 
-pdf(paste("DataOut/WCVItimeseries.pdf", sep=""), width=9, height=7)
-plotWCVI_timeseries() 
-dev.off()
+# png(paste("DataOut/WCVItimeseriesNoEnh.png", sep=""), width=9, height=7, units="in", res=500)
+# plotWCVI_timeseries(WCVIEsc) 
+# dev.off()
+
+# pdf(paste("DataOut/WCVItimeseries.pdf", sep=""), width=9, height=7)
+# plotWCVI_timeseries() 
+# dev.off()
+
+
+#==================================================================
+# Plot time-series of CU status
+#==================================================================
+#need CU_Status
+# png("DataOut/WCVICUtimeseriesNoEnh.png", width=4.5, height=6.5, units="in", res=200)
+# par(mfrow=c(3,1), cex=1.1,  mar = c(2, 3, 2, 1) + 0.1)
+# 
+# for (i in 1:length(CU_Names)){
+#   plot(x=Years, y=CU_Status[,i], pch=20, xlab="", ylab="", ylim=c(0,1), las=1) 
+#   mtext(CU_Names[i], side=3, line=0.5, at="1952", adj=0, cex=1.4)
+#   
+# }
+# dev.off()
+
+
+
+#==================================================================
+# Plot time-series of SMU ppns without enh
+#==================================================================
+#need SMU_ppn
+# png("DataOut/WCVI_SMUppntimeseriesNoEnh.png", width=4.5, height=3.5, units="in", res=200)
+# par(mfrow=c(1,1), cex=1.1,  mar = c(2, 3, 2, 1) + 0.1)
+# 
+# plot(x=Years, y=SMU_ppn, pch=20, xlab="", ylab="", ylim=c(0,1), las=1) 
+# mtext("WCVI SMU", side=3, line=0.5, at="1952", adj=0, cex=1.4)
+#   
+# 
+# dev.off()
+
+# Plot data for log regression: Need SMU_Esc 
+# plot(x=SMU_Esc, y=SMU_ppn, xlab="Aggregate Escapement", ylab="Proportion CUs above red zone", las=1, ylim=c(0,1), xlim=c(0, max(SMUEsc, na.rm=T)))
+
+#==================================================================
+# Plot logistic model from 
+#==============================================================
+
+plotLogistic <- function(Data, Preds, LRP, useGenMean = F, plotName, outDir, p=0.95, useBern_Logistic = F){
+  
+  # y label different depending on model
+  if(useBern_Logistic){
+    Ylab = "Pr(All CUs > Lower Benchmark)"
+  } else {
+    Ylab = "Prop. CUs > Lower Benchmark"
+  }
+  
+  if(useGenMean){
+    Xlab = "Gen. Mean Agg. Escapement"
+  }else {
+    Xlab = "Aggregate Escapement"
+  }
+  
+  # If LRP$lwr is <0, assume can't fit LRP
+  
+  # Create plot
+  annual_LRP_plot <- ggplot(data=Preds, mapping=aes(x=xx,y=fit)) + 
+    geom_ribbon(aes(ymin = lwr, ymax = upr, x=xx), fill = "grey85") +
+    geom_line(mapping=aes(x=xx, y=fit), col="red", size=1) +
+    geom_line(mapping=aes(x=xx, y=upr), col="grey85") +
+    geom_line(mapping=aes(x=xx, y=lwr), col="grey85") +
+    geom_point(data=Data, aes(x = xx, y = yy)) +
+    xlab(Xlab) + ylab(Ylab) +
+    #  ggtitle(paste("Retrospective Year", max(Dat.LRP$yr), sep=" ")) +
+    theme_classic()
+  
+  if(LRP$lwr > 0) {
+    annual_LRP_plot <- annual_LRP_plot + 
+      geom_vline(xintercept=LRP$fit, linetype="dashed", color="orange", size = 1) +
+      geom_hline(yintercept= p, linetype="dashed", color="orange", size = 1) +
+      geom_vline(xintercept = LRP$lwr, linetype = "dotted", color = "orange", size = 1) +
+      geom_vline(xintercept = LRP$upr, linetype = "dotted", color = "orange", size = 1) 
+  }
+  
+  
+  # Save plot
+  ggsave(paste(outDir, "/",plotName,".png",sep=""), plot = annual_LRP_plot,
+         width = 4, height = 3, units = "in")      
+  
+}  
+
+#Need out from TMB
+#plotLogistic(Data=out$Logistic_Data, Preds=out$Preds, LRP=out$LRP, useGenMean = F, plotName="test0.67", outDir="DataOut", p=0.95)
+
+#if(out$LRP$lwr<=0) out$LRP$lwr <-1
+
+#plotLogistic(Data=out$Logistic_Data, Preds=out$Preds, LRP=out$LRP, useGenMean = F, plotName="testnPrioroEnh0.67", outDir="DataOut", p=0.67)

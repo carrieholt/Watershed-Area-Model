@@ -28,13 +28,13 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
   par(mfrow=c(5,5), mar=c(2, 2, 1, 0.1) + 0.1)
   
   for (i in Stks){
-    names <- All_Est %>% select ("Name", "Stocknumber") %>% distinct()
-    name <- All_Est %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
+    names <- All_Est %>% dplyr::select ("Name", "Stocknumber") %>% distinct()
+    name <- All_Est %>% filter (Stocknumber==i) %>% dplyr::select ("Name") %>% distinct()
     
-    R <- SRDat %>% filter (Stocknumber==i) %>% select(Rec) 
-    S <- SRDat %>% filter (Stocknumber==i) %>% select(Sp) 
+    R <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Rec) 
+    S <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Sp) 
     # what is the scale of Ricker b estimate?
-    Sc <- SRDat %>% filter (Stocknumber==i) %>% select(Scale) %>% distinct() %>% as.numeric()
+    Sc <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Scale) %>% distinct() %>% as.numeric()
     if(name$Name != "Skagit" & name$Name != "KSR") plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(R$Rec) ) )
     if(name$Name == "Skagit") plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(R$Rec) ) )
     if(name$Name == "KSR") plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,500), ylim=c(0,max(R$Rec) ) )
@@ -54,7 +54,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
         #if(i==22|i==23) { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
         if(name$Name == "Cowichan") { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
         mean.log.surv <- surv.dat %>% summarize(mean = mean(log(Surv)))
-        gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% select(Estimate)
+        gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% dplyr::select(Estimate)
         a <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
           summarise(A=exp(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
       }
@@ -124,10 +124,10 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
     
     ParkenSMSY <- read.csv("DataIn/ParkenSMSY.csv")
     #if (removeSkagit==TRUE) ParkenSMSY <- ParkenSMSY %>% filter(Name != "Skagit")
-    ParkenSMSY <- ParkenSMSY %>% filter(Name==as.character(name$Name)) %>% select (SMSY) %>% as.numeric()
+    ParkenSMSY <- ParkenSMSY %>% filter(Name==as.character(name$Name)) %>% dplyr::select (SMSY) %>% as.numeric()
     abline(v=ParkenSMSY, lty="dashed")
     if(is.data.frame(r2)==TRUE) {
-      lab <-  r2 %>% filter(Stocknumber==i) %>% select(r2) %>% as.numeric() %>% round(2)
+      lab <-  r2 %>% filter(Stocknumber==i) %>% dplyr::select(r2) %>% as.numeric() %>% round(2)
       legend("topright", legend = "", title= paste0("r2=",lab), bty="n")
     }
   }
@@ -143,18 +143,18 @@ PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2,
   par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
   
   for (i in Stks){
-    R <- SRDat %>% filter (Stocknumber==i) %>% select(Rec) 
-    S <- SRDat %>% filter (Stocknumber==i) %>% select(Sp) 
+    R <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Rec) 
+    S <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Sp) 
     LogRS <- log(R$Rec/S$Sp)
     
     # what is the scale of Ricker b estimate?
-    Sc <- SRDat %>% filter (Stocknumber==i) %>% select(Scale) %>% distinct() %>% as.numeric()
+    Sc <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Scale) %>% distinct() %>% as.numeric()
     plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
     #if(i !=22 & i!=0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
     #if(i ==22) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(LogRS) ) )
     #if(i ==0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(min(LogRS),max(LogRS) ) )
     
-    name <- All_Est %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
+    name <- All_Est %>% filter (Stocknumber==i) %>% dplyr::select ("Name") %>% distinct()
     mtext(name$Name, side=3)
     
      
@@ -171,7 +171,7 @@ PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2,
         if(i==22|i==23)surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name=="Cowichan") 
         if(i==22|i==23) { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
         mean.log.surv <- surv.dat %>% summarize(mean = mean(log(Surv)))
-        gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% select(Estimate)
+        gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% dplyr::select(Estimate)
         LogA <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
           summarise(LogA.adj=(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
       }
@@ -189,7 +189,7 @@ PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2,
     skagit_beta <- 0.0000657
     if(removeSkagit==FALSE) {if (i==22)     abline(a=log(skagit_alpha), b=-skagit_beta, col="black", lty="dashed")}
 
-    lab <-  r2 %>% filter(Stocknumber==i) %>% select(r2) %>% as.numeric() %>% round(2)
+    lab <-  r2 %>% filter(Stocknumber==i) %>% dplyr::select(r2) %>% as.numeric() %>% round(2)
     legend("topright", legend = "", title= paste0("r2=",lab), bty="n")
 
   }
@@ -207,11 +207,11 @@ PlotStdResid <- function(SRes){
   par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
   
   for (i in Stks){
-    SR <- SRes %>% filter (Stocknumber==i) %>% select(Res) 
+    SR <- SRes %>% filter (Stocknumber==i) %>% dplyr::select(Res) 
     plot(x=1:length(SR$Res), y=SR$Res, xlab="", ylab="", pch=20, ylim=c(min(-4, min(SR$Res)),max(4, max(SR$Res)) ) ) 
     abline(h=c(3,-3), col="red")
     abline(h=0, col="black")
-    name <- SRes %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
+    name <- SRes %>% filter (Stocknumber==i) %>% dplyr::select ("Name") %>% distinct()
     mtext(name$Name, side=3)
   }
 }
@@ -221,13 +221,13 @@ Plotacf <- function(Preds){
   NStks <- length(Stks)
   par(mfrow=c(5,5), mar=c(2, 2, 1.5, 1) + 0.1)
   for (i in Stks){
-    Res <- Preds %>% filter (Stocknumber==i) %>% select(Res)
+    Res <- Preds %>% filter (Stocknumber==i) %>% dplyr::select(Res)
     acf(Res$Res, plot=T)
     acf1 <- acf(Res$Res, plot=F)$acf[2]
     len <- length(Res$Res)
     acf1.ci <- qnorm((1 + 0.95)/2)/sqrt(len)
     if (abs(acf1)>acf1.ci) col="red" else col="black"
-    name <- Preds %>% filter (Stocknumber==i) %>% select ("Name") %>% distinct()
+    name <- Preds %>% filter (Stocknumber==i) %>% dplyr::select ("Name") %>% distinct()
     mtext(name$Name, side=3, col=col)
   }
   
@@ -256,7 +256,7 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
 
   SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
   # what is scale of SMSY?
-  Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
+  Sc <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
   SMSY <- SMSY %>% left_join(Sc, by="Stocknumber") %>% mutate(rawSMSY=Estimate*Scale)
   lnSMSY <- log(SMSY$rawSMSY)
   lnWA <- log(WA$WA)
@@ -267,15 +267,15 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   plot(y=lnSMSY, x=lnWA, pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
   points(y=lnSMSY, x=lnWA, pch=20, col=col.use, cex=1.5)
   #points(y=lnSMSY[18:length(SMSY$lh)], x=lnWA[18:length(SMSY$lh)], pch=3, col=col.use[18:length(SMSY$lh)], cex=1.5)
-  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
-  logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% select(Estimate) %>% pull()
+  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% dplyr::select(Estimate) %>% pull()
+  logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% dplyr::select(Estimate) %>% pull()
   if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
-    logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% select(Estimate) %>% pull() + logD1}
+    logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% dplyr::select(Estimate) %>% pull() + logD1}
   if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
-    D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% select(Estimate) %>% pull() ) + exp(logD2)
-    if(nrow(All_Deltas %>% filter(Param=="Delta2ocean"))>=1)  D2o <- (All_Deltas %>% filter(Param=="Delta2ocean") %>% select(Estimate) %>% pull() ) + exp(logD2)
+    D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logD2)
+    if(nrow(All_Deltas %>% filter(Param=="Delta2ocean"))>=1)  D2o <- (All_Deltas %>% filter(Param=="Delta2ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logD2)
   }
-  #if (mod=="IWAM_FixedCombined") D2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% select(Estimate) %>% pull()
+  #if (mod=="IWAM_FixedCombined") D2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% dplyr::select(Estimate) %>% pull()
   if(length(logD1)==1&length(logD2)==2){
     abline(a=logD1[1], b=exp(logD2[1]), col="forestgreen", lwd=2)
     abline(a=logD1[1], b=exp(logD2[2]), col="dodgerblue3", lwd=2)
@@ -301,16 +301,16 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   
   if(exists("PredlnSMSY")){
     PredlnSMSY <- PredlnSMSY %>% mutate (up = Estimate + 1.96 * Std..Error, lo=Estimate - 1.96*Std..Error) 
-    #up_S <- PredlnSMSY %>% filter(Param== "PredlnSMSY_S") %>% select(up) %>% pull()
-    #lo_S <- PredlnSMSY %>% filter(Param== "PredlnSMSY_S") %>% select(lo) %>% pull()
-    #up_O <- PredlnSMSY %>% filter(Param== "PredlnSMSY_O") %>% select(up) %>% pull()
-    #lo_O <- PredlnSMSY %>% filter(Param== "PredlnSMSY_O") %>% select(lo) %>% pull()
-    up_S <- PredlnSMSY %>% filter(Param== "PredlnSMSYs_CI") %>% select(up) %>% pull()
-    lo_S <- PredlnSMSY %>% filter(Param== "PredlnSMSYs_CI") %>% select(lo) %>% pull()
-    up_O <- PredlnSMSY %>% filter(Param== "PredlnSMSYo_CI") %>% select(up) %>% pull()
-    lo_O <- PredlnSMSY %>% filter(Param== "PredlnSMSYo_CI") %>% select(lo) %>% pull()
-    up <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% select(up) %>% pull()
-    lo <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% select(lo) %>% pull()
+    #up_S <- PredlnSMSY %>% filter(Param== "PredlnSMSY_S") %>% dplyr::select(up) %>% pull()
+    #lo_S <- PredlnSMSY %>% filter(Param== "PredlnSMSY_S") %>% dplyr::select(lo) %>% pull()
+    #up_O <- PredlnSMSY %>% filter(Param== "PredlnSMSY_O") %>% dplyr::select(up) %>% pull()
+    #lo_O <- PredlnSMSY %>% filter(Param== "PredlnSMSY_O") %>% dplyr::select(lo) %>% pull()
+    up_S <- PredlnSMSY %>% filter(Param== "PredlnSMSYs_CI") %>% dplyr::select(up) %>% pull()
+    lo_S <- PredlnSMSY %>% filter(Param== "PredlnSMSYs_CI") %>% dplyr::select(lo) %>% pull()
+    up_O <- PredlnSMSY %>% filter(Param== "PredlnSMSYo_CI") %>% dplyr::select(up) %>% pull()
+    lo_O <- PredlnSMSY %>% filter(Param== "PredlnSMSYo_CI") %>% dplyr::select(lo) %>% pull()
+    up <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% dplyr::select(up) %>% pull()
+    lo <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% dplyr::select(lo) %>% pull()
     if(is.na(up_S[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_S, rev(lo_S)), col=rgb(0,0.4,0, alpha=0.2), border=NA)
     if(is.na(up_O[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_O, rev(lo_O)), col=rgb(0,0.2,0.4, alpha=0.2), border=NA)
     if(is.na(up[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up, rev(lo)), col=rgb(0.6,0.2,0.4, alpha=0.2), border=NA)
@@ -362,14 +362,14 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   plot(y=lnSREP, x=lnWA, pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SREP)")
   points(y=lnSREP, x=lnWA, pch=20, col=col.use, cex=1.5)
   #points(y=lnSREP[18:length(SREP$lh)], x=lnWA[18:length(SREP$lh)], pch=3, col=col.use[18:length(SREP$lh)], cex=1.5)
-  logN1 <- All_Deltas %>% filter(Param=="logNu1") %>% select(Estimate) %>% pull()
-  logN2 <- All_Deltas %>% filter(Param=="logNu2") %>% select(Estimate) %>% pull()
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") logN1o <- All_Deltas %>% filter(Param=="logNu1ocean") %>% select(Estimate) %>% pull() + logN1
+  logN1 <- All_Deltas %>% filter(Param=="logNu1") %>% dplyr::select(Estimate) %>% pull()
+  logN2 <- All_Deltas %>% filter(Param=="logNu2") %>% dplyr::select(Estimate) %>% pull()
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") logN1o <- All_Deltas %>% filter(Param=="logNu1ocean") %>% dplyr::select(Estimate) %>% pull() + logN1
   if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
-    N2o <- exp(All_Deltas %>% filter(Param=="logNu2ocean") %>% select(Estimate) %>% pull() ) + exp(logN2)
-    if(nrow(All_Deltas %>% filter(Param=="Nu2ocean"))>=1)  N2o <- (All_Deltas %>% filter(Param=="Nu2ocean") %>% select(Estimate) %>% pull() ) + exp(logN2)
+    N2o <- exp(All_Deltas %>% filter(Param=="logNu2ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logN2)
+    if(nrow(All_Deltas %>% filter(Param=="Nu2ocean"))>=1)  N2o <- (All_Deltas %>% filter(Param=="Nu2ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logN2)
   }
-  #if (mod=="IWAM_FixedCombined") D2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% select(Estimate) %>% pull()
+  #if (mod=="IWAM_FixedCombined") D2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% dplyr::select(Estimate) %>% pull()
   if(length(logN1)==1&length(logN2)==2){
     abline(a=logN1[1], b=exp(logN2[1]), col="forestgreen", lwd=2)
     abline(a=logN1[1], b=exp(logN2[2]), col="dodgerblue3", lwd=2)
@@ -395,16 +395,16 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   
   if(exists("PredlnSREP")){
     PredlnSREP <- PredlnSREP %>% mutate (up = Estimate + 1.96 * Std..Error, lo=Estimate - 1.96*Std..Error) 
-    #up_S <- PredlnSREP %>% filter(Param== "PredlnSREP_S") %>% select(up) %>% pull()
-    #lo_S <- PredlnSREP %>% filter(Param== "PredlnSREP_S") %>% select(lo) %>% pull()
-    #up_O <- PredlnSREP %>% filter(Param== "PredlnSREP_O") %>% select(up) %>% pull()
-    #lo_O <- PredlnSREP %>% filter(Param== "PredlnSREP_O") %>% select(lo) %>% pull()
-    up_S <- PredlnSREP %>% filter(Param== "PredlnSREPs_CI") %>% select(up) %>% pull()
-    lo_S <- PredlnSREP %>% filter(Param== "PredlnSREPs_CI") %>% select(lo) %>% pull()
-    up_O <- PredlnSREP %>% filter(Param== "PredlnSREPo_CI") %>% select(up) %>% pull()
-    lo_O <- PredlnSREP %>% filter(Param== "PredlnSREPo_CI") %>% select(lo) %>% pull()
-    up <- PredlnSREP %>% filter(Param== "PredlnSREP_CI") %>% select(up) %>% pull()
-    lo <- PredlnSREP %>% filter(Param== "PredlnSREP_CI") %>% select(lo) %>% pull()
+    #up_S <- PredlnSREP %>% filter(Param== "PredlnSREP_S") %>% dplyr::select(up) %>% pull()
+    #lo_S <- PredlnSREP %>% filter(Param== "PredlnSREP_S") %>% dplyr::select(lo) %>% pull()
+    #up_O <- PredlnSREP %>% filter(Param== "PredlnSREP_O") %>% dplyr::select(up) %>% pull()
+    #lo_O <- PredlnSREP %>% filter(Param== "PredlnSREP_O") %>% dplyr::select(lo) %>% pull()
+    up_S <- PredlnSREP %>% filter(Param== "PredlnSREPs_CI") %>% dplyr::select(up) %>% pull()
+    lo_S <- PredlnSREP %>% filter(Param== "PredlnSREPs_CI") %>% dplyr::select(lo) %>% pull()
+    up_O <- PredlnSREP %>% filter(Param== "PredlnSREPo_CI") %>% dplyr::select(up) %>% pull()
+    lo_O <- PredlnSREP %>% filter(Param== "PredlnSREPo_CI") %>% dplyr::select(lo) %>% pull()
+    up <- PredlnSREP %>% filter(Param== "PredlnSREP_CI") %>% dplyr::select(up) %>% pull()
+    lo <- PredlnSREP %>% filter(Param== "PredlnSREP_CI") %>% dplyr::select(lo) %>% pull()
     if(is.na(up_S[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_S, rev(lo_S)), col=rgb(0,0.4,0, alpha=0.2), border=NA)
     if(is.na(up_O[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_O, rev(lo_O)), col=rgb(0,0.2,0.4, alpha=0.2), border=NA)
     if(is.na(up[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up, rev(lo)), col=rgb(0.6,0.2,0.4, alpha=0.2), border=NA)
@@ -448,8 +448,8 @@ plotWAregression_Parken <- function(data, All_Deltas){
   for(i in 1:length(Parken_data$lh)) {if (Parken_data$lh[i]==0) col.use[i] <- "forestgreen" else col.use[i] <- "dodgerblue3"}
   plot(x=log(data$WA), y=log(data$SMSY*data$Scale),pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
   points(x=log(data$WA), y=log(data$SMSY*data$Scale), pch=20, col=col.use, cex=1.5)
-  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
-  D2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% select(Estimate) %>% pull()
+  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% dplyr::select(Estimate) %>% pull()
+  D2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% dplyr::select(Estimate) %>% pull()
   abline(a=logD1, b=D2, col="maroon", lwd=2)
   
   #abline(lm(log(data$SMSY*data$Scale) ~ log(data$WA)))
@@ -467,10 +467,10 @@ plotWAregression_ParkenSep <- function(data, All_Deltas){
   for(i in 1:length(Parken_data$lh)) {if (Parken_data$lh[i]==0) col.use[i] <- "forestgreen" else col.use[i] <- "dodgerblue3"}
   plot(x=log(data$WA), y=log(data$SMSY*data$Scale),pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
   points(x=log(data$WA), y=log(data$SMSY*data$Scale), pch=20, col=col.use, cex=1.5)
-  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% select(Estimate) %>% pull()
-  logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% select(Estimate) %>% pull() + logD1
-  logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% select(Estimate) %>% pull()
-  D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% select(Estimate) %>% pull() ) + exp(logD2)
+  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% dplyr::select(Estimate) %>% pull()
+  logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% dplyr::select(Estimate) %>% pull() + logD1
+  logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% dplyr::select(Estimate) %>% pull()
+  D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logD2)
   abline(a=logD1, b=exp(logD2), col="forestgreen", lwd=2)
   abline(a=logD1o, b=D2o, col="dodgerblue3", lwd=2)
   
@@ -655,34 +655,20 @@ plotWCVIBenchmarks <- function(data = WCVIEscQuant){
 #plotWCVIBenchmarks()
 #dev.off()
 
-plotWCVI_timeseries <- function(WCVIEsc){
-  # WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% select (-"Little.Zeballos")
-  # 
-  # Years <- rownames(WCVIEsc)
-  # 
-  # # Add inlets, excluding San Juan and Nitinat, as they contain only one stock each
-  # # NAs must be removed from the sums first
-  # BarkleyNA <- apply( cbind( WCVIEsc$Sarita, WCVIEsc$Somass, WCVIEsc$Nahmint), 1, sum, na.rm=F)
-  # ClayoquotNA <- apply( cbind( WCVIEsc$Bedwell.Ursus, WCVIEsc$Megin, WCVIEsc$Moyeha, WCVIEsc$Tranquil), 1, sum, na.rm=F)
-  # Nootka.EsperanzaNA <- apply( cbind( WCVIEsc$Burman , WCVIEsc$Conuma, WCVIEsc$Gold, WCVIEsc$Leiner, WCVIEsc$Tahsis, 
-  #                                   WCVIEsc$Zeballos), 1, sum, na.rm=F)
-  # KyuquotNA <- apply( cbind( WCVIEsc$Artlish, WCVIEsc$Kaouk, WCVIEsc$Tahsish), 1, sum, na.rm=F)
-  # QuatsinoNA <- apply( cbind( WCVIEsc$Cayeghle, WCVIEsc$Marble), 1, sum,  na.rm=F)
-  # 
-  # WCVIEsc <- WCVIEsc %>% mutate(Barkley = BarkleyNA, Clayoquot = ClayoquotNA, Nootka.Esperanza =Nootka.EsperanzaNA,
-  #                               Kyuquot = KyuquotNA, Quatsino = QuatsinoNA )
-  # 
+plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=FALSE){
   
-  EnhStocks <- c("Artlish", "Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  "Somass",  "Zeballos", "San Juan")
-  remove.EnhStocks <- TRUE
+ 
+  Years <- rownames(WCVIEsc)
   
+  EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  "Somass",  "Zeballos", "San Juan")# remove Artlish: 23 Dec 2020
   
-  WCVI_RPs <- as.data.frame(read.csv("DataOut/WCVI_SMSY.csv")) %>% select (-X)
-  if (remove.EnhStocks) WCVI_RPs <- WCVI_RPs %>% filter(Stock %not in% c(EnhStocks)) 
-  # See WCVILRPs.R for calculation of Sgen
-  WCVI_sgen <- as.data.frame(read.csv("DataOut/wcviRPs.csv")) %>% rename(StockNames=Stock)
-  if (remove.EnhStocks) WCVI_sgen <- WCVI_sgen %>% filter(StockNames %not in% c(EnhStocks)) 
-  
+  if(remove.EnhStocks) WCVI_RPs <- as.data.frame(read.csv("DataOut/wcviRPs_noEnh.csv")) %>% 
+    rename(StockNames=Stock)  %>% filter (StockNames != "Little Zeballos")
+ 
+  if(!remove.EnhStocks) WCVI_RPs <- as.data.frame(read.csv("DataOut/wcviRPs_wEnh.csv")) %>% 
+    rename(StockNames=Stock)  %>% filter (StockNames != "Little Zeballos")
+ 
+ if (remove.EnhStocks) WCVI_RPs <- WCVI_RPs %>% filter(StockNames %not in% c(EnhStocks)) 
   
   StockNames <- row.names(t(WCVIEsc))
   StockNames <- sapply(StockNames, function(x) (gsub(".", " ", x, fixed=TRUE) ) )
@@ -690,16 +676,8 @@ plotWCVI_timeseries <- function(WCVIEsc){
   StockNames <- sapply(StockNames, function(x) (gsub("Nootka Esperanza", "Nootka/Esperanza", x, fixed=TRUE) ) )
   StockNames <- data.frame(StockNames) %>% filter(StockNames !="Little Zeballos")
   
-  #as.character(as.data.frame(StockNames)$StockNames) 
-  
-  WCVI_smsy <- WCVI_RPs %>% rename(StockNames=Stock) %>% filter(Param=="SMSY") %>% filter (StockNames != "Little Zeballos")
-  WCVI_srep <- WCVI_RPs %>% rename(StockNames=Stock) %>% filter(Param=="SREP") %>% filter (StockNames != "Little Zeballos")
-  #  Reorder SMSY&SREP values so that they are aligned with StockNames from escapement time series
-  WCVI_smsy <- StockNames %>% left_join( WCVI_smsy, by = "StockNames") 
-  WCVI_srep <- as.data.frame(StockNames) %>% left_join( WCVI_srep, by = "StockNames") 
-  WCVI_sgen <- as.data.frame(StockNames) %>% left_join( WCVI_sgen, by = "StockNames") 
-  
-  
+  # Reorder in WCVI_RPs to be aligned with stock order in escapement data (=order in StockNames df)
+  WCVI_rps <- suppressWarnings(StockNames %>% full_join( WCVI_RPs, by = "StockNames") %>% dplyr::select (-X))
     
   col.pal <- viridis(4)
   col.pal.light <- viridis(4, alpha=0.2)
@@ -722,88 +700,127 @@ plotWCVI_timeseries <- function(WCVIEsc){
   #   polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_srep$LL[i],2), rep(WCVI_srep$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
   # }
   
-  # for (i in (N_stk-2):N_stk){
-  #   ymax[i] <- max(WCVI_srep$Estimate[i], na.rm=T)
-  #   plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
-  #   axis(side=1, tick=FALSE, padj=-1.8)
-  #   abline(h=0)
-  #   axis(side=2)
-  #   mtext(paste(StockNames$StockNames[i], ": scaled"), side=3, line=0.5, at="1960")
-  #   legend(x="topright", legend=NA, title= paste( "   Sgen=", WCVI_sgen$SGEN[i] ), bty="n" )
-  #   abline(h=WCVI_smsy$Estimate[i], col=col.pal[4], lwd=2)
-  #   abline(h=WCVI_srep$Estimate[i], col=col.pal[3], lwd=2)
-  #   abline(h=WCVI_sgen$SGEN[i], col=col.pal[2], lwd=2)
-  #   polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_smsy$LL[i],2), rep(WCVI_smsy$UL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
-  #   polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_srep$LL[i],2), rep(WCVI_srep$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
-  # }
-  # 
   N_inlets <- 5 + N_stk
-  par(mfrow=c(4,2), mar = c(2, 3, 2, 1) + 0.1)
-
-  #for (i in c(1,20, 21:N_inlets)){#if remove.EnhStocks ==FALSE
-  for (i in c(16,12,14, 15, 13)) {#if remove.EnhStocks ==TRUE
-  ymax[i] <- max(WCVI_srep$Estimate[i], WCVIEsc[,i], na.rm=T)
+  if (remove.EnhStocks) par(mfrow=c(3,2), mar = c(2, 3, 2, 1) + 0.1)
+  if (!remove.EnhStocks) par(mfrow=c(4,2), mar = c(2, 3, 2, 1) + 0.1)
+  
+  # Plot in order of inlets from south to north
+  if(!remove.EnhStocks) inlet.list <- c(which(StockNames == "San Juan"), which(StockNames == "Nitinat"),
+                                        which(StockNames == "Barkley"), which(StockNames == "Clayoquot"), 
+                                        which(StockNames == "Nootka/Esperanza"), which(StockNames == "Kyuquot"),
+                                        which(StockNames == "Quatsino") )
+  if(remove.EnhStocks) inlet.list <- c(which(StockNames == "Barkley"), which(StockNames == "Clayoquot"), 
+                                       which(StockNames == "Nootka/Esperanza"), which(StockNames == "Kyuquot"),
+                                       which(StockNames == "Quatsino") )
+  
+  for (i in c(inlet.list)){
+    ymax[i] <- max(WCVI_rps$SREP[i], WCVIEsc[,i], na.rm=T)
     plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
     axis(side=1, tick=FALSE, padj=-1.8)
     abline(h=0)
     axis(side=2)
-    mtext(StockNames$StockNames[i], side=3, line=0.5, at="1960")
-    legend(x="topleft", legend=NA, title= paste( "   Sgen=", WCVI_sgen$SGEN[i] ), bty="n" )
-    abline(h=WCVI_smsy$Estimate[i], col=col.pal[4], lwd=2)
-    abline(h=WCVI_srep$Estimate[i], col=col.pal[3], lwd=2)
-    abline(h=WCVI_sgen$SGEN[i], col=col.pal[2], lwd=2)
-    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_smsy$LL[i],2), rep(WCVI_smsy$UL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
-    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_srep$LL[i],2), rep(WCVI_srep$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
+    mtext(WCVI_rps$StockNames[i], side=3, line=0.5, at="1960")
+    legend(x="topleft", legend=NA, title= paste( "   Sgen=", WCVI_rps$SGEN[i] ), bty="n" )
+    abline(h=WCVI_rps$SMSY[i], col=col.pal[4], lwd=2)
+    abline(h=WCVI_rps$SREP[i], col=col.pal[3], lwd=2)
+    abline(h=WCVI_rps$SGEN[i], col=col.pal[2], lwd=2)
+    # CIs for SMSY from WA-model with previous assumption about productivity
+    #polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_rps$SMSYLL[i],2), rep(WCVI_rps$SMSYUL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
+    polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_rps$SREPLL[i],2), rep(WCVI_rps$SREPUL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
   }
   
   
 }
 
+## yy <- Get.LRP(remove.EnhStocks=FALSE)
+# png(paste("DataOut/WCVI_inlet_timeseries_wEnh.png", sep=""), width=9, height=7, units="in", res=500)
+# plotWCVI_timeseries(WCVIEsc=yy$WCVIEsc, remove.EnhStocks = FALSE) 
+# dev.off()
+
+## xx <- Get.LRP(remove.EnhStocks=TRUE)
+# png(paste("DataOut/WCVI_inlet_timeseries_noEnh.png", sep=""), width=9, height=7, units="in", res=500)
+# plotWCVI_timeseries(WCVIEsc=xx$WCVIEsc, remove.EnhStocks = TRUE)
+# dev.off()
 
 #png(paste("DataOut/WCVItimeseries%02d.png", sep=""), width=9, height=7, units="in", res=500)
 # png(paste("DataOut/WCVItimeseries.png", sep=""), width=9, height=7, units="in", res=500)
-# plotWCVI_timeseries() 
-# dev.off()
-
-# png(paste("DataOut/WCVItimeseriesNoEnh.png", sep=""), width=9, height=7, units="in", res=500)
 # plotWCVI_timeseries(WCVIEsc) 
 # dev.off()
 
-# pdf(paste("DataOut/WCVItimeseries.pdf", sep=""), width=9, height=7)
-# plotWCVI_timeseries() 
+
+
+
+plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out, WCVI_Esc=WCVIEsc){
+  
+  Years <- rownames(WCVI_Esc)
+
+
+  col.pal <- viridis(4)
+  col.pal.light <- viridis(4, alpha=0.2)
+  ymax <- NA
+  #N_stk <- length(StockNames$StockNames) - 5 #omit the 5 inlets
+  #N_stk <- length(StockNames) - 5 #omit the 5 inlets
+  
+
+  par(mfrow=c(1,1), mar = c(2, 3, 2, 1) + 0.1)
+
+  ymax <- max(out$LRP$upr, SMU_Esc, na.rm=T)
+  plot(x= Years, y= SMU_Esc, type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax))
+  points(x= Years, y= SMU_Esc, col=col.pal[1], pch=19)
+  axis(side=1, tick=TRUE, pos=0, padj=-0.9)#-1.8
+  abline(h=0)
+  axis(side=2)
+  mtext("WCVI SMU", side=3, line=0.5, at="1960", cex=1.5)
+  legend(x="topleft", legend=NA, title= paste( "   LRP=", signif(out$LRP$fit,3) ), bty="n" )
+  abline(h=out$LRP$fit, col=col.pal[2], lwd=2)
+  # CIs for LRP from TMB logistic regression
+  polygon(x=as.numeric(c(range(Years), rev(range(Years)))), y=c(rep(out$LRP$lwr,2), rep(out$LRP$upr,2)), col=col.pal.light[3], border=NA)
+}
+
+## xx <- Get.LRP(remove.EnhStocks=TRUE)
+# png(paste("DataOut/WCVI_SMUtimeseries_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
+# plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc, out=xx$out, WCVI_Esc=xx$WCVIEsc)
+# dev.off()
+
+## yy <- Get.LRP(remove.EnhStocks=FALSE)
+# png(paste("DataOut/WCVI_SMUtimeseries_wEnh.png", sep=""), width=9, height=4, units="in", res=500)
+# plotWCVI_SMUtimeseries(SMU_Esc=yy$SMU_Esc, out=yy$out, WCVI_Esc=yy$WCVIEsc)
 # dev.off()
 
 
 #==================================================================
 # Plot time-series of CU status
 #==================================================================
-#need CU_Status
-# png("DataOut/WCVICUtimeseriesNoEnh.png", width=4.5, height=6.5, units="in", res=200)
-# par(mfrow=c(3,1), cex=1.1,  mar = c(2, 3, 2, 1) + 0.1)
+
+## xx <- Get.LRP(remove.EnhStocks=TRUE)
+# png("DataOut/WCVI_CUstatus_noEnh.png", width=4.5, height=6.5, units="in", res=200)
+# par(mfrow=c(3,1), cex=1.1,  mar = c(2, 5, 2, 1) + 0.1)
+# Years <- rownames(xx$WCVIEsc)
 # 
-# for (i in 1:length(CU_Names)){
-#   plot(x=Years, y=CU_Status[,i], pch=20, xlab="", ylab="", ylim=c(0,1), las=1) 
-#   mtext(CU_Names[i], side=3, line=0.5, at="1952", adj=0, cex=1.4)
-#   
+# for (i in c(2,1,3)){
+#   plot(x=Years, y=xx$CU_Status[,i], pch=20, xlab="", ylab="", ylim=c(0,1), las=1 , yaxp=c(0,1,1))
+#   mtext(colnames(xx$CU_Status)[i], side=3, line=0.5, at="1952", adj=0, cex=1.4)
+#   if(i==1) mtext("CU Status = Red(0) or Amber/Green(1)", side=2, line=2, cex=1.8)
+# 
 # }
 # dev.off()
-
+# 
 
 
 #==================================================================
 # Plot time-series of SMU ppns without enh
 #==================================================================
-#need SMU_ppn
-# png("DataOut/WCVI_SMUppntimeseriesNoEnh.png", width=4.5, height=3.5, units="in", res=200)
+## xx <- Get.LRP(remove.EnhStocks=TRUE)
+
+# png("DataOut/WCVI_SMUstatus_noEnh.png", width=4.5, height=3.5, units="in", res=200)
 # par(mfrow=c(1,1), cex=1.1,  mar = c(2, 3, 2, 1) + 0.1)
 # 
-# plot(x=Years, y=SMU_ppn, pch=20, xlab="", ylab="", ylim=c(0,1), las=1) 
+# plot(x=Years, y=xx$SMU_ppn, pch=20, xlab="", ylab="", ylim=c(0,1), las=1)
 # mtext("WCVI SMU", side=3, line=0.5, at="1952", adj=0, cex=1.4)
-#   
 # 
 # dev.off()
 
-# Plot data for log regression: Need SMU_Esc 
+# Plot data for log regression: Need df: SMU_Esc from "WCVILRPs.R"
 # plot(x=SMU_Esc, y=SMU_ppn, xlab="Aggregate Escapement", ylab="Proportion CUs above red zone", las=1, ylim=c(0,1), xlim=c(0, max(SMUEsc, na.rm=T)))
 
 #==================================================================
@@ -847,15 +864,19 @@ plotLogistic <- function(Data, Preds, LRP, useGenMean = F, plotName, outDir, p=0
   }
   
   
-  # Save plot
-  ggsave(paste(outDir, "/",plotName,".png",sep=""), plot = annual_LRP_plot,
-         width = 4, height = 3, units = "in")      
+  annual_LRP_plot 
+  # # Save plot
+  # ggsave(paste(outDir, "/",plotName,".png",sep=""), plot = annual_LRP_plot,
+  #        width = 4, height = 3, units = "in")      
   
 }  
 
-#Need out from TMB
-#plotLogistic(Data=out$Logistic_Data, Preds=out$Preds, LRP=out$LRP, useGenMean = F, plotName="test0.67", outDir="DataOut", p=0.95)
+## xx <- Get.LRP(remove.EnhStocks=TRUE)
+#plotLogistic(Data=xx$out$Logistic_Data, Preds=xx$out$Preds, LRP=xx$out$LRP, useGenMean = F, plotName="WCVI_logReg_noEnh", outDir="DataOut", p=0.95)
 
-#if(out$LRP$lwr<=0) out$LRP$lwr <-1
+## yy <- Get.LRP(remove.EnhStocks=FALSE)
+#plotLogistic(Data=yy$out$Logistic_Data, Preds=yy$out$Preds, LRP=yy$out$LRP, useGenMean = F, plotName="WCVI_logReg_wEnh", outDir="DataOut", p=0.95)
 
-#plotLogistic(Data=out$Logistic_Data, Preds=out$Preds, LRP=out$LRP, useGenMean = F, plotName="testnPrioroEnh0.67", outDir="DataOut", p=0.67)
+#if(xx$out$LRP$lwr<=0) xx$out$LRP$lwr <-1
+#if(yy$out$LRP$lwr<=0) yy$out$LRP$lwr <-1
+

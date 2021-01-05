@@ -33,7 +33,7 @@ library(hrbrthemes)
 # Main switches and functions
 #---------------------------------------------------------------------------------
 plot <- FALSE#TRUE
-remove.EnhStocks <- FALSE # in WCVI CK case study
+remove.EnhStocks <- TRUE # in WCVI CK case study
 removeSkagit <- FALSE#TRUE
 mod <- "Liermann_PriorRicSig_PriorDeltaSig"##"Liermann_HalfNormRicVar_FixedDelta"#"Ricker_AllMod"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
 source ("PlotSR.r")# Plotting functions
@@ -58,7 +58,7 @@ if (removeSkagit==TRUE) {
 }
 
 # Which stocks have NAs?
-stockwNA <- SRDatwNA %>% filter (is.na(Rec) == TRUE) %>% select (Stocknumber) %>% unique() %>% unlist() 
+stockwNA <- SRDatwNA %>% filter (is.na(Rec) == TRUE) %>% dplyr::select (Stocknumber) %>% unique() %>% unlist() 
 #Do not use AR(1) model on  stocks with NAs, Humptulips and Queets (20 and 21)
 
 # Remove years with NAs
@@ -98,7 +98,7 @@ stksNum_std <- which(0:(len_stk-1) %not in%c(stksNum_ar, stksNum_surv)==TRUE)-1
 stksOrder <- data.frame(Stocknumber =  c(stksNum_std, stksNum_ar, stksNum_surv), ModelOrder = 0:(len_stk-1))
 
 # What is the scale of S,R and SMSY,SREP data, ordered when aggregated by std, AR1, surv
-SRDat_Scale <- SRDat %>% select(Stocknumber, Scale) %>% distinct() 
+SRDat_Scale <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct() 
 if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|mod=="IWAM_FixedSep_Constm") {
   SRDat_Scale <- SRDat_Scale %>% left_join(stksOrder) %>% arrange(ModelOrder)
 }
@@ -145,7 +145,7 @@ if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorD
 
 # Read in watershed area data and life-history type (stream vs ocean)
 WA <- read.csv("DataIn/WatershedArea.csv")
-names <- SRDat %>% select (Stocknumber, Name) %>% distinct() 
+names <- SRDat %>% dplyr::select (Stocknumber, Name) %>% distinct() 
 if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi") {
   WA <- WA %>% full_join(names, by="Name") %>% full_join (stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
 }
@@ -154,7 +154,7 @@ if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorD
 }
 
 if (removeSkagit==TRUE) {WA <- WA %>% filter(Name !="Skagit")}
-Stream <- SRDat %>% select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% summarize(lh=max(Stream))
+Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% summarize(lh=max(Stream))
 Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
 if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") Stream <- Stream  %>% arrange(Stocknumber)
 
@@ -193,7 +193,7 @@ if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constm"|mo
   data$yr_surv <- SRDat_surv$yr_num
   data$Surv_surv <- log(SRDat_surv$Surv) #Tompkins et al. used Ln(Surv+1)
   meanLogSurv <- SRDat_surv %>% group_by(Stocknumber) %>% summarize(meanLogSurv = mean(log(Surv))) %>% 
-    select(meanLogSurv) 
+    dplyr::select(meanLogSurv) 
   data$MeanLogSurv_surv <- meanLogSurv$meanLogSurv
 
 }
@@ -530,20 +530,20 @@ if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|m
 # Get predicted values and calculate r2
 Pred_std <- data.frame()
 Pred_std <- All_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
-Preds_std <- SRDat_std %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_std$Estimate)
+Preds_std <- SRDat_std %>% dplyr::select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_std$Estimate)
 Preds_std <- Preds_std %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp/Scale) ) )
 r2 <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
 if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
   Pred_ar <- data.frame()
   Pred_ar <- All_Ests %>% filter (Param %in% c("LogRS_Pred_ar"))
-  Preds_ar <- SRDat_ar %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_ar$Estimate)
+  Preds_ar <- SRDat_ar %>% dplyr::select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_ar$Estimate)
   Preds_ar <- Preds_ar %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
   r2_ar <- Preds_ar %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
   
   Pred_surv <- data.frame()
   Pred_surv <- All_Ests %>% filter (Param %in% c("LogRS_Pred_surv"))
-  Preds_surv <- SRDat_surv %>% select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_surv$Estimate)
+  Preds_surv <- SRDat_surv %>% dplyr::select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% add_column(Pred=Pred_surv$Estimate)
   Preds_surv <- Preds_surv %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp / Scale) ) ) 
   r2_surv <- Preds_surv %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
   r2 <- bind_rows(r2, r2_ar, r2_surv) %>% arrange(Stocknumber)
@@ -567,7 +567,7 @@ if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_Prior
   SRes <- Preds_std %>% arrange (Stocknumber)
 }
 SRes <- SRes %>% mutate ( Res = ObsLogRS- Pred) #%>% mutate (StdRes = Res/??)
-sigma <- All_Est %>% filter(Param=="logSigma") %>% select(Stocknumber, Estimate, Name)
+sigma <- All_Est %>% filter(Param=="logSigma") %>% dplyr::select(Stocknumber, Estimate, Name)
 SRes <- SRes %>% left_join(sigma) %>% rename(logSig = Estimate)
 SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 
@@ -657,7 +657,7 @@ PredlnSREP_PI <- All_Ests %>% filter (Param %in% c("PredlnSREP", "lnSREP"))
 PredlnSMSY_PI$Stocknumber <- rep(SN_std)
 PredlnSREP_PI$Stocknumber <- rep(SN_std)
 
-Scale_PI <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
+Scale_PI <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
 PredlnSMSY_PI <- PredlnSMSY_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
 PredlnSREP_PI <- PredlnSREP_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
 
@@ -703,11 +703,11 @@ WAo <- WA %>% left_join(Stream) %>% filter(lh == 1) %>% pull(WA)
 #  TestSMSYs <- TestSMSYs %>% add_column(LL=exp(TestSMSYs_PI$lwr), UL=exp(TestSMSYs_PI$upr))
 #  TestSMSYo <- TestSMSYo %>% add_column(LL=exp(TestSMSYo_PI$lwr), UL=exp(TestSMSYo_PI$upr))
 #  TestSMSY <- TestSMSYs %>% bind_rows(TestSMSYo)
-#  TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% select(-Std..Error, - Param, -Estimate) %>% 
+#  TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% dplyr::select(-Std..Error, - Param, -Estimate) %>% 
 #    add_column( Source="IWAM")
 # #Compare IWAM estiamates of SMSY with those in Parken et al for test stocks (with UL and LL (these are 5th and 95th bootstrap estimates not CIs)
 #  ParkenTestStocks <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>% 
-#    select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
+#    dplyr::select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
 #  ParkenTestSMSY <- full_join(TestSMSY, ParkenTestStocks)
 
 
@@ -727,14 +727,15 @@ TestSMSY_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYpull, Newx= data$Tes
 TestSREP_PI <- PredInt(x=log(WAo), y=Olsrepo, Predy=TestSREPpull, Newx= data$TestlnWAo)
 TestSMSY <- TestSMSY %>% add_column(LL=exp(TestSMSY_PI$lwr), UL=exp(TestSMSY_PI$upr))
 TestSREP <- TestSREP %>% add_column(LL=exp(TestSREP_PI$lwr), UL=exp(TestSREP_PI$upr))
-TestSMSY <- TestSMSY %>% mutate (Estimate = exp(Estimate)) %>% select(-Std..Error, - Param) %>% 
+TestSMSY <- TestSMSY %>% mutate (Estimate = exp(Estimate)) %>% dplyr::select(-Std..Error, - Param) %>% 
   add_column(Param = "SMSY")
-TestSREP <- TestSREP %>% mutate (Estimate = exp(Estimate)) %>% select(-Std..Error, - Param) %>% 
+TestSREP <- TestSREP %>% mutate (Estimate = exp(Estimate)) %>% dplyr::select(-Std..Error, - Param) %>% 
   add_column(Param = "SREP")
 WCVISMSY <- TestSMSY %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0))#, CU=CUNames)
 WCVISREP <- TestSREP %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0))#, CU=CUNames)
 WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
-#write.csv(WCVISMSY, "DataOut/WCVI_SMSY.csv")
+#write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh.csv")
+#write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh.csv")
 
 
 
@@ -745,12 +746,12 @@ WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
 
 SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
 # what is scale of SMSY?
-Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
+Sc <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
 SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
 SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
 lnSMSY <- log(SMSY$rawSMSY)
 lnWA <- log(WA$WA)
-order <- SMSY %>% select(Stocknumber, ModelOrder)
+order <- SMSY %>% dplyr::select(Stocknumber, ModelOrder)
 ParkenSMSY <- as.data.frame(read.csv("DataIn/ParkenSMSY.csv"))
 ParkenSMSY <- ParkenSMSY %>% left_join(order) %>% arrange(ModelOrder) %>% mutate(lnSMSY=log(SMSY))
 lnPSMSY <- ParkenSMSY$lnSMSY
@@ -778,7 +779,7 @@ if(test==TRUE){
 
 #TEST: Watereshed-Area Regression with data inputs
 SMSY <- read.csv("DataIn/SMSY_3mods.csv")
-Sca <- SMSY %>% select(Name, Scale)
+Sca <- SMSY %>% dplyr::select(Name, Scale)
 SMSY <- SMSY %>% left_join(Stream) %>% left_join(WA)
 SMSY_stream <- SMSY %>% filter(lh==0)
 SMSY_ocean <- SMSY %>% filter(lh==1)

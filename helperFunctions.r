@@ -140,3 +140,49 @@ Sgen.fn <- function ( SMSY, SREP, half.a = FALSE, const.SMAX =FALSE, explicit = 
   
 }
 
+# # Example: Artlish
+# SMSY <- 345 
+# SREP <- 971
+# 
+# png(paste("DataOut/Artlish_WCVI_SRcurve.png", sep=""), width=4, height=7, units="in", res=500)
+#   par(mfcol=c(3,1),  mar = c(4, 4, 2.5, 2) + 0.1)
+#   Sgen.fn(SMSY, SREP, half.a = FALSE, const.SMAX = FALSE, plot=TRUE)
+#   Sgen.fn(SMSY, SREP, half.a = TRUE, const.SMAX = FALSE, plot=TRUE)
+#   Sgen.fn(SMSY, SREP, half.a = TRUE, const.SMAX = TRUE, plot=TRUE)
+# dev.off()
+
+Sgen.fn2 <- function ( a.par, SREP,  explicit = TRUE , plot=FALSE) {
+  # Function to convert SREP from watershed-area model with independent alpha into Sgen
+  # explicit = should we use the explicit relationship between SMSY and Ricker parameters as in Scheuerell 2014?
+  # b = log(a.par)/SREP
+  b.par <- log(a.par)/SREP
+  if (explicit){
+    SMSY <- (1 - gsl::lambert_W0(exp(1 - log(a.par) ))) / (b.par)
+    
+    }
+  
+  if( !explicit ){
+    SMSY <- log(a.bar)/ b.par * (0.5 - 0.07 * log(a.par))
+  }
+  
+  sgen.out <- sGenSolver( log(a.par), b.par )
+  
+  if(plot){
+    Rpred <- NA
+    for (i in 1:1000){ Rpred[i]<- a.par * i * exp (- b.par * i)}
+    if (const.SMAX) xlab <- "Spawners" else xlab <- ""
+    plot(1:1000, Rpred, type="l", ylim = c (0, 1400), xlab = xlab,  ylab = "Recruits", lwd=2 )
+    abline(a=0, b=1)
+    abline(v=sgen.out, lty="dotted")
+    abline(v=SMSY, lty="dashed")
+    abline(v=(1/b.par), lty="dotdash")
+    abline(v=SREP)
+    legend( x = 700, y = 600, legend = c("Sgen", "SMSY", "SMAX", "SREP" ), lty=c("dotted","dashed", "dotdash", "solid"), bty="n" )
+    if (!half.a) title("Constant productivity")
+    if (half.a) if(!const.SMAX) title("Half productivity; constant SREP")
+    if (half.a) if(const.SMAX) title("Half productivity; constant SMAX")
+  }
+  
+  return( list( SGEN = sgen.out , SMSY = SMSY, SREP = SREP, apar = a.par, bpar = b.par) )
+  
+}

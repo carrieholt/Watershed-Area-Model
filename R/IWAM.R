@@ -12,7 +12,7 @@
 # 5. Calculate diagnostics for SR models in synoptic data set and plot SR 
 #   curves, etc.
 # 6. Calculate prediction intervals for SMSY and SREP estimates for additional 
-#   stocks
+#   "test" stocks. These are written to a *.csv file
 #---------------------------------------------------------
 
 #----------------------------------------------------------------------------
@@ -36,10 +36,10 @@ plot <- FALSE#TRUE
 remove.EnhStocks <- TRUE # in WCVI CK case study
 removeSkagit <- FALSE#TRUE
 mod <- "Liermann_PriorRicSig_PriorDeltaSig"##"Liermann_HalfNormRicVar_FixedDelta"#"Ricker_AllMod"#"Liermann"#""Ricker_AllMod"#IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"#"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"#"IWAM_FixedSep"#"IWAM_FixedCombined"
-source ("PlotSR.r")# Plotting functions
-source ("helperFunctions.R")
+source ("R/PlotSR.r")# Plotting functions
+source ("R/helperFunctions.R")
 if( plot== TRUE) {
-  source ("CheckAR1.r")# For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
+  source ("R/CheckAR1.r")# For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 stocks, "SMSY_std"
 }
 
 
@@ -428,7 +428,7 @@ if(mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_Half
 }
 
 
-# For phasing, I could fix Delta parameters. However, not needed as initlal values are ~ Parken estimates, so very close
+# For phasing, (not needed)
 # map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
 # obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 
@@ -657,9 +657,21 @@ PredlnSREP_PI <- All_Ests %>% filter (Param %in% c("PredlnSREP", "lnSREP"))
 PredlnSMSY_PI$Stocknumber <- rep(SN_std)
 PredlnSREP_PI$Stocknumber <- rep(SN_std)
 
+# To calculate prediction intervals, first get predicted and observed logSMSY and logSREP values for synoptic data set
+#   (actually only need observed logSMSY and logSREP values)
+
+#  First need to get the scale for each stock
+
 Scale_PI <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
 PredlnSMSY_PI <- PredlnSMSY_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
 PredlnSREP_PI <- PredlnSREP_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% left_join(Scale_PI)
+
+# Then need to separate observed stream vs ocean type
+
+# Plsmsys = predicted log SMSY for stream type
+# Plsmsyo = predicted log SMSY for ocean type
+# Olsmsys = observed log SMSY for stream type
+# Olsmsyo = observed log SMSY for ocean type
 
 Plsmsys <- PredlnSMSY_PI %>% filter(Param=="PredlnSMSY") %>% left_join(Stream) %>% 
   filter(lh == 0) %>% pull(Estimate) #Predicted lnSMSY from WA regression- Stream
@@ -678,13 +690,46 @@ Olsreps <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>%
 Olsrepo <- PredlnSREP_PI %>% filter(Param=="lnSREP") %>% left_join(Stream) %>% 
   filter(lh == 1) %>% pull(Estimate) # "observed" lnSMSY data output from SR models- ocean
 
-# Get Predicted SMSY values for test stocks and their Prediction Intervals
+
+# Get watershed areas for synoptic data set to calculate PIs (stream =s and ocean =o)
+WAs <- WA %>% left_join(Stream) %>% filter(lh == 0) %>% pull(WA)
+WAo <- WA %>% left_join(Stream) %>% filter(lh == 1) %>% pull(WA)
+
+# Get names of WCVI stocks
+sn <- read.csv("DataIn/WCVIStocks.csv")
+StockNames <- c(as.vector(sn$Stock), as.vector(InletlnWA$Inlet), as.vector(CUlnWA$CU))
+
+# Get Predicted SMSY and SREP values for new "test" WCVI stocks and their Prediction Intervals
 TestSMSY <- data.frame() 
 TestSMSYs <- data.frame() 
 TestSMSYo <- data.frame() 
 TestSMSY_SREP <- data.frame() 
 
-# #For Parken Test stocks
+TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYo")) %>% add_column(Stock = StockNames)
+TestSREP <- All_Ests %>% filter (Param %in% c("TestlnSREPo")) %>% add_column(Stock = StockNames)
+TestSMSYpull <- TestSMSY %>% pull(Estimate)
+TestSREPpull <- TestSREP %>% pull(Estimate)
+
+# Use custom function: PredInt() to estimate prediction intervals 
+TestSMSY_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYpull, Newx= data$TestlnWAo)
+TestSREP_PI <- PredInt(x=log(WAo), y=Olsrepo, Predy=TestSREPpull, Newx= data$TestlnWAo)
+
+TestSMSY <- TestSMSY %>% add_column(LL=exp(TestSMSY_PI$lwr), UL=exp(TestSMSY_PI$upr))
+TestSREP <- TestSREP %>% add_column(LL=exp(TestSREP_PI$lwr), UL=exp(TestSREP_PI$upr))
+TestSMSY <- TestSMSY %>% mutate (Estimate = exp(Estimate)) %>% dplyr::select(-Std..Error, - Param) %>% 
+  add_column(Param = "SMSY")
+TestSREP <- TestSREP %>% mutate (Estimate = exp(Estimate)) %>% dplyr::select(-Std..Error, - Param) %>% 
+  add_column(Param = "SREP")
+WCVISMSY <- TestSMSY %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0))#, CU=CUNames)
+WCVISREP <- TestSREP %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0))#, CU=CUNames)
+WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
+
+# Write SMSY and SREP with PIs to file
+if(remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh.csv")
+if(!remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh.csv")
+
+#---------------------------------------------------------------------------------------------------
+# #Code for deriving SMSY and SREP for Parken et al. 2006 test stocks 
 #  StockNamess <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 0) %>% pull(Stock)
 #  StockNameso <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 1) %>% pull(Stock)
 
@@ -693,8 +738,8 @@ TestSMSY_SREP <- data.frame()
 #  #Split this out by stream and ocean type as they have different linear regerssions
 #  TestSMSYs <- All_Ests %>% filter (Param %in% c("TestlnSMSYs"))  %>% add_column(Stock = StockNamess)
 #  TestSMSYo <- All_Ests %>% filter (Param %in% c("TestlnSMSYo"))  %>% add_column(Stock = StockNameso)
-WAs <- WA %>% left_join(Stream) %>% filter(lh == 0) %>% pull(WA)
-WAo <- WA %>% left_join(Stream) %>% filter(lh == 1) %>% pull(WA)
+#  WAs <- WA %>% left_join(Stream) %>% filter(lh == 0) %>% pull(WA)
+#  WAo <- WA %>% left_join(Stream) %>% filter(lh == 1) %>% pull(WA)
 #  TestSMSYs_PI <- PredInt(x=log(WAs), y=Olsmsys, Predy=TestSMSYs$Estimate, Newx= c(data$TestlnWAs))
 # #Compare my calculations of prediction intervals to those from Stan: quite close, but STAN didn't fully converge..?strange
 # #PredInt(x=log(WAs), y=Olsmsys, Predy=Plsmsys, Newx= log(WAs))
@@ -709,33 +754,7 @@ WAo <- WA %>% left_join(Stream) %>% filter(lh == 1) %>% pull(WA)
 #  ParkenTestStocks <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>% 
 #    dplyr::select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
 #  ParkenTestSMSY <- full_join(TestSMSY, ParkenTestStocks)
-
-
-# If Test stock = WCVI stocks
-
-sn <- read.csv("DataIn/WCVIStocks.csv")
-#if(remove.EnhStocks) sn <- sn %>% filter(Enh == 0) #Actually, all stocks are used
-StockNames <- c(as.vector(sn$Stock), as.vector(InletlnWA$Inlet), as.vector(CUlnWA$CU))#read.csv("DataIn/WCVIStocks.csv")$Stock
-
-
-#CUNames <- read.csv("DataIn/WCVIStocks.csv") %>% pull(CU)
-TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYo")) %>% add_column(Stock = StockNames)
-TestSREP <- All_Ests %>% filter (Param %in% c("TestlnSREPo")) %>% add_column(Stock = StockNames)
-TestSMSYpull <- TestSMSY %>% pull(Estimate)
-TestSREPpull <- TestSREP %>% pull(Estimate)
-TestSMSY_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYpull, Newx= data$TestlnWAo)
-TestSREP_PI <- PredInt(x=log(WAo), y=Olsrepo, Predy=TestSREPpull, Newx= data$TestlnWAo)
-TestSMSY <- TestSMSY %>% add_column(LL=exp(TestSMSY_PI$lwr), UL=exp(TestSMSY_PI$upr))
-TestSREP <- TestSREP %>% add_column(LL=exp(TestSREP_PI$lwr), UL=exp(TestSREP_PI$upr))
-TestSMSY <- TestSMSY %>% mutate (Estimate = exp(Estimate)) %>% dplyr::select(-Std..Error, - Param) %>% 
-  add_column(Param = "SMSY")
-TestSREP <- TestSREP %>% mutate (Estimate = exp(Estimate)) %>% dplyr::select(-Std..Error, - Param) %>% 
-  add_column(Param = "SREP")
-WCVISMSY <- TestSMSY %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0))#, CU=CUNames)
-WCVISREP <- TestSREP %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0))#, CU=CUNames)
-WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
-#write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh.csv")
-#write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh.csv")
+#---------------------------------------------------------------------------------------------------
 
 
 
@@ -744,32 +763,35 @@ WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
 #---------------------------------------------------------------------------------
 # What initial values to use for WA model parameters?
 
-SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
-# what is scale of SMSY?
-Sc <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
-SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
-SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
-lnSMSY <- log(SMSY$rawSMSY)
-lnWA <- log(WA$WA)
-order <- SMSY %>% dplyr::select(Stocknumber, ModelOrder)
-ParkenSMSY <- as.data.frame(read.csv("DataIn/ParkenSMSY.csv"))
-ParkenSMSY <- ParkenSMSY %>% left_join(order) %>% arrange(ModelOrder) %>% mutate(lnSMSY=log(SMSY))
-lnPSMSY <- ParkenSMSY$lnSMSY
-
-# lm(lnPSMSY ~ lnWA) #Get same coefficients as Parken et al. Table 4 for pooled data
-lnDelta1_start <- coef(lm(lnSMSY ~ lnWA))[1]
-lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
-# without Skagit lnDelta1_start <- 2.999911
-# without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
-# With Skagit lnDelta1_start <- 2.881
-# with Skagit nDelta2_start <- -0.288
-
-#plot(y=exp(lnSMSY), x=exp(lnWA))
-#pdf("ParkenSMSYWA.pdf", width=4)
-#  par(mfcol=c(2,1))
-#  plot(y=exp(lnPSMSY), x=exp(lnWA), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")
-#  plot(y=exp(lnPSMSY), x=exp(lnWA), xlim=c(0,2000), ylim=c(0,6000), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")
-#dev.off()
+getInits <- FALSE
+if(getInits){
+  SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
+  # what is scale of SMSY?
+  Sc <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
+  SMSY <- SMSY %>% left_join(Sc) %>% mutate(rawSMSY=Estimate*Scale)
+  SMSY <- SMSY %>% left_join(Stream, by=c("Stocknumber","ModelOrder"))
+  lnSMSY <- log(SMSY$rawSMSY)
+  lnWA <- log(WA$WA)
+  order <- SMSY %>% dplyr::select(Stocknumber, ModelOrder)
+  ParkenSMSY <- as.data.frame(read.csv("DataIn/ParkenSMSY.csv"))
+  ParkenSMSY <- ParkenSMSY %>% left_join(order) %>% arrange(ModelOrder) %>% mutate(lnSMSY=log(SMSY))
+  lnPSMSY <- ParkenSMSY$lnSMSY
+  
+  # lm(lnPSMSY ~ lnWA) #Get same coefficients as Parken et al. Table 4 for pooled data
+  lnDelta1_start <- coef(lm(lnSMSY ~ lnWA))[1]
+  lnDelta2_start <- log(coef(lm(lnSMSY ~ lnWA))[2])
+  # without Skagit lnDelta1_start <- 2.999911
+  # without Skagit lnDelta2_start <- -0.3238648, or Delta2 = 0.723348
+  # With Skagit lnDelta1_start <- 2.881
+  # with Skagit nDelta2_start <- -0.288
+  
+  #plot(y=exp(lnSMSY), x=exp(lnWA))
+  #pdf("ParkenSMSYWA.pdf", width=4)
+  #  par(mfcol=c(2,1))
+  #  plot(y=exp(lnPSMSY), x=exp(lnWA), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")
+  #  plot(y=exp(lnPSMSY), x=exp(lnWA), xlim=c(0,2000), ylim=c(0,6000), xlab="Watershed Area, km2", ylab="SMSY, Parken et al. 2006")
+  #dev.off()
+}
 
 
 

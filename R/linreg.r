@@ -121,7 +121,7 @@ PredInt(x=x,y=y,Predy=predict(lmtest))
 
 #--------------------------------------------
 # For Sean ANderson: # Proof that what TMB is doing is adding observation error from the MLE:
-compile("linreg.cpp")
+compile("TMB_Files/linreg.cpp")
 dyn.load(dynlib("linreg"))
 data <- list()
 data$x <- x

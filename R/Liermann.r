@@ -25,7 +25,7 @@ count.dig <- function(x) {floor(log10(x)) + 1}
 plot <- FALSE
 removeSkagit <- FALSE
 mod <- "Liermann"
-source ("PlotSR.r")# Plotting functions
+source ("R/PlotSR.r")# Plotting functions
 
 
 #---------------------------------------------------------

@@ -16,8 +16,8 @@ library(zoo)
 
 
 sourceAll <- function(){
-  source("benchmarkFunctions.r")
-  source("helperFunctions.r")
+  source("R/benchmarkFunctions.r")
+  source("R/helperFunctions.r")
 }
 sourceAll()
 

@@ -1,6 +1,8 @@
 #-----------------------------------------------------------------------
 # Code to estimate LRPs for WCVI CK from watershed-area based Sgen
 #-----------------------------------------------------------------------
+# Functions
+source("R/helperFunctions.r")
 
 Get.LRP <- function (remove.EnhStocks=TRUE){
   #-----------------------------------------------------------------------
@@ -13,12 +15,7 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   library(TMB)
   library(viridis)
   
-  # Functions
-  source("helperFunctions.r")
-  
-  #remove.EnhStocks <- FALSE
-  
-  
+
   #-----------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
   #-----------------------------------------------------------------------

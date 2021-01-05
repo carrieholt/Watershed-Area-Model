@@ -16,7 +16,7 @@ library(gsl)
 
 #---------------------------------------------------------
 # Source code
-source("KFfunctions.R")
+source("R/KFfunctions.R")
 
 # Initial values for all stocks
 initial<-list()

@@ -1,30 +1,35 @@
-#-----------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Code to estimate LRPs for WCVI CK from watershed-area based Sgen
-#-----------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+# Libraries and Functions
+#-------------------------------------------------------------------------------
+library(tidyverse)
+library(ggplot2)
+library(gsl)
+library(TMB)
+library(viridis)
+
 # Functions
 source("R/helperFunctions.r")
 
 Get.LRP <- function (remove.EnhStocks=TRUE){
-  #-----------------------------------------------------------------------
-  # Libraries and Functions
-  #-----------------------------------------------------------------------
-  
-  library(tidyverse)
-  library(ggplot2)
-  library(gsl)
-  library(TMB)
-  library(viridis)
-  
 
-  #-----------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
-  #-----------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh.csv")
   if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh.csv")
   
   # Remove Cypre as it's not a core indicator (Diana McHugh, 22 Oct 2020)
-  stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% filter (Param == "SMSY") %>% rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% dplyr::select (-Param, -X)#, -CU)
-  stock_SREP <- wcviRPs_long %>% filter(Stock != "Cypre") %>% filter (Param == "SREP") %>% rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% dplyr::select (-Param, -X)
+  stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
+    filter (Param == "SMSY") %>% 
+    rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
+    dplyr::select (-Param, -X)#, -CU)
+  stock_SREP <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
+    filter (Param == "SREP") %>% 
+    rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
+    dplyr::select (-Param, -X)
   wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
   
   # Calculate scale for each stock
@@ -36,26 +41,34 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   # Caculate Sgen 2 ways
   #----------------------------------------------------------------------------
   
-  # 1. Use Watershed-area SMSY and SREP to estimate Sgen (assuming productivity
+  # 1.Use Watershed-area SMSY and SREP to estimate Sgen (assuming productivity
   SGENcalcs <- purrr::map2_dfr (wcviRPs$SMSY/Scale,wcviRPs$SREP/Scale, Sgen.fn) 
   
-  # 2. Assume independent estimate of productivity and watershed-area estimate of SREP
+  # 2. Assume independent estimate of productivity and watershed-area 
+  # estimate of SREP
   
   # For base case assume no variablity in RicA among stocks. 
-  # Add variability in Ric.A when drawing MC samples from prediction intervals of WA model
-  # so that Ric.A is drawn multiple times for each stock from rnorm distribution
-  Mean.Ric.A <- 1 # Derived from life-history model (Luedke pers.comm.) and WCVI CK run reconstruction SR analysis (Dobson pers. comm.)
+  # Add variability in Ric.A when drawing MC samples from prediction intervals 
+  # of WA model so that Ric.A is drawn multiple times for each stock from 
+  # rnorm distribution
+  Mean.Ric.A <- 1 # Derived from life-history model (Luedke pers.comm.) and 
+   # WCVI CK run reconstruction SR analysis (Dobson pers. comm.)
   Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, 0))
   
   
   # When incorporating uncertainty in Ricker A:
   Sig.Ric.A <- 0.255 #0.51 for a wider plausible bound
-  # Sig.Ric.A derived from 95% CL of lower and upper plausible limits = 0.5 logA - 1.5 logA (Luedke pers. comm. Dec 2020)
+  # Sig.Ric.A derived from 95% CL of lower and upper plausible limits = 
+  # 0.5 logA - 1.5 logA (Luedke pers. comm. Dec 2020)
   # See distribution below:
   # test <- seq(0,4, len=40)
-  # plot(x=test, y=dnorm(test, 1,0.255), type="l", xlab="LogA", ylab="Probability Density", ylim=c(0,5))
-  # # With this sigma, 95% of probablity density is within bounds mean +/- 0.50 (assuming range 0.5-1.5, mean=1). 0.255*1.96 = 0.50
-  # lines(x=test, y=dnorm(test, 1,0.51))# With this sigma, 95% of probablity density is within bounds mean +/- 1.0 (assuming range 0-2.0, mean=1). 0.510*1.96 = 1.0
+  # plot(x=test, y=dnorm(test, 1,0.255), type="l", xlab="LogA", 
+  # ylab="Probability Density", ylim=c(0,5))
+  # # With this sigma, 95% of probablity density is within bounds mean 
+  # +/- 0.50 (assuming range 0.5-1.5, mean=1). 0.255*1.96 = 0.50
+  # lines(x=test, y=dnorm(test, 1,0.51))# With this sigma, 95% of probablity 
+  # density is within bounds mean +/- 1.0 
+  # (assuming range 0-2.0, mean=1). 0.510*1.96 = 1.0
   
   #Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
   
@@ -67,11 +80,15 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   # Add Sgen and revised SMSY to wcviRPs data frame
   #----------------------------------------------------------------------------
   
-  wcviRPs <- wcviRPs %>% mutate (SGEN = SGENcalcs$SGEN) %>% mutate(SGEN=round(SGEN*Scale,0))
-  wcviRPs <- wcviRPs %>% mutate (a.par = SGENcalcs$apar) %>% mutate(a.par=round(a.par,2))
-  wcviRPs <- wcviRPs %>% mutate (SMSY = SGENcalcs$SMSY) %>% mutate(SMSY=round(SMSY*Scale,0))
+  wcviRPs <- wcviRPs %>% mutate (SGEN = SGENcalcs$SGEN) %>% 
+    mutate(SGEN=round(SGEN*Scale,0))
+  wcviRPs <- wcviRPs %>% mutate (a.par = SGENcalcs$apar) %>% 
+    mutate(a.par=round(a.par,2))
+  wcviRPs <- wcviRPs %>% mutate (SMSY = SGENcalcs$SMSY) %>% 
+    mutate(SMSY=round(SMSY*Scale,0))
   
-  wcviRPs <- wcviRPs[c("Stock", "SGEN", "SMSY", "SMSYLL", "SMSYUL", "SREP", "SREPLL", "SREPUL", "a.par")]#"CU"
+  wcviRPs <- wcviRPs[c("Stock", "SGEN", "SMSY", "SMSYLL", "SMSYUL", "SREP", 
+                       "SREPLL", "SREPUL", "a.par")]#"CU"
   
   # Write this to a csv file so that it can be called in plotting functions
   # write.csv(wcviRPs, "DataOut/wcviRPs.csv")
@@ -79,36 +96,51 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   if (!remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_wEnh.csv")
   
   
-  #--------------------------------------------------------------------------------------------------------------
-  # Scenario if productivity is reducted by half, as in WSP SBC CK assessment (DFO 2014). NOT NEEDED
-  #--------------------------------------------------------------------------------------------------------------
-  
-  # SGENcalcsv2 <- map2_dfr (wcviRPs$SMSY/Scale,wcviRPs$SREP/Scale, Sgen.fn, half.a = TRUE, const.SMAX = FALSE)
-  # wcviRPs <- wcviRPs %>% mutate (SGENha.cSREP = SGENcalcsv2$SGEN) %>% mutate( SGENha.cSREP = round( SGENha.cSREP*Scale, 0 ) )
-  # wcviRPs <- wcviRPs %>% mutate (SMSYha.cSREP = SGENcalcsv2$SMSY) %>% mutate( SMSYha.cSREP = round( SMSYha.cSREP*Scale, 0 ) )
-  # wcviRPs <- wcviRPs %>% mutate (SREPha.cSREP = SGENcalcsv2$SREP) %>% mutate( SREPha.cSREP = round( SREPha.cSREP*Scale, 0 ) )
-  # ###wcviRPs <- wcviRPs %>% mutate (SMAXrev = 1/SGENcalcs$bpar) %>% mutate(SMAXrev=round(SMAXrev,0))
+  #----------------------------------------------------------------------------
+  # Scenario if productivity is reducted by half, as in WSP SBC CK assessment 
+  # (DFO 2014). NOT NEEDED
+  #----------------------------------------------------------------------------
   # 
-  # SGENcalcsv3 <- map2_dfr (wcviRPs$SMSY/Scale, wcviRPs$SREP/Scale, Sgen.fn, half.a = TRUE, const.SMAX = TRUE)
-  # wcviRPs <- wcviRPs %>% mutate (SGENha.cSMAX = SGENcalcsv3$SGEN) %>% mutate( SGENha.cSMAX = round( SGENha.cSMAX*Scale, 0 ) )
-  # wcviRPs <- wcviRPs %>% mutate (SMSYha.cSMAX = SGENcalcsv3$SMSY) %>% mutate( SMSYha.cSMAX = round( SMSYha.cSMAX*Scale, 0 ) )
-  # wcviRPs <- wcviRPs %>% mutate (SREPha.cSMAX = SGENcalcsv3$SREP) %>% mutate( SREPha.cSMAX = round( SREPha.cSMAX*Scale, 0 ) )
+  # SGENcalcsv2 <- map2_dfr (wcviRPs$SMSY/Scale,wcviRPs$SREP/Scale, 
+  #                          Sgen.fn, half.a = TRUE, const.SMAX = FALSE)
+  # wcviRPs <- wcviRPs %>% mutate (SGENha.cSREP = SGENcalcsv2$SGEN) %>% 
+  #   mutate( SGENha.cSREP = round( SGENha.cSREP*Scale, 0 ) )
+  # wcviRPs <- wcviRPs %>% mutate (SMSYha.cSREP = SGENcalcsv2$SMSY) %>% 
+  #   mutate( SMSYha.cSREP = round( SMSYha.cSREP*Scale, 0 ) )
+  # wcviRPs <- wcviRPs %>% mutate (SREPha.cSREP = SGENcalcsv2$SREP) %>% 
+  #   mutate( SREPha.cSREP = round( SREPha.cSREP*Scale, 0 ) )
+  # ###wcviRPs <- wcviRPs %>% mutate (SMAXrev = 1/SGENcalcs$bpar) %>% 
+  # ###mutate(SMAXrev=round(SMAXrev,0))
+  # 
+  # SGENcalcsv3 <- map2_dfr (wcviRPs$SMSY/Scale, wcviRPs$SREP/Scale, 
+  #                          Sgen.fn, half.a = TRUE, const.SMAX = TRUE)
+  # wcviRPs <- wcviRPs %>% mutate (SGENha.cSMAX = SGENcalcsv3$SGEN) %>% 
+  #   mutate( SGENha.cSMAX = round( SGENha.cSMAX*Scale, 0 ) )
+  # wcviRPs <- wcviRPs %>% mutate (SMSYha.cSMAX = SGENcalcsv3$SMSY) %>% 
+  #   mutate( SMSYha.cSMAX = round( SMSYha.cSMAX*Scale, 0 ) )
+  # wcviRPs <- wcviRPs %>% mutate (SREPha.cSMAX = SGENcalcsv3$SREP) %>% 
+  #   mutate( SREPha.cSMAX = round( SREPha.cSMAX*Scale, 0 ) )
+
   
   
-  
-  #----------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   # Sum escapements across indicators within inlets
-  # ---------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   
-  WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% dplyr::select (-"Little.Zeballos")
+  WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% 
+    dplyr::select (-"Little.Zeballos")
   
   # Take "." out of name as in escapement data
-  WCVIEsc_names <- sapply(colnames(WCVIEsc), function(x) (gsub(".", " ", x, fixed=TRUE) ) )
-  WCVIEsc_names <- sapply(WCVIEsc_names, function(x) (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
-  WCVIEsc_names <- sapply(WCVIEsc_names, function(x) (gsub("Nootka Esperanza", "Nootka/Esperanza", x, fixed=TRUE) ) )
+  WCVIEsc_names <- sapply(colnames(WCVIEsc), 
+                          function(x) (gsub(".", " ", x, fixed=TRUE) ) )
+  WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
+    (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
+  WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
+    (gsub("Nootka Esperanza", "Nootka/Esperanza", x, fixed=TRUE) ) )
   colnames(WCVIEsc) <- WCVIEsc_names 
   
-  EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  "Somass",  "Zeballos", "San Juan")
+  EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  
+                 "Somass",  "Zeballos", "San Juan")
   # Artlish removed from Enhanced stocks 23 Dec. 2020
   
   
@@ -117,9 +149,12 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   
   Years <- rownames(WCVIEsc)
   
-  # Get stock information for WCVI Chinook & Remove Cypre as it's not an indicator stocks
-  WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% filter (Stock != "Cypre")
-  if (remove.EnhStocks) WCVIStocks <- WCVIStocks %>% filter (Stock %not in% EnhStocks)
+  # Get stock information for WCVI Chinook & Remove Cypre as it's not an 
+  # indicator stocks
+  WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
+    filter (Stock != "Cypre")
+  if (remove.EnhStocks) WCVIStocks <- WCVIStocks %>% 
+    filter(Stock %not in% EnhStocks)
   
   Inlet_Names <- unique(WCVIStocks$Inlet)
   Inlet_Sum <- matrix(NA, nrow=length(Years), ncol=length(Inlet_Names))
@@ -135,18 +170,20 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
     
     #  Make a matrix of escapements of component indicators
     for (j in 1:length(Ins)){
-      WCVIEsc_Inlets[,j] <- WCVIEsc %>% dplyr::select(as.character(Ins[j])) %>% pull()
+      WCVIEsc_Inlets[,j] <- WCVIEsc %>% 
+        dplyr::select(as.character(Ins[j])) %>% pull()
       
     }
     
-    # Sum the escapement of component indicators, setting sum=NA for years where there are any NAs
+    # Sum the escapement of component indicators, setting sum=NA for years 
+    # where there are any NAs
     Inlet_Sum[,i] <- apply(WCVIEsc_Inlets, 1, sum, na.rm=F)
   }
   
   
-  #----------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   # Sum escapements across indicators within CUs
-  # ---------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   
   nCU <- length(unique(WCVIStocks$CU))
   CU_Sum <- matrix(NA, nrow=length(Years), ncol=nCU)
@@ -159,39 +196,46 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
     
     #  Make a matrix of escapements of component indicators
     for (j in 1:length(CUss)){
-      WCVIEsc_CUs[,j] <- WCVIEsc %>% dplyr::select(as.character(CUss[j])) %>% pull()
+      WCVIEsc_CUs[,j] <- WCVIEsc %>% dplyr::select(as.character(CUss[j])) %>% 
+        pull()
     }
     
-    # Sum the escapement of component indicators, setting sum=NA for years where there are any NAs
+    # Sum the escapement of component indicators, setting sum=NA for years 
+    # where there are any NAs
     CU_Sum[,k] <- apply(WCVIEsc_CUs, 1, sum, na.rm=F)
   }
-  # Remove double incidence of Nitinat and San Juan (= stock and an inlet) when enhancement is included
-  if(!remove.EnhStocks) WCVIEsc <- WCVIEsc %>% dplyr::select(-Nitinat, -'San Juan')
+  # Remove double incidence of Nitinat and San Juan (= stock and an inlet) 
+  # when enhancement is included
+  if(!remove.EnhStocks) WCVIEsc <- WCVIEsc %>% 
+    dplyr::select(-Nitinat, -'San Juan')
   
   WCVIEsc <- cbind(WCVIEsc, Inlet_Sum, CU_Sum) 
   
-  #----------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   # Assess status for each inlet relative to inlet-level SGEN for each year
   #   Is Inlet level escapement above inlet-level Sgen: T/F?
   #   Inlet_Status = FALSE if summed escapement is below Sgen
   #   Inlet_Status = TRUE if summed escapement is below Sgen
-  #----------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   
   Inlet_Status <- matrix(NA, nrow=length(Years), ncol=length(Inlet_Names) )
   colnames(Inlet_Status) <- Inlet_Names
   
   for (i in 1:length(Inlet_Names)) {
-    Inlet_Status[,i] <- ( Inlet_Sum[,i] > (wcviRPs %>% filter(Stock == as.character(Inlet_Names[i])) %>% pull(SGEN)) )
+    Inlet_Status[,i] <- (Inlet_Sum[,i] > 
+                           (wcviRPs %>% 
+                              filter(Stock == as.character(Inlet_Names[i])) %>% 
+                               pull(SGEN)) )
   }
   
   Inlet_Status <- as.data.frame(Inlet_Status)
   
-  #----------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   # Assess status for each CU for each year of the time-series 
   #   (floor of summed CU-level numeric statuses)
   #   CU_Status = below LB if any inlet within the CU below their Sgen = 0 
   #   CU_Status = above LB if all inlets within the CU above their Sgen = 1
-  #----------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   
   CU_Status <- matrix(NA, nrow=length(Years), ncol=length(CU_Names))
   colnames(CU_Status) <- CU_Names
@@ -200,18 +244,21 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   if(stock.LRP){
     for (k in 1:length(CU_Names)) {
       # For each CU, which are the component indicators
-      CU_ins <- unique( WCVIStocks %>% filter(CU==CU_Names[k]) %>% pull(Inlet) )
+      CU_ins <- unique( WCVIStocks %>% filter(CU==CU_Names[k]) %>% pull(Inlet))
       
       isAbove <- matrix(NA, nrow= length(Years), ncol= length(CU_ins))
       
-      #  Make a matrix of status of component inlets. Is each inlet > Sgen values, T/F?
+      # Make a matrix of status of component inlets. Is each inlet > 
+      # Sgen values, T/F?
       for (i in 1:length(CU_ins)){
-        isAbove[,i] <- Inlet_Status %>% dplyr::select(as.character(CU_ins[i])) %>% pull()
+        isAbove[,i] <- Inlet_Status %>% 
+          dplyr::select(as.character(CU_ins[i])) %>% pull()
       }
       
       # CU-level status: are ALL inlets above their Sgen values?
       # Sum the "true"
-      isAboveFun <- function(x){ floor(sum( as.numeric(x), na.rm=F) / length(x) ) }
+      isAboveFun <- function(x){ 
+        floor(sum( as.numeric(x), na.rm=F) / length(x) ) }
       CU_Status[,k] <- apply(X= isAbove, MARGIN = 1, FUN=isAboveFun)
     }
     CU_Status <- as.data.frame(CU_Status)
@@ -221,26 +268,31 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   CU.LRP <- FALSE
   if(CU.LRP){
     for (k in 1:length(CU_Names)){
-      CU_Status[,k] <- ( CU_Sum[,k] > (wcviRPs %>% filter(Stock == as.character(CU_Names[k])) %>% pull(SGEN)) )
+      CU_Status[,k] <- (CU_Sum[,k] > 
+                         (wcviRPs %>% filter(Stock == 
+                                               as.character(CU_Names[k])) %>% 
+                                       pull(SGEN)) )
     }
     CU_Status <- as.data.frame(CU_Status)
     
   }
   
-  #----------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   # Proportion of CUs that are not in the red zone
-  #----------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   
   ppnAboveFun <- function(x) {sum( as.numeric(x), na.rm=F) / length(x) }
   SMU_ppn <- apply(X=CU_Status, MARGIN=1, FUN=ppnAboveFun)
   
-  #----------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   # Logistic regression
-  #----------------------------------------------------------------------------------
+  #----------------------------------------------------------------------------
   # Get SMU-level escapement time-series
   SMU_Esc <- apply(Inlet_Sum, 1, sum, na.rm=F)
   
-  SMUlogisticData <- data.frame(SMU_Esc) %>% add_column(ppn=SMU_ppn, Years=as.numeric(Years)) %>% filter(SMU_Esc != "NA")
+  SMUlogisticData <- data.frame(SMU_Esc) %>% 
+    add_column(ppn=SMU_ppn, Years=as.numeric(Years)) %>% 
+    filter(SMU_Esc != "NA")
   
   data <- list()
   data$N_Stks <- length(CU_Names)
@@ -250,22 +302,30 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   data$LM_Agg_Abund <- SMUlogisticData$SMU_Esc/ScaleSMU
   data$N_Above_BM <- SMUlogisticData$ppn * data$N_Stks
   data$Pred_Abund <- seq(0, max(data$LM_Agg_Abund)*1.1, 0.1)
-  if(remove.EnhStocks) data$Pred_Abund <- seq(0, max(data$LM_Agg_Abund)*1.5, 0.1)
+  if(remove.EnhStocks) data$Pred_Abund <- 
+    seq(0, max(data$LM_Agg_Abund)*1.5, 0.1)
   data$p <- 0.95#0.67
   data$Penalty <- as.numeric(TRUE)
-  # Add a normally distributed penalty on aggregate abundances when p is very small (0.01) 
-  # Lower 95% CL = abundance of the smallest inlet in its lowest abundance year (most inlets lost, but 1 inlet just below LB)
-  # Upper 95% CL = abundance of the ave annual abundance of the sum of across inlet (all inlets are just below LB)
+  # Add a normally distributed penalty on aggregate abundances 
+  # when p is very small (0.01) 
+  # Lower 95% CL = abundance of the smallest CU in its lowest abundance 
+  # year (most CUs lost, only 1 remains below LB)
+  # Upper 95% CL = abundance of the ave annual abundance of the sum of 
+  # across CUs. 
+  # If CU-level benchmarks exist can sum those benchmarks for Upper 95%CL
   min <- min(apply(CU_Sum, 2, min, na.rm=T), na.rm=T)
   max <- mean(apply(CU_Sum, 1, sum, na.rm=F), na.rm=T)
   # Parameters for normal penalty (mu, sig):
   # mu  = ave of min and max values. 
   # sig = SD which allows the density = 0.05 at min and max values
-  # sum(dnorm(seq(min,max,1), mean=mean(c(min,max)), sd=22400))# Should give 95% density
-  # plot(x=seq(min,max,100), y=dnorm(seq(min,max,100), mean=mean(c(min,max)), sd=22400),type="l")
+  # sum(dnorm(seq(min,max,1), mean=mean(c(min,max)), sd=22400))# Should 
+  # give 95% density
+  # plot(x=seq(min,max,100), y=dnorm(seq(min,max,100), 
+  # mean=mean(c(min,max)), sd=22400),type="l")
   data$B_penalty_mu <- mean(c(min,max))/ScaleSMU
   if (!remove.EnhStocks) data$B_penalty_sig <- 22400/ScaleSMU
-  # sum(dnorm(seq(min,max,1), mean=mean(c(min,max)), sd=2700))# Should give 95% density
+  # Should give 95% density:
+  # sum(dnorm(seq(min,max,1), mean=mean(c(min,max)), sd=2700))
   if (remove.EnhStocks) data$B_penalty_sig <- 2700/ScaleSMU
   
   param <- list()
@@ -275,18 +335,19 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   
   #dyn.unload(dynlib(paste("TMB_Files/Logistic_LRPs", sep="")))
   #compile(paste("TMB_Files/Logistic_LRPs.cpp", sep=""))
-  dyn.load(dynlib(paste("TMB_Files/Logistic_LRPs", sep="")))# png(paste("DataOut/WCVI_SMUtimeseries_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
-  # plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc, out=xx$out, WCVI_Esc=xx$WCVIEsc)
+  dyn.load(dynlib(paste("TMB_Files/Logistic_LRPs", sep="")))
+
+  obj <- MakeADFun(data, param, DLL="Logistic_LRPs", silent=TRUE)
   
-  obj <- MakeADFun(data, param, DLL="Logistic_LRPs", silent=TRUE)#random = c( "logDelta2"), 
-  
-  opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))
+  opt <- nlminb(obj$par, obj$fn, obj$gr, control = 
+                  list(eval.max = 1e5, iter.max = 1e5))
   pl <- obj$env$parList(opt$par) 
-  summary(sdreport(obj), p.value=TRUE)
+  #summary(sdreport(obj), p.value=TRUE)
   
   All_Ests <- data.frame(summary(sdreport(obj)))
   All_Ests$Param <- row.names(All_Ests)
-  All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))[[1]]))
+  All_Ests$Param <- sapply(All_Ests$Param, function(x) 
+    (unlist(strsplit(x, "[.]"))[[1]]))
   Preds <- All_Ests %>% filter(Param == "Logit_Preds")
   All_Ests <- All_Ests %>% filter(!(Param %in% c( "Logit_Preds"))) 
   
@@ -295,23 +356,31 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   
   
   Logistic_Data <- data.frame(yr = SMUlogisticData$Years, 
-                              yy = SMUlogisticData$ppn, xx = SMUlogisticData$SMU_Esc)
+                              yy = SMUlogisticData$ppn, 
+                              xx = SMUlogisticData$SMU_Esc)
   
   out$Logistic_Data <- Logistic_Data
   
-  Logistic_Fits <- data.frame(xx = data$Pred_Abund*ScaleSMU, fit = inv_logit(Preds$Estimate),
-                              lwr = inv_logit(Preds$Estimate - 1.96*Preds$Std..Error),
-                              upr = inv_logit(Preds$Estimate + 1.96*Preds$Std..Error))
+  Logistic_Fits <- data.frame(xx = data$Pred_Abund*ScaleSMU, 
+                              fit = inv_logit(Preds$Estimate),
+                              lwr = inv_logit(Preds$Estimate - 
+                                                1.96*Preds$Std..Error),
+                              upr = inv_logit(Preds$Estimate + 
+                                                1.96*Preds$Std..Error))
   
   out$Preds <- Logistic_Fits
   
-  out$LRP <- data.frame(fit = (All_Ests %>% filter(Param == "Agg_LRP") %>% pull(Estimate))*ScaleSMU, 
-                        lwr = (All_Ests %>% filter(Param == "Agg_LRP") %>% mutate(xx =Estimate - 1.96*Std..Error) %>% 
+  out$LRP <- data.frame(fit = (All_Ests %>% filter(Param == "Agg_LRP") %>% 
+                                 pull(Estimate))*ScaleSMU, 
+                        lwr = (All_Ests %>% filter(Param == "Agg_LRP") %>% 
+                                 mutate(xx =Estimate - 1.96*Std..Error) %>% 
                                  pull(xx) ) * ScaleSMU,
-                        upr = (All_Ests %>% filter(Param == "Agg_LRP") %>% mutate(xx =Estimate + 1.96*Std..Error) %>% 
+                        upr = (All_Ests %>% filter(Param == "Agg_LRP") %>% 
+                                 mutate(xx =Estimate + 1.96*Std..Error) %>% 
                                  pull(xx) ) * ScaleSMU)
   
-  return(list(out=out, WCVIEsc=WCVIEsc, SMU_Esc=SMU_Esc, CU_Status=CU_Status, SMU_ppn=SMU_ppn))
+  return(list(out=out, WCVIEsc=WCVIEsc, SMU_Esc=SMU_Esc, 
+              CU_Status=CU_Status, SMU_ppn=SMU_ppn))
   
    
 }
@@ -319,35 +388,41 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
 #Get.LRP(remove.EnhStocks = TRUE)
 #Get.LRP(remove.EnhStocks = FALSE)
 
-#----------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------
 # R version of logistic regression
 #   This matches results from TMB code when penalty=FALSE
-#----------------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------
 R.logReg <- FALSE
 
 if (R.logReg) {
   ModDat <- data.frame(xx=data$LM_Agg_Abund, yy=SMUlogisticData$ppn)
-  Fit_Mod <- glm( yy ~ xx , family = quasibinomial, data=ModDat)#or family=binomial, which gives much larger SEs, and assumes var=1.
+  #or family=binomial, which gives much larger SEs, and assumes var=1.
+  Fit_Mod <- glm( yy ~ xx , family = quasibinomial, data=ModDat)
   summary(Fit_Mod)$coefficients
-  LRP <- (log(data$p/(1-data$p)) - Fit_Mod$coefficients[[1]])/ Fit_Mod$coefficients[[2]]
+  LRP <- (log(data$p/(1-data$p)) - Fit_Mod$coefficients[[1]])/ 
+    Fit_Mod$coefficients[[2]]
   # use MASS function to get "dose" 
   library(MASS)
   Dose <- dose.p(Fit_Mod, p=data$p)
   Dose
   
   #  - Make x vector to predict with this model, for plotting
-  xx <- data.frame(xx = seq(0, max(data$LM_Agg_Abund*1.25), by=(max(data$LM_Agg_Abund*1.25)/1000)))
+  xx <- data.frame(xx = seq(0, max(data$LM_Agg_Abund*1.25), 
+                            by=(max(data$LM_Agg_Abund*1.25)/1000)))
   
   # - Create model predictions that include standard error fit
-  preds <- predict.glm(Fit_Mod, newdata = xx, type = "link", se.fit = TRUE)#, dispersion = )
+  preds <- predict.glm(Fit_Mod, newdata = xx, type = "link", se.fit = TRUE)
   
-  # Create a confidence interval (lwr, upr) on the link scale as the fitted value plus or minus 1.96 times the standard error
+  # Create a confidence interval (lwr, upr) on the link scale as the fitted 
+  # value plus or minus 1.96 times the standard error:
   critval <- 1.96 ## approx 95% CI
   upr <- preds$fit + (critval * preds$se.fit)
   lwr <- preds$fit - (critval * preds$se.fit)
   fit <- preds$fit
   
-  # Transform confidene interval using the inverse of the link function to map the fitted values and the upper and lower limits of the interval back on to the response scale
+  # Transform confidene interval using the inverse of the link function to 
+  # map the fitted values and the upper and lower limits of the interval
+  # back on to the response scale:
   fit2 <- Fit_Mod$family$linkinv(fit)
   upr2 <- Fit_Mod$family$linkinv(upr)
   lwr2 <- Fit_Mod$family$linkinv(lwr)
@@ -374,13 +449,17 @@ if (R.logReg) {
 }
 
 
-#-------------------------------------------------------------------------------------
-# TMB version of code to estimate Sgen from SMSY and SREP (WA_Sgen.cpp): NOT WORKING
-#-------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------
+# TMB version of code to estimate Sgen from SMSY and SREP (WA_Sgen.cpp): 
+# NOT WORKING
+#----------------------------------------------------------------------------
 
-# # Do not need TMB code given I need to run this over bootstraps PRIOR to logististic regression. 
-# # I could input all boostrapped PI draws, and estimate LRP internally for each draw, however wrangling with data is difficult 
-# # in TMB and since there is only one estimation step: logistic regression, could simply implement in R
+# # Do not need TMB code given I need to run this over bootstraps PRIOR to 
+# # logististic regression. 
+# # I could input all boostrapped PI draws, and estimate LRP internally for 
+# # each draw, however wrangling with data is difficult 
+# # in TMB and since there is only one estimation step: logistic regression, 
+# # could simply implement in R
 # 
 # 
 # SMSY <- wcviRPs %>% pull(SMSY)
@@ -397,8 +476,10 @@ if (R.logReg) {
 # data <- list()
 # data$SMSY <- SMSY
 # data$SREP <- SREP
-# data$Inlets <- read.csv("DataIn/WCVIStocks.csv") %>% filter (Stock != "Cypre") %>% pull(SA_ind)
-# data$N_inlets <- length(unique(read.csv("DataIn/WCVIStocks.csv") %>% filter (Stock != "Cypre") %>% pull(SA_ind)))
+# data$Inlets <- read.csv("DataIn/WCVIStocks.csv") %>% 
+# filter (Stock != "Cypre") %>% pull(SA_ind)
+# data$N_inlets <- length(unique(read.csv("DataIn/WCVIStocks.csv") %>% 
+# filter (Stock != "Cypre") %>% pull(SA_ind)))
 # 
 # #data$Scale <- Scale
 # 
@@ -416,13 +497,16 @@ if (R.logReg) {
 # # b is bounded between 1/3 of SREP and SREP
 # lower <- 1/data$SREP
 # upper <- 3/data$SREP
-# opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5))#, lower=rep(0,20), upper=log(SMSY))
+# opt <- nlminb(obj$par, obj$fn, obj$gr, control = 
+# list(eval.max = 1e5, iter.max = 1e5))#, lower=rep(0,20), upper=log(SMSY))
 # pl <- obj$env$parList(opt$par) 
 # #summary(sdreport(obj), p.value=TRUE)
 # 
 # 
-# # The summation of Sgens across inlets is not working because Sgen's are each scaled differntly
-# # Actually, do this in R as organizing data is easier there (and just almost as fast to run)
+# # The summation of Sgens across inlets is not working because Sgen's 
+# # are each scaled differntly
+# # Actually, do this in R as organizing data is easier there 
+# # (and just almost as fast to run)
 # 
 # #exp(pl$logSgen)*Scale
 # #1/((1/pl$RicB)*Scale)

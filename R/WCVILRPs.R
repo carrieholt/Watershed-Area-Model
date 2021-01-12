@@ -13,6 +13,22 @@ library(viridis)
 # Functions
 source("R/helperFunctions.r")
 
+#-------------------------------------------------------------------------------
+# Function to estimate LRPs for WCVI CK
+# Arguments; 
+  # remove.EnhStocoks = A logical reflecting if enhanced stock are to be included
+  # Requires that IWAM model has been run and 
+  # "WCVI_SMSY_noEnh.csv" or "WCVI_SMSY_wEnh.csv" exist
+# Returns:
+  # csv file, DataOut/wcviRPs_noEnh.csv or DataOut/wcviRPs_wEnh.csv of stock, 
+    # inlet, and CU level Sgen, adjusted SMSY values(adjusted for expert derived 
+    # productivity) and SREP values from integrated watershed-area model
+  # Dataframe $out
+  # Dataframe $WCVIEsc
+  # Dataframe $SMU_Esc
+  # Dataframe $CU_Status
+  # Dataframe $SMU_ppn
+
 Get.LRP <- function (remove.EnhStocks=TRUE){
 
   #----------------------------------------------------------------------------

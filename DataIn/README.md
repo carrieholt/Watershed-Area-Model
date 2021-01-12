@@ -1,14 +1,10 @@
----
-title: "Readme"
-author: "Carrie Holt"
-date: "July 17, 2020"
-output: html_document
----
+
 ## Readme file for data
+-----  
 
 # Synoptic Data used in Watershed-area model
 
-SRinputLiermann.csv file provided by Martin Liermann 21 May 2020. This was data used in Liermann et al. 2010.
+SRinputLiermann.csv file provided by Martin Liermann 21 May 2020. This was data used in Liermann et al. 2010 (martin.liermann@noaa.gov).
 
 Revisions: 
 -changed number of stocks to start from zero instead of 1, and I added yr_num column
@@ -49,5 +45,5 @@ Revisions:
 - Surv.csv
 
 # SMSY, SREP, RicSig values from Parken et al. 2006
-- derived from CSAS Res. Doc., Parken et al. 2006
+- derived from CSAS Res. Doc., Parken et al. 2006, https://waves-vagues.dfo-mpo.gc.ca/Library/326898.pdf
 - ParkenSREP.csv, ParkenRicSig.csv, WA_Parken.csv, ParkenSMSY.csv, ParkenTestStocks.csv

@@ -108,6 +108,7 @@ Type objective_function<Type>::operator() ()
   Logit_Preds = B_0 + B_1*Pred_Abund;
   
   REPORT(N_Above_BM);
+  REPORT(ans);
   ADREPORT(Agg_LRP);
   ADREPORT(Logit_Preds);
   

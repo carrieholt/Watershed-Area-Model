@@ -360,12 +360,16 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   pl <- obj$env$parList(opt$par) 
   #summary(sdreport(obj), p.value=TRUE)
   
-  All_Ests <- data.frame(summary(sdreport(obj)))
+  # Get parameter estimates and logit predicted values for CIs
+  All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE))
   All_Ests$Param <- row.names(All_Ests)
   All_Ests$Param <- sapply(All_Ests$Param, function(x) 
     (unlist(strsplit(x, "[.]"))[[1]]))
   Preds <- All_Ests %>% filter(Param == "Logit_Preds")
   All_Ests <- All_Ests %>% filter(!(Param %in% c( "Logit_Preds"))) 
+  
+  
+  
   
   out <- list()
   out$All_Ests <- All_Ests
@@ -396,7 +400,8 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
                                  pull(xx) ) * ScaleSMU)
   
   return(list(out=out, WCVIEsc=WCVIEsc, SMU_Esc=SMU_Esc, 
-              CU_Status=CU_Status, SMU_ppn=SMU_ppn))
+              CU_Status=CU_Status, SMU_ppn=SMU_ppn, 
+              LRPppn=data$p, nLL=obj$report()$ans))
   
    
 }
@@ -436,7 +441,7 @@ if (R.logReg) {
   lwr <- preds$fit - (critval * preds$se.fit)
   fit <- preds$fit
   
-  # Transform confidene interval using the inverse of the link function to 
+  # Transform confidence interval using the inverse of the link function to 
   # map the fitted values and the upper and lower limits of the interval
   # back on to the response scale:
   fit2 <- Fit_Mod$family$linkinv(fit)

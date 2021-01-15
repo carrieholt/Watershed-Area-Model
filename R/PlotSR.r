@@ -877,6 +877,13 @@ plotLogistic <- function(Data, Preds, LRP, useGenMean = F, plotName, outDir, p=0
 ## yy <- Get.LRP(remove.EnhStocks=FALSE)
 #plotLogistic(Data=yy$out$Logistic_Data, Preds=yy$out$Preds, LRP=yy$out$LRP, useGenMean = F, plotName="WCVI_logReg_wEnh", outDir="DataOut", p=0.95)
 
+# Data <- out$Logistic_Data
+# Preds <- out$Preds 
+# LRP <- out$LRP
+# useGenMean <- F
+# p <- 0.95
+# useBern_Logistic <- F
+
 #if(xx$out$LRP$lwr<=0) xx$out$LRP$lwr <-1
 #if(yy$out$LRP$lwr<=0) yy$out$LRP$lwr <-1
 

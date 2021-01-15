@@ -11,7 +11,7 @@ Revisions:
 -renamed to SRinput.csv
 
 17 July 2020.
--SRinput.csv, eplaced Cowichan Data with the data reported in Tompkins et. 2005.
+-SRinput.csv, replaced Cowichan Data with the data reported in Tompkins et. 2005.
 
 28 July 2020
 -SRinput.csv revised spelling of "Nehalem" (instead of "Niehalem")

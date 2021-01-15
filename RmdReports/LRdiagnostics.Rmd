@@ -1,95 +1,99 @@
-#-------------------------------------------------------------------------------
-# Function to run diagnostics on logistic regression
-#-------------------------------------------------------------------------------
+---
+title: "Logistic Regression Diagnostics"
+author: "Carrie Holt"
+date: "January 15, 2021"
+output:
+  html_document: default
+  word_document: default
+---
 
-# -------------------------------------------------------------------------------
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = normalizePath(".."))  
+
+
+library(tidyverse)
+library(ggplot2)
+library(viridis)
+library(patchwork)
+
+```
+
 # Assumptions of logistic regression
-# 1. The relationship between aggregate abundance and logit(proportions) is
-#  linear
-# 2. The observed proportions are independent (not autocorrelated)
-# 3. There are no influential values (outliers)
-# 4. There is no multicollinearity among predictors (NA, only 1 predictor)
-# -------------------------------------------------------------------------------
+1. The relationship between aggregate abundance and logit(proportions) is linear
 
-#-------------------------------------------------------------------------------
+2. The observed proportions are independent (not autocorrelated)
+
+3. There are no influential values (outliers)
+
+4. There is no multicollinearity among predictors (NA, only 1 predictor)
+
 # Steps:
-# 1. Estimate Pearson resiudals and deviance residuals (Assumption 3).
-#   Are deviance residuals >2?
-# 2a. Plot residuals against fitted values (Assumption 1).
-#   Is there a trend in residuals over fitted values?
-# 2b. Plot autocorrelation among residuals Assumption 2).
-#   Are residuals autocorrelated?
-# 3. Evaluate statistical significance of model coefficients.
-# 4. Evaluate Pearson Chi-squared statistic (goodness of fit).
-#   Is there statistical evidence for lack of fit?
-# 5. Evaluate Deviance G-squared statistic (goodness of fit)
-#   Is there statistical evidence for lack of fit?
-# 6. Evaluate quasi-Rsquared.
-#   What is the ratio of the fit to the null model?
-# 7. Evaluate hit rate.
-#   What is the classification accuracy of the LRP based on the logistic
-#   regression?
-#-------------------------------------------------------------------------------
+1. Estimate Pearson resiudals and deviance residuals (Assumption 3).
+  Are deviance residuals >2?
 
-#-------------------------------------------------------------------------------
-# Arguments:
-# All_Ests = Dataframe containing parameters of logistic regression, B_0 and B_1
-#   with p values (All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE)))
-# AggAbund = Vector of scaled observed aggregate abundances, with NAs removed
-# obsPpnAboveBM = Vectors of observed ppn of CUs above their lower benchmarks
-#   with NAs removed
-# p = the proportion of CUs that must be > their benchmark when defining LRP
-# nLL = negLogLikehood = ans from TMB file, outputted with REPORT(ans); in TMB
-#   and then called in R with obj$report()$ans
-# dir = name of directory where plots should be saved followed by /
-# plotname = filename for residual plots
-
-# # Carrie's inputs for testing
-# zz <- Get.LRP(remove.EnhStocks = TRUE)
-# All_Ests <- zz$out$All_Ests
-# AggAbundRaw <- zz$SMU_Esc 
-# digits <- count.dig(AggAbundRaw)
-# ScaleSMU <- min(10^(digits -1 ), na.rm=T)
-# AggAbund <- AggAbundRaw/ScaleSMU
-# AggAbund <- AggAbund[!is.na(AggAbund)]
-# obsPpnAboveBM <- zz$out$Logistic_Data$yy
-# p <- zz$LRPppn
-# nLL <- zz$nLL
-# dir <- "DataOut/"
-# plotname <- "WCVI_ResidPlots"
-# 
-# input<- list(All_Ests=All_Ests, AggAbund=AggAbund, 
-#              obsPpnAboveBM=obsPpnAboveBM, p=p, nLL=nLL,dir="", plotname="test")
-# save(input, file="DataIn/Input_LRdiagnostics.rda")
-# 
-# LRdiagOut <- LRdiagnostics(All_Ests=All_Ests, AggAbund=AggAbund, 
-#                             obsPpnAboveBM=obsPpnAboveBM, p=p, nLL=nLL, dir=dir, 
-#                             plotname=plotname)
-#-------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------
-# Returns:
-# - png of plots of residuals and their autocorrelation (step 2) stored in 
-#   directory, dir
-# - list of outputs from steps 1, 3-7
-#-------------------------------------------------------------------------------
-
-
-
-#-------------------------------------------------------------------------------
-# Function:
-
-LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir, 
-                          plotname){
+2. (a) Plot residuals against fitted values (Assumption 1).
+  Is there a trend in residuals over fitted values?
   
-  #-------------------------------------------------------------------------------
-  # Source functions and libraries
-  source("R/helperFunctions.r")
-  library(patchwork)
-  #-------------------------------------------------------------------------------
-  
-  
-  #-------------------------------------------------------------------------------
+  (b) Plot autocorrelation among residuals Assumption 2).
+  Are residuals autocorrelated?
+
+3. Evaluate statistical significance of model coefficients.
+
+4. Evaluate Pearson Chi-squared statistic (goodness of fit).
+  Is there statistical evidence for lack of fit?
+
+5. Evaluate Deviance G-squared statistic (goodness of fit)
+  Is there statistical evidence for lack of fit?
+
+6. Evaluate quasi-Rsquared.
+  What is the ratio of the fit to the null model?
+
+7. Evaluate hit rate.
+  What is the classification accuracy of the LRP based on the logistic
+  regression?
+
+
+This code is wrapped inside a function LRdiagnostics() in a file of the same name. It's extracted here for demonstration purposes.
+
+## The arguments of the function are:
+
+All_Ests = Dataframe containing parameters of logistic regression, B_0 and B_1
+  with p values (All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE)))
+
+AggAbund = Vector of scaled observed aggregate abundances, with NAs removed
+
+obsPpnAboveBM = Vectors of observed ppn of CUs above their lower benchmarks
+  with NAs removed
+
+p = the proportion of CUs that must be > their benchmark when defining LRP
+
+nLL = negLogLikehood = ans from TMB file, outputted with REPORT(ans); in TMB
+  and then called in R with obj$report()$ans
+
+dir = name of directory where plots should be saved followed by /
+
+plotname = filename for residual plots
+
+First input data are loaded. 
+
+Step 1. What are residuals, and are deviance residuals > 2?
+
+```{r warning=FALSE, message=FALSE, error=FALSE}
+load("DataIn/Input_LRdiagnostics.rda")
+All_Ests <- input$All_Ests
+AggAbund <- input$AggAbund
+obsPpnAboveBM <- input$obsPpnAboveBM
+p <- input$p
+nLL <- input$nLL
+dir <- input$dir
+plotname <- input$plotname
+
+source("R/helperFunctions.r") # containst function ggplot.corr()
+
+
+
+ #-------------------------------------------------------------------------------
   # Step 1. Estimate Pearson resiudals and deviance residuals (Assumption 3). 
   #   Are deviance residuals >2?
   #-------------------------------------------------------------------------------
@@ -105,7 +109,8 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   
   PearResid <- ( obsPpnAboveBM - predPpnAboveBM ) / sqrt( predPpnAboveBM * 
                                                             (1 - predPpnAboveBM) ) 
-  
+
+  PearResid
   # Deviance residual: Eq3.16 https://data.princeton.edu/wws509/notes/c3s8
   # setting n=1 (number of trials at each observation of x)
   # To avoid NANs, use ifelse statement in the eqn, as suggested here:
@@ -122,6 +127,8 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   DevResid <- sign(obsPpnAboveBM - predPpnAboveBM ) * 
     sqrt( 2 * binom.resid(y=obsPpnAboveBM, mu=predPpnAboveBM) ) 
   
+
+  DevResid
   # Observations with a deviance residual in excess of two may indicate 
   # lack of fit. (https://data.princeton.edu/wws509/notes/c3s8)
   
@@ -134,7 +141,12 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   # predPpnAboveBM <- inv_logit(B_0 + B_1*ModDat$xx)
   # residuals(Fit_Mod, type="pearson")
   # residuals(Fit_Mod, type="deviance")
-  
+
+
+```
+
+2. Then residuals are plotted. Is there a trends over fitted values?
+```{r}
   #-------------------------------------------------------------------------------
   # Step 2:
   # 2a. Plot residuals against fitted values (Assumption 1). 
@@ -177,10 +189,12 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   # See ggplot.cor function in "helperFunctions.r"
   p3 <- ggplot.corr(data=PearResid, title="Pearsons's residuals") 
   p4 <- ggplot.corr(data=DevResid, title="Deviance residuals") 
-  
-  ggsave(filename=paste0(dir, plotname, ".png"), p1+p2+p3+p4)
-  
-  
+
+  p1+p2+p3+p4
+```
+
+3. Are coefficients significant?
+```{r}
   #-------------------------------------------------------------------------------
   # step 3. 
   # Evaluate statistical significance of model coefficients.
@@ -190,10 +204,14 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
     rename(P.value=Pr...z.2..) %>% dplyr::select(Param, Estimate, 
                                                  Std..Error, z.value, 
                                                  P.value)
-  # Look at table here:
-  # knitr::kable(signTable)
   
-  #-------------------------------------------------------------------------------
+  signTable
+
+```
+
+4. What is goodness of fit based on Pearson chi-square?
+```{r}
+ #-------------------------------------------------------------------------------
   # Step 4. 
   # Evaluate Pearson Chi-square statistic (goodness of fit). 
   #   Is there statistical evidence for lack of fit?
@@ -209,9 +227,15 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   # https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
   p.PearChiSq <- 1 - pchisq(q=Pearson, df=length(PearResid)-2)
   #values < 0.05 indicate statistically significant evidence for lack of fit
-  
-  
-  #-------------------------------------------------------------------------------
+  names(p.PearChiSq) <- c("PearChiSq")
+  p.PearChiSq
+
+```
+
+5. What is goodness of fit based on Deviance G-squared? This statistics measures the
+deviance of the fitted logistic model with respect to a perfect model (the saturated model)
+```{r}
+ #-------------------------------------------------------------------------------
   # Step 5. 
   # Evaluate Deviance G-squared statistic (goodness of fit)
   #   Is there statistical evidence for lack of fit?
@@ -224,8 +248,12 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   Deviance <- sum(DevResid^2)
   p.DevChiSq <- pchisq(q=Deviance, df=length(DevResid)-2)
   #values < 0.05 indicate statistically significant evidence for lack of fit
-  
-  
+  names(p.DevChiSq) <- c("p.DevChiSq")
+  p.DevChiSq
+```
+
+6. What is quasiR2? This is not the percentage of variance explained by the logistic model, but rather a ratio indicating how close is the fit to being perfect  or the worst.
+```{r}
   #-------------------------------------------------------------------------------
   # Step 6. 
   # Evaluate quasi-Rsquared.
@@ -243,9 +271,14 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   # https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
   # However, shen we forced the y-intercept near zero,  the model actually fits 
   # worse than the null model and quasiR2 can be negative
-  
-  
-  #-------------------------------------------------------------------------------
+  names(quasiR2) <- c("quasiR2")
+  quasiR2
+
+```
+
+7. What is the classifiation accuracy?
+```{r}
+ #-------------------------------------------------------------------------------
   # Step 7. 
   # Evaluate hit rate from a confusion matrix
   #   What is the classification accuracy of the LRP based on the logistic 
@@ -260,41 +293,14 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   
   # Confusion Matrix
   confMat <- table(y, yHat)
+  confMat
   
   # What is the accuracy in classifying observed aggregate abundances?
   # Hit ratio = ratio of correct classification
   hitRatio <- sum(diag(confMat))/sum(confMat)
   hitRatio <- round(hitRatio, digits=2)
+  names(hitRatio) <- c("hitRatio")
+  hitRatio
   
-  # The hit matrix will be always biased towards unrealistically good
-  # classification rates when computed with the same sample used for
-  # fitting the logistic model. An approach based on data-splitting/
-  # cross-validation is therefore needed to estimate the hit matrix 
-  # unbiasedly  https://bookdown.org/egarpor/PM-UC3M/glm-modsel.html
-  
-  #-------------------------------------------------------------------------------
-  # Output
-  out <- list()
-  out$DevResid <- DevResid
-  out$signTable <- signTable
-  out$p.PearChiSq <- p.PearChiSq 
-  out$p.DevChiSq <- p.DevChiSq 
-  out$quasiR2 <- quasiR2
-  out$confMat <- confMat
-  out$hitRatio <- hitRatio
-  
-  return(out)
-  
-  #-------------------------------------------------------------------------------
-  
-  
-}
+```
 
-
-
-#NB the logit function from Brooke's helperFunctoin code needs an extra set of
-# ()s. I don't think it was actually implemented in the code...?
-
-logit <- function(x){
-  log(x/(1-x))
-}

@@ -1,7 +1,7 @@
 ---
 title: "WCVI LRPs"
 author: "Carrie Holt"
-date: "January 2, 2021"
+date: "January 18, 2021"
 output:
   html_document: default
   word_document: default
@@ -20,7 +20,7 @@ library(viridis)
 
 ```
 
-This report contains preliminary LRPs for WCVI Chinook. Only indicators stocks with average PNI > 0.5 were included in these preliminary analyses. Results and LRPs with all indicator stocks (enhanced and unenhanced) are included at the end.  Enhanced indicator stocks are: Burman,  Conuma, Leiner, Nitinat, Sarita,  Somass,  Zeballos,  and San Juan. Non-enhanced inidcators stocks are: Artlish, Bedwell/Ursus, Cayeghle, Gold, Kaouk, Marble, Megin, Moyeha, Nahmint, Tahsis, Tahsish, and Tranquil.
+This report contains preliminary LRPs for WCVI Chinook. Only indicators stocks with average PNI > 0.5 were included in these preliminary analyses. Results and LRPs with all indicator stocks (enhanced and unenhanced) are included at the end.  Non-enhanced indicator stocks are: Artlish, Bedwell/Ursus, Cayeghle,Kaouk, Marble, Megin, Moyeha, Nahmint, Tahsis, and Tahsish. Enhanced indicators are: Burman,  Conuma, Leiner, Nitinat, Sarita,  Somass,  Zeballos,  San Juan, Tranquil, and Gold. Note, Tranquil is considered enhanced although PNI data are not avialble for this stock, and has been moved. Also, Gold have been moved to the enhanced category. Although a large portion of the fish in this system are not marked (PNI =0.52), most of the unmarked spawners are thought to be second generation (or descendents of) hatchery-origin fish from Robertson Creek hatchery. There is no evidence of the original natural-spawners in this system.
 
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.cap = "**Figure 1**. Time series of spawner abundances by inlet for indicator WCVI Chinook stocks with average PNI >0.5. Three reference points are included: SREP from the watershed-area model (horizontal green line) with 95% prediction intervals (green shaded area), and SMSY (horizontal yellow line) and SGEN (horizontal blue line) from watershed-area SREP values and expert-derived estimates of productivity."}

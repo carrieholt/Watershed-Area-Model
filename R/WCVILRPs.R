@@ -155,10 +155,14 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
     (gsub("Nootka Esperanza", "Nootka/Esperanza", x, fixed=TRUE) ) )
   colnames(WCVIEsc) <- WCVIEsc_names 
   
-  EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  
-                 "Somass",  "Zeballos", "San Juan")
+  EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% filter (Enh==1) %>%
+    pull(Stock)
+  EnhStocks <- as.character(EnhStocks)
+
+  #EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  
+  #               "Somass",  "Zeballos", "San Juan", "Tranquil")
   # Artlish removed from Enhanced stocks 23 Dec. 2020
-  
+  # Tranquil added 18 Jan 2021
   
   
   if (remove.EnhStocks) {WCVIEsc <- WCVIEsc %>% dplyr::select(-EnhStocks) }

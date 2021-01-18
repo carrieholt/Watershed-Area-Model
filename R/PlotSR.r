@@ -660,7 +660,12 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=FALSE){
  
   Years <- rownames(WCVIEsc)
   
-  EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  "Somass",  "Zeballos", "San Juan")# remove Artlish: 23 Dec 2020
+  #EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  "Somass",  "Zeballos", "San Juan")
+  EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% filter (Enh==1) %>%
+    pull(Stock)
+  EnhStocks <- as.character(EnhStocks)
+  
+  # remove Artlish: 23 Dec 2020
   
   if(remove.EnhStocks) WCVI_RPs <- as.data.frame(read.csv("DataOut/wcviRPs_noEnh.csv")) %>% 
     rename(StockNames=Stock)  %>% filter (StockNames != "Little Zeballos")
@@ -701,8 +706,13 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=FALSE){
   # }
   
   N_inlets <- 5 + N_stk
+
   if (remove.EnhStocks) par(mfrow=c(3,2), mar = c(2, 3, 2, 1) + 0.1)
   if (!remove.EnhStocks) par(mfrow=c(4,2), mar = c(2, 3, 2, 1) + 0.1)
+
+  # For PPT presentation
+  ppt <- TRUE
+  if (ppt) par(mfrow=c(5,1), mar = c(2, 3, 2, 1) + 0.1)
   
   # Plot in order of inlets from south to north
   if(!remove.EnhStocks) inlet.list <- c(which(StockNames == "San Juan"), which(StockNames == "Nitinat"),
@@ -711,9 +721,10 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=FALSE){
                                         which(StockNames == "Quatsino") )
   if(remove.EnhStocks) inlet.list <- c(which(StockNames == "Barkley"), which(StockNames == "Clayoquot"), 
                                        which(StockNames == "Nootka/Esperanza"), which(StockNames == "Kyuquot"),
-                                       which(StockNames == "Quatsino") )
-  
-  for (i in c(inlet.list)){
+                                       which(StockNames == "Quatsino") ) 
+  if(ppt) inlet.list <- rev(inlet.list)
+
+    for (i in c(inlet.list)){
     ymax[i] <- max(WCVI_rps$SREP[i], WCVIEsc[,i], na.rm=T)
     plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
     axis(side=1, tick=FALSE, padj=-1.8)
@@ -737,8 +748,8 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=FALSE){
 # plotWCVI_timeseries(WCVIEsc=yy$WCVIEsc, remove.EnhStocks = FALSE) 
 # dev.off()
 
-## xx <- Get.LRP(remove.EnhStocks=TRUE)
-# png(paste("DataOut/WCVI_inlet_timeseries_noEnh.png", sep=""), width=9, height=7, units="in", res=500)
+# xx <- Get.LRP(remove.EnhStocks=TRUE)
+# png(paste("DataOut/WCVI_inlet_timeseries_noEnh.png", sep=""), width=6, height=9, units="in", res=500)
 # plotWCVI_timeseries(WCVIEsc=xx$WCVIEsc, remove.EnhStocks = TRUE)
 # dev.off()
 
@@ -797,14 +808,14 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out, WCVI_Esc=WCVIEsc){
 # par(mfrow=c(3,1), cex=1.1,  mar = c(2, 5, 2, 1) + 0.1)
 # Years <- rownames(xx$WCVIEsc)
 # 
-# for (i in c(2,1,3)){
+# for (i in c(3,1,2)){
 #   plot(x=Years, y=xx$CU_Status[,i], pch=20, xlab="", ylab="", ylim=c(0,1), las=1 , yaxp=c(0,1,1))
 #   mtext(colnames(xx$CU_Status)[i], side=3, line=0.5, at="1952", adj=0, cex=1.4)
 #   if(i==1) mtext("CU Status = Red(0) or Amber/Green(1)", side=2, line=2, cex=1.8)
 # 
 # }
 # dev.off()
-# 
+
 
 
 #==================================================================

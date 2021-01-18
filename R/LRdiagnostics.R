@@ -26,7 +26,9 @@
 #   Is there statistical evidence for lack of fit?
 # 6. Evaluate quasi-Rsquared.
 #   What is the ratio of the fit to the null model?
-# 7. Evaluate hit rate.
+# 7. Evaluate Wald test
+#   Is deviance significantly reduced with predictor, Aggregate abundance?
+# 8. Evaluate hit rate.
 #   What is the classification accuracy of the LRP based on the logistic
 #   regression?
 #-------------------------------------------------------------------------------
@@ -47,7 +49,7 @@
 # # Carrie's inputs for testing
 # zz <- Get.LRP(remove.EnhStocks = TRUE)
 # All_Ests <- zz$out$All_Ests
-# AggAbundRaw <- zz$SMU_Esc 
+# AggAbundRaw <- zz$SMU_Esc
 # digits <- count.dig(AggAbundRaw)
 # ScaleSMU <- min(10^(digits -1 ), na.rm=T)
 # AggAbund <- AggAbundRaw/ScaleSMU
@@ -58,7 +60,7 @@
 # dir <- "DataOut/"
 # plotname <- "WCVI_ResidPlots"
 # 
-# input<- list(All_Ests=All_Ests, AggAbund=AggAbund, 
+# input<- list(All_Ests=All_Ests, AggAbund=AggAbund,
 #              obsPpnAboveBM=obsPpnAboveBM, p=p, nLL=nLL,dir="", plotname="test")
 # save(input, file="DataIn/Input_LRdiagnostics.rda")
 # 
@@ -71,7 +73,7 @@
 # Returns:
 # - png of plots of residuals and their autocorrelation (step 2) stored in 
 #   directory, dir
-# - list of outputs from steps 1, 3-7
+# - list of outputs from steps 1, 3-8
 #-------------------------------------------------------------------------------
 
 
@@ -206,7 +208,8 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   Pearson <- sum(PearResid^2)
   
   # Statistical test of the goodness of fit 
-  # https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
+  # Section 6.5.6. https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
+  # Section 1.4 of https://www.flutterbys.com.au/stats/tut/tut10.5a.html
   p.PearChiSq <- 1 - pchisq(q=Pearson, df=length(PearResid)-2)
   #values < 0.05 indicate statistically significant evidence for lack of fit
   
@@ -222,10 +225,9 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   # deviance of the fitted logistic model with respect to a perfect model (the 
   # saturated model) https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
   Deviance <- sum(DevResid^2)
-  p.DevChiSq <- pchisq(q=Deviance, df=length(DevResid)-2)
+  p.DevChiSq <- 1-pchisq(q=Deviance, df=length(DevResid)-2)
   #values < 0.05 indicate statistically significant evidence for lack of fit
-  
-  
+  # See section 6.5.6: https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
   #-------------------------------------------------------------------------------
   # Step 6. 
   # Evaluate quasi-Rsquared.
@@ -247,6 +249,20 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   
   #-------------------------------------------------------------------------------
   # Step 7. 
+  # Evaluate Wald test
+  #   Is the predictor, 'Aggregate Abundance', a significant predictor of the ppn
+  #   of CUs > their lower benchmark?
+  #-------------------------------------------------------------------------------
+  
+  # The Wald test evaluates the significance of a predictor based on difference 
+  # in Deviances between the specificed model and a reduced model without the 
+  # predictor
+  # See Section 4.7 https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
+  p.Wald <- signif( pchisq(q=(Deviance-NullDev), df=1), digits=2)
+  
+  
+  #-------------------------------------------------------------------------------
+  # Step 8. 
   # Evaluate hit rate from a confusion matrix
   #   What is the classification accuracy of the LRP based on the logistic 
   #   regression?
@@ -280,6 +296,7 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   out$p.PearChiSq <- p.PearChiSq 
   out$p.DevChiSq <- p.DevChiSq 
   out$quasiR2 <- quasiR2
+  out$p.Wald <- p.Wald
   out$confMat <- confMat
   out$hitRatio <- hitRatio
   

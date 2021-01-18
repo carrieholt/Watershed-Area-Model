@@ -49,7 +49,10 @@ library(patchwork)
 6. Evaluate quasi-Rsquared.
   What is the ratio of the fit to the null model?
 
-7. Evaluate hit rate.
+7. Evaluate Wald test.
+  Is deviance significantly reduced with the predictor, Aggregate abundance?
+
+8. Evaluate hit rate.
   What is the classification accuracy of the LRP based on the logistic
   regression?
 
@@ -89,7 +92,7 @@ nLL <- input$nLL
 dir <- input$dir
 plotname <- input$plotname
 
-source("R/helperFunctions.r") # containst function ggplot.corr()
+source("R/helperFunctions.r") # contains function ggplot.corr()
 
 
 
@@ -224,7 +227,8 @@ source("R/helperFunctions.r") # containst function ggplot.corr()
   Pearson <- sum(PearResid^2)
   
   # Statistical test of the goodness of fit 
-  # https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
+  # Section 6.5.6. https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
+  # Section 1.4 of https://www.flutterbys.com.au/stats/tut/tut10.5a.html
   p.PearChiSq <- 1 - pchisq(q=Pearson, df=length(PearResid)-2)
   #values < 0.05 indicate statistically significant evidence for lack of fit
   names(p.PearChiSq) <- c("PearChiSq")
@@ -246,9 +250,11 @@ deviance of the fitted logistic model with respect to a perfect model (the satur
   # deviance of the fitted logistic model with respect to a perfect model (the 
   # saturated model) https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
   Deviance <- sum(DevResid^2)
-  p.DevChiSq <- pchisq(q=Deviance, df=length(DevResid)-2)
-  #values < 0.05 indicate statistically significant evidence for lack of fit
+  p.DevChiSq <- 1-pchisq(q=Deviance, df=length(DevResid)-2)
+  # values < 0.05 indicate statistically significant evidence for lack of fit
+  # See section 6.5.6: https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
   names(p.DevChiSq) <- c("p.DevChiSq")
+  
   p.DevChiSq
 ```
 
@@ -272,14 +278,37 @@ deviance of the fitted logistic model with respect to a perfect model (the satur
   # However, shen we forced the y-intercept near zero,  the model actually fits 
   # worse than the null model and quasiR2 can be negative
   names(quasiR2) <- c("quasiR2")
+  
   quasiR2
 
+  pchisq(q=(Deviance-NullDev), df=1)
+  
+  
 ```
 
-7. What is the classifiation accuracy?
+7. Wald test
+
+```{r}
+#-------------------------------------------------------------------------------
+  # Step 7. 
+  # Evaluate Wald test
+  #   Is the predictor, 'Aggregate Abundance', a significant predictor of the ppn
+  #   of CUs > their lower benchmark?
+  #-------------------------------------------------------------------------------
+  
+  # The Wald test evaluates the significance of a predictor based on difference 
+  # in Deviances between the specificed model and a reduced model without the 
+  # predictor
+  # See Section 4.7 https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
+  p.Wald <- signif( pchisq(q=(Deviance-NullDev), df=1), digits=2)
+  names(p.Wald) <- c("p.Wald")
+  p.Wald
+```
+
+8. What is the classifiation accuracy?
 ```{r}
  #-------------------------------------------------------------------------------
-  # Step 7. 
+  # Step 8. 
   # Evaluate hit rate from a confusion matrix
   #   What is the classification accuracy of the LRP based on the logistic 
   #   regression?

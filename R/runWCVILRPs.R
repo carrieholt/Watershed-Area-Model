@@ -7,7 +7,7 @@
 #-------------------------------------------------------------------------------
 
 list.of.packages <- c("tidyverse", "ggplot2", "gsl", "TMB", "viridis", 
-                      "rsample", "gridextra", "reshape2", "zoo", "hrbrthemes")
+                      "rsample", "gridExtra", "reshape2", "zoo", "hrbrthemes")
 new.packages <- list.of.packages[!(list.of.packages %in% 
                                      installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
@@ -26,6 +26,8 @@ library(hrbrthemes)
 
 source("R/helperFunctions.r")
 source ("R/PlotSR.r")
+source ("R/IWAM.R")
+source("R/WCVILRPs.R")
 
 #-------------------------------------------------------------------------------
 # Step 1

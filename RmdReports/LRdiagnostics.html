@@ -395,6 +395,7 @@ summary {
 <li><p>Evaluate Pearson Chi-squared statistic (goodness of fit). Is there statistical evidence for lack of fit?</p></li>
 <li><p>Evaluate Deviance G-squared statistic (goodness of fit) Is there statistical evidence for lack of fit?</p></li>
 <li><p>Evaluate quasi-Rsquared. What is the ratio of the fit to the null model?</p></li>
+<li><p>Evaluate Wald test. Is deviance significantly reduced with the predictor, Aggregate abundance?</p></li>
 <li><p>Evaluate hit rate. What is the classification accuracy of the LRP based on the logistic regression?</p></li>
 </ol>
 <p>This code is wrapped inside a function LRdiagnostics() in a file of the same name. It’s extracted here for demonstration purposes.</p>
@@ -418,7 +419,7 @@ nLL &lt;- input$nLL
 dir &lt;- input$dir
 plotname &lt;- input$plotname
 
-source(&quot;R/helperFunctions.r&quot;) # containst function ggplot.corr()
+source(&quot;R/helperFunctions.r&quot;) # contains function ggplot.corr()
 
 
 
@@ -557,7 +558,8 @@ source(&quot;R/helperFunctions.r&quot;) # containst function ggplot.corr()
   Pearson &lt;- sum(PearResid^2)
   
   # Statistical test of the goodness of fit 
-  # https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
+  # Section 6.5.6. https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
+  # Section 1.4 of https://www.flutterbys.com.au/stats/tut/tut10.5a.html
   p.PearChiSq &lt;- 1 - pchisq(q=Pearson, df=length(PearResid)-2)
   #values &lt; 0.05 indicate statistically significant evidence for lack of fit
   names(p.PearChiSq) &lt;- c(&quot;PearChiSq&quot;)
@@ -579,8 +581,10 @@ source(&quot;R/helperFunctions.r&quot;) # containst function ggplot.corr()
   # saturated model) https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
   Deviance &lt;- sum(DevResid^2)
   p.DevChiSq &lt;- 1-pchisq(q=Deviance, df=length(DevResid)-2)
-  #values &lt; 0.05 indicate statistically significant evidence for lack of fit
+  # values &lt; 0.05 indicate statistically significant evidence for lack of fit
+  # See section 6.5.6: https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
   names(p.DevChiSq) &lt;- c(&quot;p.DevChiSq&quot;)
+  
   p.DevChiSq</code></pre>
 <pre><code>## p.DevChiSq 
 ##  0.9995338</code></pre>
@@ -605,14 +609,36 @@ source(&quot;R/helperFunctions.r&quot;) # containst function ggplot.corr()
   # However, shen we forced the y-intercept near zero,  the model actually fits 
   # worse than the null model and quasiR2 can be negative
   names(quasiR2) &lt;- c(&quot;quasiR2&quot;)
+  
   quasiR2</code></pre>
 <pre><code>##    quasiR2 
 ## -0.7366453</code></pre>
+<pre class="r"><code>  pchisq(q=(Deviance-NullDev), df=1)</code></pre>
+<pre><code>## [1] 0.776799</code></pre>
 <ol start="7" style="list-style-type: decimal">
+<li>Wald test</li>
+</ol>
+<pre class="r"><code>#-------------------------------------------------------------------------------
+  # Step 7. 
+  # Evaluate Wald test
+  #   Is the predictor, &#39;Aggregate Abundance&#39;, a significant predictor of the ppn
+  #   of CUs &gt; their lower benchmark?
+  #-------------------------------------------------------------------------------
+  
+  # The Wald test evaluates the significance of a predictor based on difference 
+  # in Deviances between the specificed model and a reduced model without the 
+  # predictor
+  # See Section 4.7 https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
+  p.Wald &lt;- signif( pchisq(q=(Deviance-NullDev), df=1), digits=2)
+  names(p.Wald) &lt;- c(&quot;p.Wald&quot;)
+  p.Wald</code></pre>
+<pre><code>## p.Wald 
+##   0.78</code></pre>
+<ol start="8" style="list-style-type: decimal">
 <li>What is the classifiation accuracy?</li>
 </ol>
 <pre class="r"><code> #-------------------------------------------------------------------------------
-  # Step 7. 
+  # Step 8. 
   # Evaluate hit rate from a confusion matrix
   #   What is the classification accuracy of the LRP based on the logistic 
   #   regression?

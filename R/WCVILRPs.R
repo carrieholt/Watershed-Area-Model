@@ -16,8 +16,15 @@ source("R/helperFunctions.r")
 #-------------------------------------------------------------------------------
 # Function to estimate LRPs for WCVI CK
 # Arguments; 
-  # remove.EnhStocoks = A logical reflecting if enhanced stock are to be included
-  # Requires that IWAM model has been run and 
+  # remove.EnhStocks = A logical reflecting if enhanced stock are to be 
+    # included
+  # LOO = numeric for leave-one-out cross validation of the logistic regression
+    # This number is the index of the time-series of ppn of CUs and aggregate 
+    # abundances that are removed prior to implementing the logistic regression 
+    # in TMB. Set to NA as default (no values removed). Note, the outputted 
+    # time-series ('out') contain all the data, but parameter estimates are 
+    # derived from time-series without LOO index value
+  # The code requires that the IWAM model has been run and 
   # "WCVI_SMSY_noEnh.csv" or "WCVI_SMSY_wEnh.csv" exist
 # Returns:
   # csv file, DataOut/wcviRPs_noEnh.csv or DataOut/wcviRPs_wEnh.csv of stock, 
@@ -29,7 +36,7 @@ source("R/helperFunctions.r")
   # Dataframe $CU_Status
   # Dataframe $SMU_ppn
 
-Get.LRP <- function (remove.EnhStocks=TRUE){
+Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
 
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
@@ -321,6 +328,12 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   
   data$LM_Agg_Abund <- SMUlogisticData$SMU_Esc/ScaleSMU
   data$N_Above_BM <- SMUlogisticData$ppn * data$N_Stks
+  
+  if(!is.na(LOO)) { #Is applying leave-one-out cross validation, remove that
+    #year
+    data$LM_Agg_Abund <- data$LM_Agg_Abund[-LOO]
+    data$N_Above_BM <- data$N_Above_BM[-LOO]
+  }
   data$Pred_Abund <- seq(0, max(data$LM_Agg_Abund)*1.1, 0.1)
   if(remove.EnhStocks) data$Pred_Abund <- 
     seq(0, max(data$LM_Agg_Abund)*1.5, 0.1)
@@ -405,7 +418,7 @@ Get.LRP <- function (remove.EnhStocks=TRUE){
   
   return(list(out=out, WCVIEsc=WCVIEsc, SMU_Esc=SMU_Esc, 
               CU_Status=CU_Status, SMU_ppn=SMU_ppn, 
-              LRPppn=data$p, nLL=obj$report()$ans))
+              LRPppn=data$p, nLL=obj$report()$ans, LOO=LOO))
   
    
 }

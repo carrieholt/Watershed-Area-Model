@@ -275,13 +275,12 @@ deviance of the fitted logistic model with respect to a perfect model (the satur
   # but rather a ratio indicating how close is the fit to being perfect 
   # or the worst. It is not related to any correlation coefficient
   # https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
-  # However, shen we forced the y-intercept near zero,  the model actually fits 
+  # However, when we forced the y-intercept near zero,  the model actually fits 
   # worse than the null model and quasiR2 can be negative
   names(quasiR2) <- c("quasiR2")
   
   quasiR2
 
-  pchisq(q=(Deviance-NullDev), df=1)
   
   
 ```
@@ -289,7 +288,7 @@ deviance of the fitted logistic model with respect to a perfect model (the satur
 7. Wald test
 
 ```{r}
-#-------------------------------------------------------------------------------
+  #-------------------------------------------------------------------------------
   # Step 7. 
   # Evaluate Wald test
   #   Is the predictor, 'Aggregate Abundance', a significant predictor of the ppn
@@ -307,12 +306,12 @@ deviance of the fitted logistic model with respect to a perfect model (the satur
 
 8. What is the classifiation accuracy?
 ```{r}
- #-------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------
   # Step 8. 
-  # Evaluate hit rate from a confusion matrix
+  # Evaluate hit ratio from a confusion matrix
   #   What is the classification accuracy of the LRP based on the logistic 
   #   regression?
-  #-------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------
   
   
   # In which years did the model predict aggregate abundances >LRP?
@@ -331,5 +330,20 @@ deviance of the fitted logistic model with respect to a perfect model (the satur
   names(hitRatio) <- c("hitRatio")
   hitRatio
   
+```
+
+9. Leave-one-out cross validation:  classification accuracy
+Sequentially remove one data point at a time, re-estimate logistic regression and LRP, and then calculate Hit Ratio (classification accurarcy) by comparing predicted and observed values for the data point that was held out.
+
+```{r}
+  #------------------------------------------------------------------------------
+  # Step 9. 
+  # Evaluate hit ratio using leave-one-out cross validation from a confusion 
+  # matrix
+  #   What is the classification accuracy of the LRP using out-of-sample data?
+  #------------------------------------------------------------------------------
+
+
+
 ```
 

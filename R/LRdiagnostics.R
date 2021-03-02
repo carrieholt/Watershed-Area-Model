@@ -1,5 +1,12 @@
 #-------------------------------------------------------------------------------
-# Function to run diagnostics on logistic regression
+# Functions to run diagnostics on logistic regression
+
+# Function 1: LRdiagnostic, performs diagnostics using the entire time-series 
+# of data
+
+# Function 2: LOO_LRdiagnostic, performs leave-one-out cross-validation by 
+# iteratively re-running LRP estimation of subsets of data, leaving one data 
+# point out each time, and estimating classification accuracy on removed data point
 #-------------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------------
@@ -12,6 +19,9 @@
 # -------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
+# Function 1: LRdiagnostic, performs diagnostics using the entire time-series 
+# of data
+
 # Steps:
 # 1. Estimate Pearson resiudals and deviance residuals (Assumption 3).
 #   Are deviance residuals >2?
@@ -47,18 +57,18 @@
 # plotname = filename for residual plots
 
 # # Carrie's inputs for testing
-# zz <- Get.LRP(remove.EnhStocks = TRUE)
-# All_Ests <- zz$out$All_Ests
-# AggAbundRaw <- zz$SMU_Esc
-# digits <- count.dig(AggAbundRaw)
-# ScaleSMU <- min(10^(digits -1 ), na.rm=T)
-# AggAbund <- AggAbundRaw/ScaleSMU
-# AggAbund <- AggAbund[!is.na(AggAbund)]
-# obsPpnAboveBM <- zz$out$Logistic_Data$yy
-# p <- zz$LRPppn
-# nLL <- zz$nLL
-# dir <- "DataOut/"
-# plotname <- "WCVI_ResidPlots"
+zz <- Get.LRP(remove.EnhStocks = TRUE)
+All_Ests <- zz$out$All_Ests
+AggAbundRaw <- zz$SMU_Esc
+digits <- count.dig(AggAbundRaw)
+ScaleSMU <- min(10^(digits -1 ), na.rm=T)
+AggAbund <- AggAbundRaw/ScaleSMU
+AggAbund <- AggAbund[!is.na(AggAbund)]
+obsPpnAboveBM <- zz$out$Logistic_Data$yy
+p <- zz$LRPppn
+nLL <- zz$nLL
+dir <- "DataOut/"
+plotname <- "WCVI_ResidPlots"
 # 
 # input<- list(All_Ests=All_Ests, AggAbund=AggAbund,
 #              obsPpnAboveBM=obsPpnAboveBM, p=p, nLL=nLL,dir="", plotname="test")
@@ -181,6 +191,8 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   p4 <- ggplot.corr(data=DevResid, title="Deviance residuals") 
   
   ggsave(filename=paste0(dir, plotname, ".png"), p1+p2+p3+p4)
+  #ggsave(filename=paste0(dir, plotname, "1.png"), p2)
+  #ggsave(filename=paste0(dir, plotname, "2.png"), p4)
   
   
   #-------------------------------------------------------------------------------
@@ -305,11 +317,132 @@ LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir,
   #-------------------------------------------------------------------------------
   
   
-}
+} # End of Function 1: LRdiagnostics()
+
+
+#-------------------------------------------------------------------------------
+# Function 2: LOO_LRdiagnostic, performs leave-one-out cross-validation by 
+# iteratively re-running LRP estimation of subsets of data, leaving one data 
+# point out each time, and estimating classification accuracy on removed data point
+
+# Steps:
+# 1. Run logistic regression iteratively removing one year in time-series 
+# each time
+# 2. Get observed ppn of CUs above their lower benchmark for the year that
+# was held out (iteratively)
+# 3. Get predicted ppn of CUs above their lower benchmark for the year that
+# was held out (iteratively)
+# 4. Evaluate confusion matrix hit rate on the resulting time-series of 
+# predictied and observed ppns.
+#   What is the out-of-sample classification accuracy?
+
+# Note, this function will have to be adapted to case studies based no the 
+# logistic regression model used for those stocks. I revised my Get.LRP() 
+# function by adding an argument LOO, where LOO = numeric for leave-one-out
+# cross validation of the logistic regression. This number is the index of 
+# the time-series of ppn of CUs and aggregate abundances that are removed
+# prior to implementing the logistic regression in TMB. It is set to NA as 
+# a default (no values removed). Note, the outputted time-series ('out') 
+# contain all the data, but parameter estimates are derived from 
+# time-series without LOO index value. Within the Get.LRP function, I added 
+# the following code when setting up data list for TMB:
+# if(!is.na(LOO)) {
+#  data$LM_Agg_Abund <- data$LM_Agg_Abund[-LOO]
+#  data$N_Above_BM <- data$N_Above_BM[-LOO]
+# }
 
 
 
-#NB the logit function from Brooke's helperFunctoin code needs an extra set of
+#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
+# Arguments:
+# remove.EnhStocks = logical specifying if enhanced stocks are removed 
+  # (PNI<0.5)
+# n = length of time-series over with to iteravely remove a data point in the 
+  # logistic regression
+
+
+# Note, LOO_LRdiagnists() calls the function Get.LRP() which generates the 
+# following outputs required for calculation of this diagnostic:
+# out$All_Ests = Dataframe containing parameters of logistic regression, B_0 and B_1
+  # with p values (All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE)))
+# SMU_Esc = Vector of scaled observed aggregate abundances, with NAs removed
+# out$Logistic_Data$yy = Vectors of observed ppn of CUs above their lower benchmarks
+  # with NAs removed
+# LRPppn = the proportion of CUs that must be > their benchmark when defining LRP
+
+
+#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
+# Returns:
+# - Hit Ratio from confusion matrix, based on leave-one-out predictions
+#-------------------------------------------------------------------------------
+
+
+
+#-------------------------------------------------------------------------------
+# Function 2:
+
+LOO_LRdiagnostics <- function(remove.EnhStocks=TRUE, n=18){
+  
+  
+  # Step 1: estimate logistic regression iteratively, removing a single year 
+  # each time
+  
+  predPpnAboveBM <- NA
+  
+  for (i in 1:n){
+    # Estimate logistic regression using function Get.LRP
+    zz <- Get.LRP(remove.EnhStocks = TRUE, LOO=i)
+    All_Ests <- zz$out$All_Ests
+
+    if(i==1){ # These remain constant over iterations
+      # Step 2: Get observed time-series of aggregate raw abundances that includes all
+      # data and then scale to units near 1-10 
+      AggAbundRaw <- zz$out$Logistic_Data$xx
+      digits <- count.dig(AggAbundRaw)
+      ScaleSMU <- min(10^(digits -1 ), na.rm=T)
+      AggAbund <- AggAbundRaw/ScaleSMU
+      # Get time-series of observed ppns of CUs> benchamark, including all
+      # data
+      obsPpnAboveBM <- zz$out$Logistic_Data$yy
+      # Get threshold p value (ppn of CUs>benchmark) used to estimate LRP
+      p <- zz$LRPppn
+      #dir <- "DataOut/"
+    }
+ 
+   # Step 3: Get predicted ppn of CUs above their lower benchmark for the year 
+    # that was held out
+    B_0 <- All_Ests %>% filter(Param=="B_0") %>% pull(Estimate)
+    B_1 <- All_Ests %>% filter(Param=="B_1") %>% pull(Estimate)
+    #predPpnAboveBM <- inv_logit(B_0 + B_1*AggAbund)
+    predPpnAboveBM[i] <- inv_logit(B_0 + B_1*AggAbund[i])
+  } # End of for i in 1:18
+  
+  # Step 4: Calculate Hit Ratio
+  
+  # In which years did the model predict aggregate abundances >LRP?
+  yHat <- predPpnAboveBM > p
+  # In which years were observed aggregate abundances >LRP?
+  y <- obsPpnAboveBM > p
+  
+  # Confusion Matrix
+  confMat <- table(y, yHat)
+  
+  # What is the accuracy in classifying observed aggregate abundances?
+  # Hit ratio = ratio of correct classification
+  hitRatio <- sum(diag(confMat))/sum(confMat)
+  hitRatio <- round(hitRatio, digits=2)
+  
+  return(hitRatio=hitRatio)
+}# End of Function 2: LOO_LRdiagnostics()
+
+
+
+
+#NB the logit function from Brooke's helperFunction code needs an extra set of
 # ()s. I don't think it was actually implemented in the code...?
 
 logit <- function(x){

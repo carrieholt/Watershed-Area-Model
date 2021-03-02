@@ -711,7 +711,7 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=FALSE){
   if (!remove.EnhStocks) par(mfrow=c(4,2), mar = c(2, 3, 2, 1) + 0.1)
 
   # For PPT presentation
-  ppt <- TRUE
+  ppt <- FALSE
   if (ppt) par(mfrow=c(5,1), mar = c(2, 3, 2, 1) + 0.1)
   
   # Plot in order of inlets from south to north

@@ -396,7 +396,8 @@ summary {
 <li><p>Evaluate Deviance G-squared statistic (goodness of fit) Is there statistical evidence for lack of fit?</p></li>
 <li><p>Evaluate quasi-Rsquared. What is the ratio of the fit to the null model?</p></li>
 <li><p>Evaluate Wald test. Is deviance significantly reduced with the predictor, Aggregate abundance?</p></li>
-<li><p>Evaluate hit rate. What is the classification accuracy of the LRP based on the logistic regression?</p></li>
+<li><p>Evaluate hit ratio. What is the classification accuracy of the LRP based on the logistic regression?</p></li>
+<li><p>Leave-one-out cross-validaton of hit ratio. What is the classification accuracy of the LRP when we use out-of-sample predictions?</p></li>
 </ol>
 <p>This code is wrapped inside a function LRdiagnostics() in a file of the same name. It’s extracted here for demonstration purposes.</p>
 <div id="the-arguments-of-the-function-are" class="section level2">
@@ -606,19 +607,17 @@ source(&quot;R/helperFunctions.r&quot;) # contains function ggplot.corr()
   # but rather a ratio indicating how close is the fit to being perfect 
   # or the worst. It is not related to any correlation coefficient
   # https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
-  # However, shen we forced the y-intercept near zero,  the model actually fits 
+  # However, when we forced the y-intercept near zero,  the model actually fits 
   # worse than the null model and quasiR2 can be negative
   names(quasiR2) &lt;- c(&quot;quasiR2&quot;)
   
   quasiR2</code></pre>
 <pre><code>##    quasiR2 
 ## -0.7366453</code></pre>
-<pre class="r"><code>  pchisq(q=(Deviance-NullDev), df=1)</code></pre>
-<pre><code>## [1] 0.776799</code></pre>
 <ol start="7" style="list-style-type: decimal">
 <li>Wald test</li>
 </ol>
-<pre class="r"><code>#-------------------------------------------------------------------------------
+<pre class="r"><code>  #-------------------------------------------------------------------------------
   # Step 7. 
   # Evaluate Wald test
   #   Is the predictor, &#39;Aggregate Abundance&#39;, a significant predictor of the ppn
@@ -637,12 +636,12 @@ source(&quot;R/helperFunctions.r&quot;) # contains function ggplot.corr()
 <ol start="8" style="list-style-type: decimal">
 <li>What is the classifiation accuracy?</li>
 </ol>
-<pre class="r"><code> #-------------------------------------------------------------------------------
+<pre class="r"><code>  #-----------------------------------------------------------------------------
   # Step 8. 
-  # Evaluate hit rate from a confusion matrix
+  # Evaluate hit ratio from a confusion matrix
   #   What is the classification accuracy of the LRP based on the logistic 
   #   regression?
-  #-------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------
   
   
   # In which years did the model predict aggregate abundances &gt;LRP?
@@ -664,6 +663,89 @@ source(&quot;R/helperFunctions.r&quot;) # contains function ggplot.corr()
   hitRatio</code></pre>
 <pre><code>## hitRatio 
 ##        1</code></pre>
+<ol start="9" style="list-style-type: decimal">
+<li>Leave-one-out cross validation: classification accuracy Sequentially remove one data point at a time, re-estimate logistic regression and LRP, and then calculate Hit Ratio (classification accurarcy) by comparing predicted and observed values for the data point that was held out.</li>
+</ol>
+<pre class="r"><code>  #------------------------------------------------------------------------------
+  # Step 9.
+  # Evaluate hit ratio using leave-one-out cross validation from a confusion
+  # matrix. Contains 4 sub-steps, 9.1-9.4.
+  #   What is the classification accuracy of the LRP using out-of-sample data?
+  #------------------------------------------------------------------------------
+
+
+  # Step 9.1: estimate logistic regression iteratively, removing a single year
+  # each time
+
+  n &lt;- 18 # length of time-series used in logistic regression
+  source(&quot;R/WCVILRPs.R&quot;)
+  predPpnAboveBM &lt;- NA
+
+  for (i in 1:n){
+    # Estimate logistic regression using function Get.LRP
+    zz &lt;- Get.LRP(remove.EnhStocks = TRUE, LOO=i)
+    All_Ests &lt;- zz$out$All_Ests
+
+    if(i==1){ # These remain constant over iterations
+      # Step 9.2: Get observed time-series of aggregate raw abundances that includes all
+      # data and then scale to units near 1-10
+      AggAbundRaw &lt;- zz$out$Logistic_Data$xx
+      digits &lt;- count.dig(AggAbundRaw)
+      ScaleSMU &lt;- min(10^(digits -1 ), na.rm=T)
+      AggAbund &lt;- AggAbundRaw/ScaleSMU
+      # Get time-series of observed ppns of CUs&gt; benchamark, including all
+      # data
+      obsPpnAboveBM &lt;- zz$out$Logistic_Data$yy
+      # Get threshold p value (ppn of CUs&gt;benchmark) used to estimate LRP
+      p &lt;- zz$LRPppn
+      #dir &lt;- &quot;DataOut/&quot;
+    }
+
+   # Step 9.3: Get predicted ppn of CUs above their lower benchmark for the year
+    # that was held out
+    B_0 &lt;- All_Ests %&gt;% filter(Param==&quot;B_0&quot;) %&gt;% pull(Estimate)
+    B_1 &lt;- All_Ests %&gt;% filter(Param==&quot;B_1&quot;) %&gt;% pull(Estimate)
+    #predPpnAboveBM &lt;- inv_logit(B_0 + B_1*AggAbund)
+    predPpnAboveBM[i] &lt;- inv_logit(B_0 + B_1*AggAbund[i])
+  } # End of for i in 1:18</code></pre>
+<pre><code>## Note: Using an external vector in selections is ambiguous.
+## i Use `all_of(EnhStocks)` instead of `EnhStocks` to silence this message.
+## i See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.
+## This message is displayed once per session.</code></pre>
+<pre><code>## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed
+## Warning: 5 external pointers will be removed</code></pre>
+<pre class="r"><code>  # Step 9.4: Calculate Hit Ratio
+
+  # In which years did the model predict aggregate abundances &gt;LRP?
+  yHat &lt;- predPpnAboveBM &gt; p
+  # In which years were observed aggregate abundances &gt;LRP?
+  y &lt;- obsPpnAboveBM &gt; p
+
+  # Confusion Matrix
+  confMat &lt;- table(y, yHat)
+
+  # What is the accuracy in classifying observed aggregate abundances?
+  # Hit ratio = ratio of correct classification
+  hitRatio &lt;- sum(diag(confMat))/sum(confMat)
+  hitRatio &lt;- round(hitRatio, digits=2)
+
+  hitRatio</code></pre>
+<pre><code>## [1] 1</code></pre>
 </div>
 </div>
 

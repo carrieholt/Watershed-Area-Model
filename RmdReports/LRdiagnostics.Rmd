@@ -8,6 +8,8 @@ output:
 ---
 
 ```{r setup, include=FALSE, echo=FALSE}
+
+
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = normalizePath(".."))  
 
@@ -52,11 +54,14 @@ library(patchwork)
 7. Evaluate Wald test.
   Is deviance significantly reduced with the predictor, Aggregate abundance?
 
-8. Evaluate hit rate.
+8. Evaluate hit ratio.
   What is the classification accuracy of the LRP based on the logistic
   regression?
 
-
+9. Leave-one-out cross-validaton of hit ratio.
+  What is the classification accuracy of the LRP when we use out-of-sample
+  predictions?
+  
 This code is wrapped inside a function LRdiagnostics() in a file of the same name. It's extracted here for demonstration purposes.
 
 ## The arguments of the function are:
@@ -337,13 +342,64 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
 
 ```{r}
   #------------------------------------------------------------------------------
-  # Step 9. 
-  # Evaluate hit ratio using leave-one-out cross validation from a confusion 
-  # matrix
+  # Step 9.
+  # Evaluate hit ratio using leave-one-out cross validation from a confusion
+  # matrix. Contains 4 sub-steps, 9.1-9.4.
   #   What is the classification accuracy of the LRP using out-of-sample data?
   #------------------------------------------------------------------------------
 
 
+  # Step 9.1: estimate logistic regression iteratively, removing a single year
+  # each time
+
+  n <- 18 # length of time-series used in logistic regression
+  source("R/WCVILRPs.R")
+  predPpnAboveBM <- NA
+
+  for (i in 1:n){
+    # Estimate logistic regression using function Get.LRP
+    zz <- Get.LRP(remove.EnhStocks = TRUE, LOO=i)
+    All_Ests <- zz$out$All_Ests
+
+    if(i==1){ # These remain constant over iterations
+      # Step 9.2: Get observed time-series of aggregate raw abundances that includes all
+      # data and then scale to units near 1-10
+      AggAbundRaw <- zz$out$Logistic_Data$xx
+      digits <- count.dig(AggAbundRaw)
+      ScaleSMU <- min(10^(digits -1 ), na.rm=T)
+      AggAbund <- AggAbundRaw/ScaleSMU
+      # Get time-series of observed ppns of CUs> benchamark, including all
+      # data
+      obsPpnAboveBM <- zz$out$Logistic_Data$yy
+      # Get threshold p value (ppn of CUs>benchmark) used to estimate LRP
+      p <- zz$LRPppn
+      #dir <- "DataOut/"
+    }
+
+   # Step 9.3: Get predicted ppn of CUs above their lower benchmark for the year
+    # that was held out
+    B_0 <- All_Ests %>% filter(Param=="B_0") %>% pull(Estimate)
+    B_1 <- All_Ests %>% filter(Param=="B_1") %>% pull(Estimate)
+    #predPpnAboveBM <- inv_logit(B_0 + B_1*AggAbund)
+    predPpnAboveBM[i] <- inv_logit(B_0 + B_1*AggAbund[i])
+  } # End of for i in 1:18
+
+  # Step 9.4: Calculate Hit Ratio
+
+  # In which years did the model predict aggregate abundances >LRP?
+  yHat <- predPpnAboveBM > p
+  # In which years were observed aggregate abundances >LRP?
+  y <- obsPpnAboveBM > p
+
+  # Confusion Matrix
+  confMat <- table(y, yHat)
+
+  # What is the accuracy in classifying observed aggregate abundances?
+  # Hit ratio = ratio of correct classification
+  hitRatio <- sum(diag(confMat))/sum(confMat)
+  hitRatio <- round(hitRatio, digits=2)
+
+  hitRatio
 
 ```
 

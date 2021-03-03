@@ -664,7 +664,7 @@ source(&quot;R/helperFunctions.r&quot;) # contains function ggplot.corr()
 <pre><code>## hitRatio 
 ##        1</code></pre>
 <ol start="9" style="list-style-type: decimal">
-<li>Leave-one-out cross validation: classification accuracy Sequentially remove one data point at a time, re-estimate logistic regression and LRP, and then calculate Hit Ratio (classification accurarcy) by comparing predicted and observed values for the data point that was held out.</li>
+<li>Leave-one-out cross validation: classification accuracy Sequentially remove one data point at a time, re-estimate logistic regression and LRP, and then calculate Hit Ratio (classification accurarcy) by comparing predicted and observed values for the data point that was held out. See LRdiagnostics.R for details on how to adapt this diagnostic for other case studies.</li>
 </ol>
 <pre class="r"><code>  #------------------------------------------------------------------------------
   # Step 9.
@@ -674,11 +674,13 @@ source(&quot;R/helperFunctions.r&quot;) # contains function ggplot.corr()
   #------------------------------------------------------------------------------
 
 
-  # Step 9.1: estimate logistic regression iteratively, removing a single year
+  # Step 9.1: Estimate logistic regression iteratively, removing a single year
   # each time
 
   n &lt;- 18 # length of time-series used in logistic regression
-  source(&quot;R/WCVILRPs.R&quot;)
+  source(&quot;R/WCVILRPs.R&quot;) # required to use the Get.LRP() function for the 
+  # WCVI case study
+  
   predPpnAboveBM &lt;- NA
 
   for (i in 1:n){

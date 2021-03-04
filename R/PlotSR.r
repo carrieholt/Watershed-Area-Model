@@ -761,7 +761,7 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=FALSE){
 
 
 
-plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out, WCVI_Esc=WCVIEsc){
+plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEsc){
   
   Years <- rownames(WCVI_Esc)
 
@@ -775,17 +775,17 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out, WCVI_Esc=WCVIEsc){
 
   par(mfrow=c(1,1), mar = c(2, 3, 2, 1) + 0.1)
 
-  ymax <- max(out$LRP$upr, SMU_Esc, na.rm=T)
+  ymax <- max(out$upr, SMU_Esc, na.rm=T)
   plot(x= Years, y= SMU_Esc, type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax))
   points(x= Years, y= SMU_Esc, col=col.pal[1], pch=19)
   axis(side=1, tick=TRUE, pos=0, padj=-0.9)#-1.8
   abline(h=0)
   axis(side=2)
   mtext("WCVI SMU", side=3, line=0.5, at="1960", cex=1.5)
-  legend(x="topleft", legend=NA, title= paste( "   LRP=", signif(out$LRP$fit,3) ), bty="n" )
-  abline(h=out$LRP$fit, col=col.pal[2], lwd=2)
+  legend(x="topleft", legend=NA, title= paste( "   LRP=", signif(out$fit,4) ), bty="n" )
+  abline(h=out$fit, col=col.pal[2], lwd=2)
   # CIs for LRP from TMB logistic regression
-  polygon(x=as.numeric(c(range(Years), rev(range(Years)))), y=c(rep(out$LRP$lwr,2), rep(out$LRP$upr,2)), col=col.pal.light[3], border=NA)
+  polygon(x=as.numeric(c(range(Years), rev(range(Years)))), y=c(rep(out$lwr,2), rep(out$upr,2)), col=col.pal.light[3], border=NA)
 }
 
 ## xx <- Get.LRP(remove.EnhStocks=TRUE)

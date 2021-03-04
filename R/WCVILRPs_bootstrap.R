@@ -1,5 +1,8 @@
 #-------------------------------------------------------------------------------
-# Code to estimate LRPs for WCVI CK from watershed-area based Sgen
+# Code to estimate LRPs for WCVI CK from watershed-area based Sgen by
+# bootstrapping from SREP estimates from the watershed-area model and Ricker 
+# a values from a plausible range derived from expert opinion and a 
+# life-history model
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 # Libraries and Functions
@@ -12,6 +15,7 @@ library(viridis)
 
 # Functions
 source("R/helperFunctions.r")
+
 
 #-------------------------------------------------------------------------------
 # Function to estimate LRPs for WCVI CK
@@ -36,7 +40,8 @@ source("R/helperFunctions.r")
   # Dataframe $CU_Status
   # Dataframe $SMU_ppn
 
-Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
+
+Get.LRP.bs <- function (remove.EnhStocks=TRUE, LOO = NA){
 
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
@@ -59,9 +64,11 @@ Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
   digits <- count.dig(stock_SMSY$SMSY)
   Scale <- 10^(digits)
   
+  SREP_SE <- wcviRPs %>% mutate(SE = (wcviRPs$SREP - wcviRPs$SREPLL) / 1.96)
+  SREP_SE <- SREP_SE %>% dplyr::select(Stock, SE)
   
   #----------------------------------------------------------------------------
-  # Caculate Sgen 2 ways
+  # Calculate Sgen 2 ways
   #----------------------------------------------------------------------------
   
   # 1.Use Watershed-area SMSY and SREP to estimate Sgen (assuming productivity
@@ -80,7 +87,7 @@ Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
   
   
   # When incorporating uncertainty in Ricker A:
-  Sig.Ric.A <- 0.255 #0.51 for a wider plausible bound
+  Sig.Ric.A <- 0.51#0.255 #0.51 for a wider plausible bound
   # Sig.Ric.A derived from 95% CL of lower and upper plausible limits = 
   # 0.5 logA - 1.5 logA (Luedke pers. comm. Dec 2020)
   # See distribution below:
@@ -93,9 +100,18 @@ Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
   # density is within bounds mean +/- 1.0 
   # (assuming range 0-2.0, mean=1). 0.510*1.96 = 1.0
   
-  #Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
+  Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
+  if(min(Ric.A)<0) Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
   
-  SGENcalcs <- purrr::map2_dfr (Ric.A, wcviRPs$SREP/Scale, Sgen.fn2)
+  sREP <- rnorm(length(Scale), wcviRPs$SREP, SREP_SE$SE)
+  if(min(sREP)<0)   sREP <- rnorm(length(Scale), wcviRPs$SREP, SREP_SE$SE)
+
+  # hist(Ric.A)
+  # par(mfrow=c(3,3))
+  # for (i in 1:28) hist( rnorm(nBS, wcviRPs$SREP[i], SREP_SE$SE[i]))
+  
+  #SGENcalcs <- purrr::map2_dfr (Ric.A, wcviRPs$SREP/Scale, Sgen.fn2)
+  SGENcalcs <- purrr::map2_dfr (Ric.A, sREP/Scale, Sgen.fn2)
   
   
   
@@ -113,10 +129,10 @@ Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
   wcviRPs <- wcviRPs[c("Stock", "SGEN", "SMSY", "SMSYLL", "SMSYUL", "SREP", 
                        "SREPLL", "SREPUL", "a.par")]#"CU"
   
-  # Write this to a csv file so that it can be called in plotting functions
-  # write.csv(wcviRPs, "DataOut/wcviRPs.csv")
-  if (remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_noEnh.csv")
-  if (!remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_wEnh.csv")
+  # # Write this to a csv file so that it can be called in plotting functions
+  # # write.csv(wcviRPs, "DataOut/wcviRPs.csv")
+  # if (remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_noEnh.csv")
+  # if (!remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_wEnh.csv")
   
   
   #----------------------------------------------------------------------------
@@ -329,7 +345,7 @@ Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
   data$LM_Agg_Abund <- SMUlogisticData$SMU_Esc/ScaleSMU
   data$N_Above_BM <- SMUlogisticData$ppn * data$N_Stks
   
-  if(!is.na(LOO)) { #Is applying leave-one-out cross validation, remove that
+  if(!is.na(LOO)) { #If applying leave-one-out cross validation, remove that
     #year
     data$LM_Agg_Abund <- data$LM_Agg_Abund[-LOO]
     data$N_Above_BM <- data$N_Above_BM[-LOO]
@@ -368,12 +384,13 @@ Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
   
   #dyn.unload(dynlib(paste("TMB_Files/Logistic_LRPs", sep="")))
   #compile(paste("TMB_Files/Logistic_LRPs.cpp", sep=""))
-  dyn.load(dynlib(paste("TMB_Files/Logistic_LRPs", sep="")))
+  
+  dyn.load(dynlib(paste("TMB_Files/Logistic_LRPs", sep=""))) 
 
-  obj <- MakeADFun(data, param, DLL="Logistic_LRPs", silent=TRUE)
+  obj <- MakeADFun(data, param, DLL="Logistic_LRPs", silent=TRUE) 
   
   opt <- nlminb(obj$par, obj$fn, obj$gr, control = 
-                  list(eval.max = 1e5, iter.max = 1e5))
+                  list(eval.max = 1e5, iter.max = 1e5)) 
   pl <- obj$env$parList(opt$par) 
   #summary(sdreport(obj), p.value=TRUE)
   
@@ -421,10 +438,71 @@ Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
               LRPppn=data$p, nLL=obj$report()$ans, LOO=LOO))
   
    
+} # Eng of Get.LRP.bs() function
+
+
+#-------------------------------------------------------------------------------
+# Now run bootstraps to derive LRPs with uncertainty in benchmarks
+# See implementation of this in WCVI_LRPs.Rmd
+
+run.bootstraps <- FALSE
+
+if (run.bootstraps){
+  nBS <- 200 # number trials for bootstrapping
+  for (k in 1:nBS) {
+    out <- as.data.frame(Get.LRP.bs()$out$LRP) 
+    if(k==1) LRP.bs <- data.frame(fit=out$fit, upr=out$upr, lwr=out$lwr)
+    if(k>1) LRP.bs <- add_row(LRP.bs, out)
+  }
+  # hist(LRP.bs$fit)
+  
+  # # Is 200 enough trials? Yes
+  # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
+  # plot(running.mean)
+  
+  # Calculate distribution of overall LRPs by integrating bootstrapped LRP 
+  # values with uncertainty of each LRP value from TMB
+  LRP.samples <- rnorm(nBS*10, LRP.bs$fit, (LRP.bs$fit - LRP.bs$lwr) / 1.96)
+  hist(LRP.samples)
+  LRP_bs <- quantile(LRP.samples, probs=c(0.05, 0.5, 0.95))
+  names(LRP_bs) <- c("lwr", "LRP", "upr")
+  
+  LRP_bs
+  # To do: add this to WCVI_LRPs.Rmd in the final plot, explaining how it was 
+  # achieved (and remove CIs from benchmark plots for consistency)
+  
 }
 
-#Get.LRP(remove.EnhStocks = TRUE)
-#Get.LRP(remove.EnhStocks = FALSE)
+#-------------------------------------------------------------------------------
+# Now run bootstraps to derive uncertainties in Sgen and SMSY
+
+run.Bench.bootstraps <- FALSE
+
+if (run.Bench.bootstraps){
+  nBS <- 200 # number trials for bootstrapping
+  for (k in 1:nBS) {
+    out <- as.data.frame(Get.LRP.bs()$out$LRP) 
+    if(k==1) LRP.bs <- data.frame(fit=out$fit, upr=out$upr, lwr=out$lwr)
+    if(k>1) LRP.bs <- add_row(LRP.bs, out)
+  }
+  # hist(LRP.bs$fit)
+  
+  # # Is 200 enough trials? Yes
+  # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
+  # plot(running.mean)
+  
+  # Calculate distribution of overall LRPs by integrating bootstrapped LRP 
+  # values with uncertainty of each LRP value from TMB
+  LRP.samples <- rnorm(nBS*10, LRP.bs$fit, (LRP.bs$fit - LRP.bs$lwr) / 1.96)
+  hist(LRP.samples)
+  LRP_bs <- quantile(LRP.samples, probs=c(0.05, 0.5, 0.95))
+  names(LRP_bs) <- c("lwr", "LRP", "upr")
+  
+  LRP_bs
+  # To do: add this to WCVI_LRPs.Rmd in the final plot, explaining how it was 
+  # achieved (and remove CIs from benchmark plots for consistency)
+  
+}
 
 #----------------------------------------------------------------------------
 # R version of logistic regression

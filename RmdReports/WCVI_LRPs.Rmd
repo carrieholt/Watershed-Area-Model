@@ -1,7 +1,7 @@
 ---
 title: "WCVI LRPs"
 author: "Carrie Holt"
-date: "January 18, 2021"
+date: "March 3, 2021"
 output:
   html_document: default
   word_document: default
@@ -27,6 +27,7 @@ This report contains preliminary LRPs for WCVI Chinook. Only indicators stocks w
 source("R/helperFunctions.r")
 source("R/WCVILRPs.r")
 source("R/PlotSR.r")
+source("R/WCVILRPs_bootstrap.R")
 
 xx <- Get.LRP(remove.EnhStocks=TRUE)
 
@@ -69,14 +70,36 @@ plotLogistic(Data=xx$out$Logistic_Data, Preds=xx$out$Preds, LRP=xx$out$LRP, useG
 
 ```
 
-Aggregate SMU abundances vary around the LRP, but are mostly below it. Note, the 95% confidence interval for LRP do not yet include uncertainty from the watershed-area regression. Full uncertainties that capture variabilty from benchamrks estimation will be larger.
-```{r , echo=FALSE, fig.cap = "**Figure 5**. Time-series of SMU abundances (summation of indicators stocks with average NI >0.5) relative to LRP."}
+Figure 4 shows that the aggregate SMU abundances are entirely below LRP. Note, the 95% confidence interval for LRP in Figure 4 is derived from uncertaity in the statistical fit of the logisitic regression, and does not include uncertainty from the underlying lower benchmarks, which are themsleves derived from the watershed-area regression of SREP and plausible ranges of productivity (Ricker a). 
 
-plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc, out=xx$out, WCVI_Esc=xx$WCVIEsc)
+To capture uncertainties in underlying benchmarks, the LRP estimation procedure was re-iterated over multiple random samples of SREP from the watershed-area model (capturing uncertainty in SREP) and samples of productivity (Ricker a) from plausible ranges derived from expert opinion. The uncertainties from individual LRP estimates were then integrated with uncertainty derived from multiple iterations of LRPs by drawing samples from the joint distribution.
+```{r , echo=FALSE, include=FALSE}
+
+
+nBS <- 200 # number trials for bootstrapping
+for (k in 1:nBS) {
+  out <- as.data.frame(Get.LRP.bs()$out$LRP) 
+  if(k==1) LRP.bs <- data.frame(fit=out$fit, upr=out$upr, lwr=out$lwr)
+  if(k>1) LRP.bs <- add_row(LRP.bs, out)
+}
+
+
+```
+
+```{r fig.cap = "**Figure 5**. Time-series of SMU abundances (summation of indicators stocks with average NI >0.5) relative to LRP."}
+# Calculate distribution of overall LRPs by integrating bootstrapped LRP 
+# values with uncertainty of each LRP value from TMB
+LRP.samples <- rnorm(nBS*10, LRP.bs$fit, (LRP.bs$fit - LRP.bs$lwr) / 1.96)
+#hist(LRP.samples)
+quan_bs <- quantile(LRP.samples, probs=c(0.05, 0.5, 0.95))
+LRP_bs <- data.frame(lwr=quan_bs[1], fit=quan_bs[2], upr=quan_bs[3])
+row.names(LRP_bs) <- "LRP"
+
+plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc, out=LRP_bs, WCVI_Esc=xx$WCVIEsc)
+
 
 ```
 ## Plots with enhancement
-
 ```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.cap = "**Figure 6**. Time series of spawner abundances by inlet including all indicator WCVI Chinook stocks. Three reference points are included: SREP from the watershed-area model (horizontal green line) with 95% prediction intervals (green shaded area), and SMSY (horizontal yellow line) and SGEN (horizontal blue line) estimated from SREP and expert derived productivity. The reference points in this plot differ from those in Fig. 1 because all indicator stocks were included in the watershed-area model instead of only un-enhanced indicator stocks."}
 yy <- Get.LRP(remove.EnhStocks=FALSE)
 
@@ -112,9 +135,30 @@ plotLogistic(Data=yy$out$Logistic_Data, Preds=yy$out$Preds, LRP=yy$out$LRP, useG
 
 ```
 
-```{r , echo=FALSE, fig.cap = "**Figure 10**. Time-series of SMU abundances (summation of all indicators stocks) relative to LRP, with all indicator stocks included."}
+```{r , echo=FALSE, include=FALSE}
 
-plotWCVI_SMUtimeseries(SMU_Esc=yy$SMU_Esc, out=yy$out, WCVI_Esc=yy$WCVIEsc)
+nBS <- 200 # number trials for bootstrapping
+for (k in 1:nBS) {
+  out <- as.data.frame(Get.LRP.bs(remove.EnhStocks=FALSE)$out$LRP) 
+  if(k==1) LRP.bs <- data.frame(fit=out$fit, upr=out$upr, lwr=out$lwr)
+  if(k>1) LRP.bs <- add_row(LRP.bs, out)
+}
+
+
+```
+```{r fig.cap = "**Figure 10**. Time-series of SMU abundances (summation of all indicators stocks) relative to LRP, with all indicator stocks included."}
+# Calculate distribution of overall LRPs by integrating bootstrapped LRP 
+# values with uncertainty of each LRP value from TMB
+LRP.samples <- rnorm(nBS*10, LRP.bs$fit, (LRP.bs$fit - LRP.bs$lwr) / 1.96)
+hist(LRP.samples)
+quan_bs <- quantile(LRP.samples, probs=c(0.05, 0.5, 0.95))
+LRP_bs <- data.frame(lwr=quan_bs[1], fit=quan_bs[2], upr=quan_bs[3])
+row.names(LRP_bs) <- "LRP"
+
+plotWCVI_SMUtimeseries(SMU_Esc=yy$SMU_Esc, out=LRP_bs, WCVI_Esc=yy$WCVIEsc)
+
+
+#plotWCVI_SMUtimeseries(SMU_Esc=yy$SMU_Esc, out=yy$out$LRP, WCVI_Esc=yy$WCVIEsc)
 
 ```
 

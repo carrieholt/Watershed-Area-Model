@@ -347,19 +347,19 @@ Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
   # across CUs. 
   # If CU-level benchmarks exist can sum those benchmarks for Upper 95%CL
   min <- min(apply(CU_Sum, 2, min, na.rm=T), na.rm=T)
-  max <- mean(apply(CU_Sum, 1, sum, na.rm=F), na.rm=T)
+  max <- max(apply(CU_Sum, 1, sum, na.rm=F), na.rm=T)
   # Parameters for normal penalty (mu, sig):
   # mu  = ave of min and max values. 
   # sig = SD which allows the density = 0.05 at min and max values
-  # sum(dnorm(seq(min,max,1), mean=mean(c(min,max)), sd=22400))# Should 
+  # sum(dnorm(seq(min,max,1), mean=mean(c(min,max)), sd=43000))# Should 
   # give 95% density
   # plot(x=seq(min,max,100), y=dnorm(seq(min,max,100), 
   # mean=mean(c(min,max)), sd=22400),type="l")
   data$B_penalty_mu <- mean(c(min,max))/ScaleSMU
-  if (!remove.EnhStocks) data$B_penalty_sig <- 22400/ScaleSMU
+  if (!remove.EnhStocks) data$B_penalty_sig <- 43000/ScaleSMU#,eam--22400#max--43000
   # Should give 95% density:
   # sum(dnorm(seq(min,max,1), mean=mean(c(min,max)), sd=2700))
-  if (remove.EnhStocks) data$B_penalty_sig <- 2700/ScaleSMU
+  if (remove.EnhStocks) data$B_penalty_sig <- 2400/ScaleSMU#mean--1375#max--2400
   
   param <- list()
   param$B_0 <- -2

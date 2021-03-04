@@ -435,7 +435,8 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE, LOO = NA){
   
   return(list(out=out, WCVIEsc=WCVIEsc, SMU_Esc=SMU_Esc, 
               CU_Status=CU_Status, SMU_ppn=SMU_ppn, 
-              LRPppn=data$p, nLL=obj$report()$ans, LOO=LOO))
+              LRPppn= data$p, nLL=obj$report()$ans, LOO=LOO, 
+              bench= select(SGENcalcs,-apar, -bpar)*Scale))
   
    
 } # Eng of Get.LRP.bs() function
@@ -449,10 +450,15 @@ run.bootstraps <- FALSE
 
 if (run.bootstraps){
   nBS <- 200 # number trials for bootstrapping
+  outBench <- list() 
+  
   for (k in 1:nBS) {
-    out <- as.data.frame(Get.LRP.bs()$out$LRP) 
-    if(k==1) LRP.bs <- data.frame(fit=out$fit, upr=out$upr, lwr=out$lwr)
-    if(k>1) LRP.bs <- add_row(LRP.bs, out)
+    out <- Get.LRP.bs()
+    outLRP <- as.data.frame(out$out$LRP) 
+    if(k==1) LRP.bs <- data.frame(fit=outLRP$fit, upr=outLRP$upr, lwr=outLRP$lwr)
+    if(k>1) LRP.bs <- add_row(LRP.bs, outLRP)
+    
+    outBench[[k]] <- out$bench
   }
   # hist(LRP.bs$fit)
   
@@ -464,45 +470,28 @@ if (run.bootstraps){
   # values with uncertainty of each LRP value from TMB
   LRP.samples <- rnorm(nBS*10, LRP.bs$fit, (LRP.bs$fit - LRP.bs$lwr) / 1.96)
   hist(LRP.samples)
-  LRP_bs <- quantile(LRP.samples, probs=c(0.05, 0.5, 0.95))
-  names(LRP_bs) <- c("lwr", "LRP", "upr")
+  LRP.boot <- quantile(LRP.samples, probs=c(0.05, 0.5, 0.95))
+  names(LRP.boot) <- c("lwr", "LRP", "upr")
   
-  LRP_bs
-  # To do: add this to WCVI_LRPs.Rmd in the final plot, explaining how it was 
-  # achieved (and remove CIs from benchmark plots for consistency)
+  SGEN.bs <- select(as.data.frame(outBench), starts_with("SGEN"))
+  rownames(SGEN.bs) <- stock_SMSY$Stock
+  SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.05), 
+                          lwr=apply(SGEN.bs, 1, quantile, 0.5),
+                          upr=apply(SGEN.bs, 1, quantile, 0.95) )
   
-}
-
-#-------------------------------------------------------------------------------
-# Now run bootstraps to derive uncertainties in Sgen and SMSY
-
-run.Bench.bootstraps <- FALSE
-
-if (run.Bench.bootstraps){
-  nBS <- 200 # number trials for bootstrapping
-  for (k in 1:nBS) {
-    out <- as.data.frame(Get.LRP.bs()$out$LRP) 
-    if(k==1) LRP.bs <- data.frame(fit=out$fit, upr=out$upr, lwr=out$lwr)
-    if(k>1) LRP.bs <- add_row(LRP.bs, out)
-  }
-  # hist(LRP.bs$fit)
+  SMSY.bs <- select(as.data.frame(outBench), starts_with("SMSY"))
+  rownames(SMSY.bs) <- stock_SMSY$Stock
+  SMSY.boot <- data.frame(SMSY= apply(SMSY.bs, 1, quantile, 0.05), 
+                          lwr=apply(SMSY.bs, 1, quantile, 0.5),
+                          upr=apply(SMSY.bs, 1, quantile, 0.95) )
   
-  # # Is 200 enough trials? Yes
-  # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
-  # plot(running.mean)
-  
-  # Calculate distribution of overall LRPs by integrating bootstrapped LRP 
-  # values with uncertainty of each LRP value from TMB
-  LRP.samples <- rnorm(nBS*10, LRP.bs$fit, (LRP.bs$fit - LRP.bs$lwr) / 1.96)
-  hist(LRP.samples)
-  LRP_bs <- quantile(LRP.samples, probs=c(0.05, 0.5, 0.95))
-  names(LRP_bs) <- c("lwr", "LRP", "upr")
-  
-  LRP_bs
-  # To do: add this to WCVI_LRPs.Rmd in the final plot, explaining how it was 
-  # achieved (and remove CIs from benchmark plots for consistency)
+  #Print median and upper and lower 95% intervals for LRP, SGEN & SMSY
+  LRP.boot
+  SGEN.boot
+  SMSY.boot
   
 }
+
 
 #----------------------------------------------------------------------------
 # R version of logistic regression

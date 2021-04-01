@@ -36,7 +36,7 @@ source("R/helperFunctions.r")
   # Dataframe $CU_Status
   # Dataframe $SMU_ppn
 
-Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
+Get.LRP <- function (remove.EnhStocks=TRUE, Bern_logistic=FALSE, LOO = NA){
 
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
@@ -328,8 +328,12 @@ Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
   
   data$LM_Agg_Abund <- SMUlogisticData$SMU_Esc/ScaleSMU
   data$N_Above_BM <- SMUlogisticData$ppn * data$N_Stks
+  #data$Above_BM <- floor(SMUlogisticData$ppn)
+  # data$AboveBM =  0 and 1s for Bernoulli regression (1 = all CUs > benchmark
+  # and 0 = at least one CU is < benchmark)
   
-  if(!is.na(LOO)) { #Is applying leave-one-out cross validation, remove that
+  
+  if(!is.na(LOO)) { #If applying leave-one-out cross validation, remove that
     #year
     data$LM_Agg_Abund <- data$LM_Agg_Abund[-LOO]
     data$N_Above_BM <- data$N_Above_BM[-LOO]
@@ -338,7 +342,11 @@ Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
   if(remove.EnhStocks) data$Pred_Abund <- 
     seq(0, max(data$LM_Agg_Abund)*1.5, 0.1)
   data$p <- 0.95#0.67
-  data$Penalty <- as.numeric(TRUE)
+  # Apply the penalty for the binomial regression only (not Bernoulli)
+  if(Bern_logistic==FALSE) data$Penalty <- as.numeric(TRUE)
+  if(Bern_logistic==TRUE) data$Penalty <- as.numeric(FALSE)
+  data$Bern_logistic <- as.numeric(Bern_logistic)
+  
   # Add a normally distributed penalty on aggregate abundances 
   # when p is very small (0.01) 
   # Lower 95% CL = abundance of the smallest CU in its lowest abundance 
@@ -433,7 +441,12 @@ Get.LRP <- function (remove.EnhStocks=TRUE, LOO = NA){
 R.logReg <- FALSE
 
 if (R.logReg) {
-  ModDat <- data.frame(xx=data$LM_Agg_Abund, yy=SMUlogisticData$ppn)
+  if (Bern_logistic==FALSE) {ModDat <- 
+    data.frame(xx=data$LM_Agg_Abund, yy=SMUlogisticData$ppn)}
+  
+  if (Bern_logistic==TRUE) {ModDat <- 
+    data.frame(xx=data$LM_Agg_Abund, yy=floor(SMUlogisticData$ppn))}
+  
   #or family=binomial, which gives much larger SEs, and assumes var=1.
   Fit_Mod <- glm( yy ~ xx , family = quasibinomial, data=ModDat)
   summary(Fit_Mod)$coefficients

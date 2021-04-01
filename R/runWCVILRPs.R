@@ -45,9 +45,9 @@ runIWAM(remove.EnhStocks = FALSE, removeSkagit = FALSE,
 # Step 2
 # Run LRP code to derive inlet-level Sgen and SMU level LRPs for WCVI CK, 
 # accounting for uncertainty in LRP from the logistic regression
-Get.LRP(remove.EnhStocks = TRUE)$out$LRP
+Get.LRP(remove.EnhStocks = TRUE, Bern_logistic=FALSE)$out$LRP
 
-Get.LRP(remove.EnhStocks = FALSE)$out$LRP
+Get.LRP(remove.EnhStocks = FALSE, Bern_logistic=FALSE)$out$LRP
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
@@ -61,7 +61,7 @@ nBS <- 200 # number trials for bootstrapping
 outBench <- list() 
 
 for (k in 1:nBS) {
-  out <- Get.LRP.bs(remove.EnhStocks = TRUE)
+  out <- Get.LRP.bs(remove.EnhStocks = TRUE, Bern_logistic=FALSE)
   outLRP <- as.data.frame(out$out$LRP) 
   if(k==1) LRP.bs <- data.frame(fit=outLRP$fit, upr=outLRP$upr, lwr=outLRP$lwr)
   if(k>1) LRP.bs <- add_row(LRP.bs, outLRP)

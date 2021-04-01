@@ -1,7 +1,7 @@
 ---
 title: "Logistic Regression Diagnostics"
 author: "Carrie Holt"
-date: "January 15, 2021"
+date: "April 1, 2021"
 output:
   html_document: default
   word_document: default
@@ -23,15 +23,17 @@ library(patchwork)
 
 # Assumptions of logistic regression
 1. The relationship between aggregate abundance and logit(proportions) is linear
+and the residuals are homoscedastic
 
 2. The observed proportions are independent (not autocorrelated)
 
-3. There are no influential values (outliers)
+3. There are no influential values (outliers). Note, we cannot evaluate this as
+hat  matrix is not provided in TMB outputs.
 
 4. There is no multicollinearity among predictors (NA, only 1 predictor)
 
 # Steps:
-1. Estimate Pearson resiudals and deviance residuals (Assumption 3).
+1. Estimate Pearson residuals and deviance residuals (Assumption 3).
   Are deviance residuals >2?
 
 2. (a) Plot residuals against fitted values (Assumption 1).
@@ -62,7 +64,8 @@ library(patchwork)
   What is the classification accuracy of the LRP when we use out-of-sample
   predictions?
   
-This code is wrapped inside a function LRdiagnostics() in a file of the same name. It's extracted here for demonstration purposes.
+This code is wrapped inside a function LRdiagnostics() in a file of the same 
+name. It's extracted here for demonstration purposes.
 
 ## The arguments of the function are:
 
@@ -72,7 +75,8 @@ All_Ests = Dataframe containing parameters of logistic regression, B_0 and B_1
 AggAbund = Vector of scaled observed aggregate abundances, with NAs removed
 
 obsPpnAboveBM = Vectors of observed ppn of CUs above their lower benchmarks
-  with NAs removed
+  with NAs removed OR observed probability of a specified proportion of CUs
+  being above their lower benchmarks
 
 p = the proportion of CUs that must be > their benchmark when defining LRP
 
@@ -115,8 +119,8 @@ source("R/helperFunctions.r") # contains function ggplot.corr()
   # Pearson residuals: Eq3.15 https://data.princeton.edu/wws509/notes/c3s8
   # setting n=1 (number of trials at each observation of x)
   
-  PearResid <- ( obsPpnAboveBM - predPpnAboveBM ) / sqrt( predPpnAboveBM * 
-                                                            (1 - predPpnAboveBM) ) 
+  PearResid <- (obsPpnAboveBM - predPpnAboveBM) / sqrt(predPpnAboveBM * 
+                                                          (1 - predPpnAboveBM)) 
 
   PearResid
   # Deviance residual: Eq3.16 https://data.princeton.edu/wws509/notes/c3s8

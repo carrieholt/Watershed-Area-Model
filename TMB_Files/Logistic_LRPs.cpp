@@ -51,6 +51,8 @@ Type objective_function<Type>::operator() ()
   DATA_SCALAR(B_penalty_mu);
   DATA_SCALAR(B_penalty_sig);
   DATA_INTEGER(Penalty);
+  DATA_INTEGER(Bern_logistic);
+  
   
   PARAMETER(B_0);
   PARAMETER(B_1);
@@ -63,20 +65,36 @@ Type objective_function<Type>::operator() ()
  
   // vectors of number of "trials" for logistic mods
   vector<Type> N_bin(Logistic_Mod_Yrs);
+  vector<Type> N_bern(Logistic_Mod_Yrs);
   // vector for logistic likelihood
   vector<Type> LogitP(Logistic_Mod_Yrs);
-  
+  // Also version with 0/1's if doing bernoulli
+  vector <Type> All_Above_BM(Logistic_Mod_Yrs);
+  // set to 0
+  All_Above_BM.setZero();
   
   // create logistic likelihood and
   // Fill Ns with values
   for(int i=0; i<Logistic_Mod_Yrs; ++i){
     LogitP(i) = B_0 + B_1*LM_Agg_Abund(i);
     N_bin(i) = N_Stks;
+    N_bern(i) = 1;
+    // Also fill in bernoulli version with 1s when all above LRP
+    if(N_Above_BM(i) == N_Stks){
+      All_Above_BM(i) = 1;
+    }
+    
   }
   
   // Fit logistic model
+  
+  if(Bern_logistic == 1){
+    ans += -sum(dbinom_robust(All_Above_BM, N_bern, LogitP, true));
+  } else if(Bern_logistic == 0) {
     ans += -sum(dbinom_robust(N_Above_BM, N_bin, LogitP, true));
-
+  }
+  
+  
   
   // Add log-normal penalty on the aggregate abundance at p=0.01. AggAbun= ( log(p/(1-p) - B_0)/B_1
   Type p_min = 0.01;
@@ -108,6 +126,7 @@ Type objective_function<Type>::operator() ()
   Logit_Preds = B_0 + B_1*Pred_Abund;
   
   REPORT(N_Above_BM);
+  REPORT(All_Above_BM);
   REPORT(ans);
   ADREPORT(Agg_LRP);
   ADREPORT(Logit_Preds);

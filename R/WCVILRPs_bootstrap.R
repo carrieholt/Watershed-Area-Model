@@ -41,7 +41,7 @@ source("R/helperFunctions.r")
   # Dataframe $SMU_ppn
 
 
-Get.LRP.bs <- function (remove.EnhStocks=TRUE, LOO = NA){
+Get.LRP.bs <- function (remove.EnhStocks=TRUE, Bern_logistic=FALSE, LOO = NA){
 
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
@@ -354,7 +354,11 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE, LOO = NA){
   if(remove.EnhStocks) data$Pred_Abund <- 
     seq(0, max(data$LM_Agg_Abund)*1.5, 0.1)
   data$p <- 0.95#0.67
-  data$Penalty <- as.numeric(TRUE)
+  
+  if(Bern_logistic==FALSE) data$Penalty <- as.numeric(TRUE)
+  if(Bern_logistic==TRUE) data$Penalty <- as.numeric(FALSE)
+  data$Bern_logistic <- as.numeric(Bern_logistic)
+  
   # Add a normally distributed penalty on aggregate abundances 
   # when p is very small (0.01) 
   # Lower 95% CL = abundance of the smallest CU in its lowest abundance 

@@ -425,7 +425,7 @@ Get.LRP <- function (remove.EnhStocks=TRUE, Bern_logistic=FALSE, LOO = NA){
                                  pull(xx) ) * ScaleSMU)
   
   return(list(out=out, WCVIEsc=WCVIEsc, SMU_Esc=SMU_Esc, 
-              CU_Status=CU_Status, SMU_ppn=SMU_ppn, 
+              CU_Status=CU_Status, Inlet_Status=Inlet_Status, SMU_ppn=SMU_ppn, 
               LRPppn=data$p, nLL=obj$report()$ans, LOO=LOO))
   
    

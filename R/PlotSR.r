@@ -898,3 +898,44 @@ plotLogistic <- function(Data, Preds, LRP, useGenMean = F, plotName, outDir, p=0
 #if(xx$out$LRP$lwr<=0) xx$out$LRP$lwr <-1
 #if(yy$out$LRP$lwr<=0) yy$out$LRP$lwr <-1
 
+
+#==================================================================
+# Plot annual inlet status plot (WCVI(
+#==============================================================
+
+library(patchwork)
+
+# ***must run code within WCVILRPs.R code to get variable, Inlet_Status
+
+# Inlet_StatusNumeric <- t(apply(X= Inlet_Status, MARGIN = 1, FUN=as.numeric))
+# 
+# colnames(Inlet_StatusNumeric)  <- colnames(Inlet_Status)
+# 
+# Inlet_StatusNumeric <- as.data.frame(Inlet_StatusNumeric) %>% 
+#   add_column(Years=as.numeric(Years))
+# 
+# colnames(Inlet_StatusNumeric)[5] <- "NootkaEsperanza"
+# 
+# Inlet_StatusNumeric
+# g1 <- ggplot(Inlet_StatusNumeric) + geom_point(aes(x=Years, y=Barkley)) +
+#   scale_x_continuous(name ="") + scale_y_continuous(breaks=c(0,1), limits=c(0,1)) + 
+#   theme(text = element_text(size=17))
+# 
+# g2 <- ggplot(Inlet_StatusNumeric) + geom_point(aes(x=Years, y=Clayoquot))+
+#   scale_x_continuous(name ="") + scale_y_continuous(breaks=c(0,1), limits=c(0,1)) + 
+#   theme(text = element_text(size=17))
+# g3 <- ggplot(Inlet_StatusNumeric) + geom_point(aes(x=Years, y=NootkaEsperanza))+
+#   scale_x_continuous(name ="") + scale_y_continuous(breaks=c(0,1), limits=c(0,1))+ 
+#   theme(text = element_text(size=17))
+# g4 <- ggplot(Inlet_StatusNumeric) + geom_point(aes(x=Years, y=Kyuquot))+
+#   scale_x_continuous(name ="") + scale_y_continuous(breaks=c(0,1), limits=c(0,1))+ 
+#   theme(text = element_text(size=17))
+# g5 <- ggplot(Inlet_StatusNumeric) + geom_point(aes(x=Years, y=Quatsino))+
+#   scale_x_continuous(name ="") + scale_y_continuous(breaks=c(0,1), limits=c(0,1))+ 
+#   theme(text = element_text(size=17))
+# 
+# Inlet_Status_plot <- g5 + g4 + g3 + g2 + g1 + plot_layout(ncol = 1)
+# plotName <- "InletStatus"
+# ggsave(paste("DataOut/",plotName,".png",sep=""), plot = Inlet_Status_plot,
+#        width = 7, height = 10, units = "in")  
+

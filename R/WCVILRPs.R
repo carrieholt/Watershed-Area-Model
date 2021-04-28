@@ -207,7 +207,21 @@ Get.LRP <- function (remove.EnhStocks=TRUE, Bern_logistic=FALSE, LOO = NA){
     Inlet_Sum[,i] <- apply(WCVIEsc_Inlets, 1, sum, na.rm=F)
   }
   
+  # Create csv files of inlet-level escapements for projection-based LRP
+  Inlet_Sum_csv <- as.data.frame(Inlet_Sum) %>% 
+    add_column(Years=as.numeric(Years))
+  Inlet_Sum_csv <- Inlet_Sum_csv %>%  pivot_longer(cols=Inlet_Names) %>% 
+    rename(BroodYear=Years, Inlet=name, Escapement=value)
   
+  WCVIStocks_inlets <- WCVIStocks %>% select(CU, Inlet) %>% distinct() %>% 
+    add_column(Inlet_ID=1:5)
+  
+  
+  Inlet_Sum_csv <- Inlet_Sum_csv %>% left_join(WCVIStocks_inlets, by="Inlet")
+  
+  Inlet_Sum_csv <-  Inlet_Sum_csv %>% rename(Inlet_Name=Inlet, CU_Name=CU) %>% 
+    arrange(Inlet_ID)
+  write.csv(Inlet_Sum_csv, file="DataOut/Inlet_Sum.csv", row.names=F)
   #----------------------------------------------------------------------------
   # Sum escapements across indicators within CUs
   #----------------------------------------------------------------------------

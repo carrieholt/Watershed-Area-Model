@@ -219,8 +219,10 @@ Get.LRP <- function (remove.EnhStocks=TRUE, Bern_logistic=FALSE, LOO = NA){
   
   Inlet_Sum_csv <- Inlet_Sum_csv %>% left_join(WCVIStocks_inlets, by="Inlet")
   
-  Inlet_Sum_csv <-  Inlet_Sum_csv %>% rename(Inlet_Name=Inlet, CU_Name=CU) %>% 
-    arrange(Inlet_ID)
+  Inlet_Sum_csv <-  Inlet_Sum_csv %>% rename(Inlet_Name=Inlet, CU_Name=CU, 
+                                             Spawners=Escapement) %>% 
+    add_column(Recruits = NA)
+    
   write.csv(Inlet_Sum_csv, file="DataOut/Inlet_Sum.csv", row.names=F)
   #----------------------------------------------------------------------------
   # Sum escapements across indicators within CUs

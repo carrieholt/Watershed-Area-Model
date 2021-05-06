@@ -28,7 +28,7 @@ source("R/helperFunctions.r")
 source ("R/PlotSR.r")
 source ("R/IWAM.R")
 source("R/WCVILRPs.R")
-source("R/WCVILRPs_boostrap.R")
+source("R/WCVILRPs_bootstrap.R")
 
 #-------------------------------------------------------------------------------
 # Step 1

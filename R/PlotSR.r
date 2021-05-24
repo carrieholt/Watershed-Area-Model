@@ -782,14 +782,15 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
   abline(h=0)
   axis(side=2)
   mtext("WCVI SMU", side=3, line=0.5, at="1960", cex=1.5)
-  legend(x="topleft", legend=NA, title= paste( "   LRP=", signif(out$fit,4) ), bty="n" )
-  abline(h=out$fit, col=col.pal[2], lwd=2)
-  #abline(h=projLRP$fit, col=col.pal[4], lwd=2)
+  # legend(x="topleft", legend=NA, title= paste( "   LRP=", signif(out$fit,4) ), bty="n" )
+  # abline(h=out$fit, col=col.pal[2], lwd=2)
+  # #Projected LRP from "ProjectedLRPs.csv"
+  #abline(h=5700, col=col.pal[4], lwd=2)#abline(h=projLRP$fit, col=col.pal[4], lwd=2)
   # CIs for LRP from TMB logistic regression
-  polygon(x=as.numeric(c(range(Years), rev(range(Years)))), y=c(rep(out$lwr,2), rep(out$upr,2)), col=col.pal.light[3], border=NA)
+  # polygon(x=as.numeric(c(range(Years), rev(range(Years)))), y=c(rep(out$lwr,2), rep(out$upr,2)), col=col.pal.light[3], border=NA)
 }
 
-## xx <- Get.LRP(remove.EnhStocks=TRUE)
+ # xx <- Get.LRP(remove.EnhStocks=TRUE)
 # png(paste("DataOut/WCVI_SMUtimeseries_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
 # plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc, out=xx$out, WCVI_Esc=xx$WCVIEsc)
 # dev.off()
@@ -801,13 +802,25 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
 
 # Code to plot projection based LRPs
 # Need to run the function lines indepently to plot both empirical and projection LRPs
-# projLRP <- data.frame(read.csv("c:/github/SalmonLRP_RetroEval/WCVIChinookStudy/DataOut/ProjectedLRPs/ProjectedLRPs.csv"))
-# projLRP <- projLRP %>% filter(OM=="Base.n500") %>% pull(LRP)
-# projLRP <- data.frame(fit=projLRP)
-# png(paste("DataOut/WCVI_SMUtimeseries_projLRPn500wEmpLRP_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
+# projLRPin <- data.frame(read.csv("c:/github/SalmonLRP_RetroEval/WCVIChinookStudy/DataOut/ProjectedLRPs/ProjectedLRPs.csv"))
+# projLRPa <- projLRPin %>% filter(OM=="cvER0.21.cvERSMU0.42.agePpnConst.recCorSca0.1.n100.mcmc") %>% pull(LRP)
+# projLRPb <- projLRPin %>% filter(OM=="cvER0.42.cvERSMU0.42.agePpnConst.recCorSca0.3.n100.mcmc") %>% pull(LRP)
+# projLRPc <- projLRPin %>% filter(OM=="cvER0.cvERSMU0.42n100.mcmc") %>% pull(LRP)
+# projLRPd <- 5300
+# projLRPe <- 5500
+# projLRPf <- 5700
+#   
+# projLRP <- data.frame(fit=projLRPa)
+# png(paste("DataOut/WCVI_SMUtimeseries_projLRPwEmpLRPcvER0.21RecScalar_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
 # plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc[38:length(xx$SMU_Esc)], out=xx$out$LRP, WCVI_Esc=xx$WCVIEsc[38:length(xx$SMU_Esc),])
+# # abline(h=projLRPa, col="salmon", lwd=2)
+# # abline(h=projLRPb, col="aquamarine3", lwd=2)
+# # abline(h=projLRPc, col="black", lwd=2)
+# abline(h=projLRPd, col=viridis(3)[1], lwd=2)
+# abline(h=projLRPe, col=viridis(3)[2], lwd=2)
+# abline(h=projLRPf, col=viridis(3)[3], lwd=2)
 # dev.off()
-
+# 
 #==================================================================
 # Plot time-series of CU status
 #==================================================================

@@ -120,7 +120,7 @@ Get.LRP <- function (remove.EnhStocks=TRUE, Bern_logistic=FALSE, LOO = NA){
   
   
   #----------------------------------------------------------------------------
-  # Scenario if productivity is reducted by half, as in WSP SBC CK assessment 
+  # Scenario if productivity is reduced by half, as in WSP SBC CK assessment 
   # (DFO 2014). NOT NEEDED
   #----------------------------------------------------------------------------
   # 

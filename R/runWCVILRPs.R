@@ -45,6 +45,8 @@ runIWAM(remove.EnhStocks = FALSE, removeSkagit = FALSE,
 # Step 2
 # Run LRP code to derive inlet-level Sgen and SMU level LRPs for WCVI CK, 
 # accounting for uncertainty in LRP from the logistic regression
+# Keep Bern_logistic = FALSE for now, as for WCVI CK, there are no years ppn=1
+# so Bernoulli logistic regression cannot be esimated
 Get.LRP(remove.EnhStocks = TRUE, Bern_logistic=FALSE)$out$LRP
 
 Get.LRP(remove.EnhStocks = FALSE, Bern_logistic=FALSE)$out$LRP

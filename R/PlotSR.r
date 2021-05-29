@@ -775,7 +775,7 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
 
   par(mfrow=c(1,1), mar = c(2, 3, 2, 1) + 0.1)
 
-  ymax <- max(out$upr, SMU_Esc, na.rm=T)
+  ymax <- max(out$upr, SMU_Esc, na.rm=T)#30000
   plot(x= Years, y= SMU_Esc, type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax))
   points(x= Years, y= SMU_Esc, col=col.pal[1], pch=19)
   axis(side=1, tick=TRUE, pos=0, padj=-0.9)#-1.8
@@ -809,16 +809,25 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
 # projLRPd <- 5700
 # projLRPe <- 5900
 # projLRPf <- 6100
-# #   
-# # projLRP <- data.frame(fit=projLRPa)
-# png(paste("DataOut/WCVI_SMUtimeseries_projLRPcvER0.21RecScalar_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
+# projLRPAllp <- data.frame(read.csv("c:/github/SalmonLRP_RetroEval/WCVIChinookStudy/DataOut/ProjectedLRPs/ProjectedLRPscvER0.21Allp.csv"))
+# projLRPg <- projLRPAllp %>% filter(ProbThresh=="0.5") %>% pull(LRP)
+# projLRPh <- projLRPAllp %>% filter(ProbThresh=="0.66") %>% pull(LRP)
+# projLRPi <- projLRPAllp %>% filter(ProbThresh=="0.9") %>% pull(LRP)
+# projLRPj <- projLRPAllp %>% filter(ProbThresh=="0.99") %>% pull(LRP)
+# # #   
+# # # projLRP <- data.frame(fit=projLRPa)
+# png(paste("DataOut/WCVI_SMUtimeseries_projLRPcvER0.21pValues_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
 # plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc[38:length(xx$SMU_Esc)], out=xx$out$LRP, WCVI_Esc=xx$WCVIEsc[38:length(xx$SMU_Esc),])
 # # abline(h=projLRPa, col="salmon", lwd=2)
 # # abline(h=projLRPb, col="aquamarine3", lwd=2)
 # # abline(h=projLRPc, col="black", lwd=2)
-# abline(h=projLRPd, col=viridis(3)[1], lwd=2)
-# abline(h=projLRPe, col=viridis(3)[2], lwd=2)
-# abline(h=projLRPf, col=viridis(3)[3], lwd=2)
+# # abline(h=projLRPd, col=viridis(3)[1], lwd=2)
+# # abline(h=projLRPe, col=viridis(3)[2], lwd=2)
+# # abline(h=projLRPf, col=viridis(3)[3], lwd=2)
+# abline(h=projLRPg, col=viridis(4)[1], lwd=2)
+# abline(h=projLRPh, col=viridis(4)[2], lwd=2)
+# abline(h=projLRPi, col=viridis(4)[3], lwd=2)
+# abline(h=projLRPj, col=viridis(4)[4], lwd=2)
 # dev.off()
 # 
 #==================================================================

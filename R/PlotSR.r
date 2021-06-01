@@ -775,7 +775,7 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
 
   par(mfrow=c(1,1), mar = c(2, 3, 2, 1) + 0.1)
 
-  ymax <- max(out$upr, SMU_Esc, na.rm=T)#30000
+  ymax <- 50000#max(out$upr, SMU_Esc, na.rm=T)#30000
   plot(x= Years, y= SMU_Esc, type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax))
   points(x= Years, y= SMU_Esc, col=col.pal[1], pch=19)
   axis(side=1, tick=TRUE, pos=0, padj=-0.9)#-1.8
@@ -787,7 +787,7 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
   # #Projected LRP from "ProjectedLRPs.csv"
   # abline(h=projLRPa, col=col.pal[4], lwd=2)#abline(h=projLRP$fit, col=col.pal[4], lwd=2)
   # CIs for LRP from TMB logistic regression
-  #polygon(x=as.numeric(c(range(Years), rev(range(Years)))), y=c(rep(out$lwr,2), rep(out$upr,2)), col=col.pal.light[3], border=NA)
+  # polygon(x=as.numeric(c(range(Years), rev(range(Years)))), y=c(rep(out$lwr,2), rep(out$upr,2)), col=col.pal.light[3], border=NA)
 }
 
  # xx <- Get.LRP(remove.EnhStocks=TRUE)
@@ -814,8 +814,8 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
 # projLRPh <- projLRPAllp %>% filter(ProbThresh=="0.66") %>% pull(LRP)
 # projLRPi <- projLRPAllp %>% filter(ProbThresh=="0.9") %>% pull(LRP)
 # projLRPj <- projLRPAllp %>% filter(ProbThresh=="0.99") %>% pull(LRP)
-# # #   
-# # # projLRP <- data.frame(fit=projLRPa)
+# # # #   
+# # # # projLRP <- data.frame(fit=projLRPa)
 # png(paste("DataOut/WCVI_SMUtimeseries_projLRPcvER0.21pValues_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
 # plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc[38:length(xx$SMU_Esc)], out=xx$out$LRP, WCVI_Esc=xx$WCVIEsc[38:length(xx$SMU_Esc),])
 # # abline(h=projLRPa, col="salmon", lwd=2)
@@ -824,12 +824,12 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
 # # abline(h=projLRPd, col=viridis(3)[1], lwd=2)
 # # abline(h=projLRPe, col=viridis(3)[2], lwd=2)
 # # abline(h=projLRPf, col=viridis(3)[3], lwd=2)
-# abline(h=projLRPg, col=viridis(4)[1], lwd=2)
-# abline(h=projLRPh, col=viridis(4)[2], lwd=2)
-# abline(h=projLRPi, col=viridis(4)[3], lwd=2)
-# abline(h=projLRPj, col=viridis(4)[4], lwd=2)
+#  abline(h=projLRPg, col="orange", lwd=2)
+# abline(h=projLRPh, col=viridis(4)[3], lwd=2)
+# abline(h=projLRPi, col=viridis(4)[2], lwd=2)
+# abline(h=projLRPj, col=viridis(4)[1], lwd=2)
 # dev.off()
-# 
+
 #==================================================================
 # Plot time-series of CU status
 #==================================================================

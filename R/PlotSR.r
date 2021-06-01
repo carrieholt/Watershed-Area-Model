@@ -830,6 +830,12 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
 # abline(h=projLRPj, col=viridis(4)[1], lwd=2)
 # dev.off()
 
+# Current geometric mean?
+# dum <- xx$WCVIEsc[61:64,c("Kyuquot", "Clayoquot", "Quatsino", "Barkley", "Nootka/Esperanza", "WCVI Nootka & Kyuquot", "WCVI South", "WCVI North")] 
+# geoMean <- function(x){prod(x)^(1/length(x))}
+# apply(dum,2,geoMean)
+#Clayoquot: (prod(dum[c(1,2,4),2]))^(1/3)
+
 #==================================================================
 # Plot time-series of CU status
 #==================================================================

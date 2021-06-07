@@ -73,10 +73,11 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
   digits <- count.dig(stock_SMSY$SMSY)
   Scale <- 10^(digits)
   
-  SREP_SE <- wcviRPs %>% mutate(SE = (wcviRPs$SREP - wcviRPs$SREPLL) / 1.96)
+  #SREP_SE <- wcviRPs %>% mutate(SE = ((wcviRPs$SREP) - (wcviRPs$SREPLL)) / 1.96)
+  SREP_logSE <- wcviRPs %>% mutate(SE = (log(wcviRPs$SREP) - log(wcviRPs$SREPLL)) / 1.96)
   # The UpperLimit-MLE gives same answer
-  #SREP_SE <- wcviRPs %>% mutate(SE = (wcviRPs$SREPUL - wcviRPs$SREP) / 1.96)
-  SREP_SE <- SREP_SE %>% dplyr::select(Stock, SE)
+  #SREP_logSE <- wcviRPs %>% mutate(SE = (log(wcviRPs$SREPUL) - log(wcviRPs$SREP)) / 1.96)
+  SREP_logSE <- SREP_logSE %>% dplyr::select(Stock, SE)
   
   #----------------------------------------------------------------------------
   # Calculate Sgen 2 ways
@@ -124,8 +125,9 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
     Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
     if(min(Ric.A)<0) Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
     
-    sREP <- rnorm(length(Scale), wcviRPs$SREP, SREP_SE$SE)
-    if(min(sREP)<0)   sREP <- rnorm(length(Scale), wcviRPs$SREP, SREP_SE$SE)
+    sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP), SREP_logSE$SE))
+    if(min(sREP)<0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, 
+                                        SREP_SE$SE))
     
 
     SGENcalcs <- purrr::map2_dfr (Ric.A, sREP/Scale, Sgen.fn2)
@@ -197,8 +199,9 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
     Ric.A.hi <- exp(rnorm(length(Scale), log(wcviRPs$a.par), Sig.Ric.A))
     if(min(Ric.A.hi)<0) Ric.A <- exp(rnorm(length(Scale), wcviRPs$a.RR, Sig.Ric.A))
     
-    sREP <- rnorm(length(Scale), wcviRPs$SREP, SREP_SE$SE)
-    if(min(sREP)<0)   sREP <- rnorm(length(Scale), wcviRPs$SREP, SREP_SE$SE)
+    sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP), SREP_logSE$SE))
+    if(min(sREP)<0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, 
+                                        SREP_SE$SE))
     
     
     SGENcalcs <- purrr::map2_dfr (Ric.A.hi, sREP/Scale, Sgen.fn2)

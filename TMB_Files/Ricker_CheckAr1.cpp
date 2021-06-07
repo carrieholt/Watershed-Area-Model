@@ -49,6 +49,7 @@ Type objective_function<Type>:: operator() ()
   DATA_IVECTOR(stk);
   DATA_IVECTOR(yr);
   DATA_INTEGER(N_Stks);
+  DATA_INTEGER(biasCor);
   
   //DATA_IVECTOR(model);
   //DATA_SCALAR(Sgen_sig);
@@ -96,7 +97,12 @@ Type objective_function<Type>:: operator() ()
   for (int i = 0; i<N_Obs; i++){
     
     //LogR_Pred_std(i) = logA_std(stk(i)) + log(S(i)) - exp(logB_std(stk(i))) * S(i);
-    LogRS_Pred_std(i) = logA_std(stk(i)) - exp(logB_std(stk(i))) * S(i);
+    if(biasCor == 0) {
+      LogRS_Pred_std(i) = logA_std(stk(i)) - exp(logB_std(stk(i))) * S(i);
+      }
+    if(biasCor == 1) {
+      LogRS_Pred_std(i) = logA_std(stk(i)) - exp(logB_std(stk(i))) * S(i) - pow(sigma_std(stk(i)) , 2) / Type(2);
+    }
     //ans += -dnorm(LogR_Pred_std(i), logR(i),  sigma_std(stk(i)), true);
     ans += -dnorm(LogRS_Pred_std(i), logRS(i),  sigma_std(stk(i)), true);    
     nLL(i) = -dnorm(LogRS_Pred_std(i), logRS(i),  sigma_std(stk(i)), true);

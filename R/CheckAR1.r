@@ -52,6 +52,7 @@ data$stk <- as.numeric(SRDat$Stocknumber)#All stocks are included, so no need to
 data$yr <- SRDat$yr_num
 N_Stks <- length(unique(SRDat$Name))
 data$N_Stks <- N_Stks
+data$biasCor <- as.numeric(T)
 #data$model <- rep(0,N_Stocks)
 
 
@@ -101,8 +102,6 @@ if (plot==TRUE) {
 }
 
 
-#saveRDS( All_Ests, paste( "DataOut/All_Est_Ricker_std.RDS", sep="") )
-
 
 A_std <- All_Ests %>% filter(Param=="logA_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(A=exp(Estimate))
 B_std <- All_Ests %>% filter(Param=="logB_std") %>% add_column(Stocknumber=unique(data$stk)) %>% mutate(B=exp(Estimate)/Scale.stock) 
@@ -118,6 +117,9 @@ All_Est <- All_Est %>% select(Estimate, Std..Error, ParamShort) %>% rename(Param
 SN_std <- unique(SRDat[, c("Stocknumber")])
 All_Est$Stocknumber <- rep(SN_std)
 All_Est <- left_join(All_Est, unique(SRDat[, c("Stocknumber", "Name")]))
+
+# For boxplots of Ricker alpha values
+#saveRDS( All_Est, paste( "DataOut/All_Est_Ricker_std_noWAreg_wBC.RDS", sep="") )
 
 # Plot SR curves:
 

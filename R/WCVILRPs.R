@@ -18,13 +18,21 @@ source("R/helperFunctions.r")
 # Arguments; 
   # remove.EnhStocks = A logical reflecting if enhanced stock are to be 
     # included
+  # prod = character specifying which assumption about productivity is made,
+    # either "LifeStageModel" (default), where productivity is derived life-
+    # stage model with expert opinion (W. LUedke pers. comm.) or from a run
+    # reconstruction assuming same harvest rates across WCVI Chinook stocks 
+    # estimated from Robertson Creek Hatchery fish (D. Dobson, pers. comm.) 
+  # Bern_logistic = logical (TRUE/FALSE), indicating if a Bernoulli logistic 
+    # regression is used to estimate LRPs based on aggregate abundances 
+    # (TRUE, default) or if binomial logistic regression is used (FALSE)
   # LOO = numeric for leave-one-out cross validation of the logistic regression
-    # This number is the index of the time-series of ppn of CUs and aggregate 
+    # This number is the index of the time-series of ppn of CUs and aggregate
     # abundances that are removed prior to implementing the logistic regression 
     # in TMB. Set to NA as default (no values removed). Note, the outputted 
     # time-series ('out') contain all the data, but parameter estimates are 
     # derived from time-series without LOO index value
-  # The code requires that the IWAM model has been run and 
+  # The code requires that the IWAM model has been run (IWAM.r) and input files: 
   # "WCVI_SMSY_noEnh.csv" or "WCVI_SMSY_wEnh.csv" exist
 # Returns:
   # csv file, DataOut/wcviRPs_noEnh.csv or DataOut/wcviRPs_wEnh.csv of stock, 
@@ -36,13 +44,17 @@ source("R/helperFunctions.r")
   # Dataframe $CU_Status
   # Dataframe $SMU_ppn
 
-Get.LRP <- function (remove.EnhStocks=TRUE, Bern_logistic=FALSE, LOO = NA){
+#See WCVILRPs_bootstrap.R for version that includes uncertainty in RicA and SREP
+
+Get.LRP <- function (remove.EnhStocks=TRUE, prod="LifeStageModel",
+                     Bern_logistic=FALSE, LOO = NA){
 
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
   #----------------------------------------------------------------------------
-  if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh.csv")
-  if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh.csv")
+  #if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh.csv")
+  if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
+  if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv")
   
   # Remove Cypre as it's not a core indicator (Diana McHugh, 22 Oct 2020)
   stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
@@ -61,62 +73,124 @@ Get.LRP <- function (remove.EnhStocks=TRUE, Bern_logistic=FALSE, LOO = NA){
   
   
   #----------------------------------------------------------------------------
-  # Caculate Sgen 2 ways
+  # Calculate Sgen 2 ways
   #----------------------------------------------------------------------------
   
-  # 1.Use Watershed-area SMSY and SREP to estimate Sgen (assuming productivity
-  SGENcalcs <- purrr::map2_dfr (wcviRPs$SMSY/Scale,wcviRPs$SREP/Scale, Sgen.fn) 
+  # 1.Use Watershed-area SMSY and SREP to estimate Sgen (assuming very high 
+  # productivity). Don't use this approach
+  # SGENcalcs <- purrr::map2_dfr (wcviRPs$SMSY/Scale,wcviRPs$SREP/Scale, Sgen.fn) 
   
   # 2. Assume independent estimate of productivity and watershed-area 
-  # estimate of SREP
+  # estimate of SREP. For base case assume no variability in RicA among stocks. 
   
-  # For base case assume no variablity in RicA among stocks. 
-  # Add variability in Ric.A when drawing MC samples from prediction intervals 
-  # of WA model so that Ric.A is drawn multiple times for each stock from 
-  # rnorm distribution
-  Mean.Ric.A <- 1 # Derived from life-history model (Luedke pers.comm.) and 
-   # WCVI CK run reconstruction SR analysis (Dobson pers. comm.)
-  Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, 0))
+  # There are two assumptions about productivity, (1) from life-stage model with 
+  # expert opinion (W. Luedke pers. comm.), and (2) from "RunReconstruction
+  # which assumes same harvest rates across wCVI Chinook stocks (D. Dobson 
+  # pers. comm.)  The default is the life-stage model with expert opinion (1)
+
+  # Lower estimate of Ricker a derived from life-stage model (Luedke pers.
+  # comm.) 
+  # DEFAULT
+  if(prod == "LifeStageModel"){
+    Mean.Ric.A <- 1 # actually logA
+    Ric.A.lo <- rep(exp(Mean.Ric.A),length(Scale))
+    SGENcalcs.hi <- purrr::map2_dfr (Ric.A.lo, wcviRPs$SREP/Scale, Sgen.fn2)
+    
+    #----------------------------------------------------------------------------
+    # Add Sgen and revised SMSY to wcviRPs data frame
+    #----------------------------------------------------------------------------
+    
+    
+    wcviRPs <- wcviRPs %>% mutate (SGEN = SGENcalcs.hi$SGEN) %>% 
+      mutate(SGEN=round(SGEN*Scale,0))
+    wcviRPs <- wcviRPs %>% mutate (a.par = SGENcalcs.hi$apar) %>% 
+      mutate(a.par=round(a.par,2))
+    wcviRPs <- wcviRPs %>% mutate (SMSY = SGENcalcs.hi$SMSY) %>% 
+      mutate(SMSY=round(SMSY*Scale,0))
+    
+    wcviRPs <- wcviRPs[c("Stock", "SGEN", "SMSY", "SMSYLL", "SMSYUL", "SREP", 
+                         "SREPLL", "SREPUL", "a.par")]#"CU"
+    
+    # Write this to a csv file so that it can be called in plotting functions
+    if (remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_noEnh.csv")
+    if (!remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_wEnh.csv")
+    
+  }#   if(prod == "LifeStageModel"){
   
+  # Ricker a's from Diana Dobson's Run Reconstruction (pers.comm) coded in TMB
+  # Higher estimate of Ricker a (lower Sgen)  
+  if(prod == "RunReconstruction"){
+    lnalpha_inlet <- read.csv("DataIn/CUPars_wBC.csv") %>% 
+      select(alpha,stkName) %>% rename(inlets=stkName, lnalpha=alpha)
+    lnalpha_nBC_inlet <- read.csv("DataIn/CUPars_nBC.csv") %>% 
+      select(alpha,stkName) %>% rename(inlets=stkName, lnalpha_nBC=alpha)
+    WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
+      filter (Stock != "Cypre") %>% rename(inlets=Inlet)
+    Ric.A <- lnalpha_inlet %>% left_join(WCVIStocks, by="inlets") %>% select(c(lnalpha,inlets,CU,Stock))
+    
+    wcviRPs <- wcviRPs %>% left_join(Ric.A) %>% mutate(a.RR=exp(lnalpha))
+    wcviRPs[wcviRPs$Stock=="Nitinat",]$a.RR <- exp(1)
+    wcviRPs[wcviRPs$Stock=="San Juan",]$a.RR <- exp(1)
+    wcviRPs[wcviRPs$Stock=="Nitinat",]$a.RR <- exp(1)
+    
+    wcviRPs[wcviRPs$Stock=="Barkley",]$a.RR <- 
+      wcviRPs[wcviRPs$inlets=="Barkley",]$a.RR[1]
+    wcviRPs[wcviRPs$Stock=="Clayoquot",]$a.RR <- 
+      wcviRPs[wcviRPs$inlets=="Clayoquot",]$a.RR[1]
+    wcviRPs[wcviRPs$Stock=="Kyuquot",]$a.RR <- 
+      wcviRPs[wcviRPs$inlets=="Kyuquot",]$a.RR[1]
+    wcviRPs[wcviRPs$Stock=="Nootka/Esperanza",]$a.RR <- 
+      wcviRPs[wcviRPs$inlets=="Nootka/Esperanza",]$a.RR[1]
+    wcviRPs[wcviRPs$Stock=="Quatsino",]$a.RR <- 
+      wcviRPs[wcviRPs$inlets=="Quatsino",]$a.RR[1]
+    wcviRPs[wcviRPs$Stock=="WCVI South",]$a.RR <- 
+      wcviRPs[wcviRPs$inlets=="Barkley",]$a.RR[1]
+    wcviRPs[wcviRPs$Stock=="WCVI Nootka & Kyuquot",]$a.RR <- 
+      wcviRPs[wcviRPs$inlets=="Nootka/Esperanza",]$a.RR[1]
+    wcviRPs[wcviRPs$Stock=="WCVI North",]$a.RR <- 
+      wcviRPs[wcviRPs$inlets=="Quatsino",]$a.RR[1]
+    
+    wcviRPs <- wcviRPs %>% select(-c(inlets, CU, lnalpha)) %>% rename(a.par=a.RR)
+    
+    # When incorporating uncertainty in Ricker A:
+    # Sig.Ric.A <- 0.255 #0.51 for a wider plausible bound
+    # Sig.Ric.A derived from 95% CL of lower and upper plausible limits = 
+    # 0.5 logA - 1.5 logA (Luedke pers. comm. Dec 2020)
+    # See distribution below:
+    # test <- seq(0,4, len=40)
+    # plot(x=test, y=dnorm(test, 1,0.255), type="l", xlab="LogA", 
+    # ylab="Probability Density", ylim=c(0,5))
+    # # With this sigma, 95% of probablity density is within bounds mean 
+    # +/- 0.50 (assuming range 0.5-1.5, mean=1). 0.255*1.96 = 0.50
+    # lines(x=test, y=dnorm(test, 1,0.51))# With this sigma, 95% of probablity 
+    # density is within bounds mean +/- 1.0 
+    # (assuming range 0-2.0, mean=1). 0.510*1.96 = 1.0
+    
+    
+    Ric.A.hi <- wcviRPs$a.par
+    SGENcalcs.lo <- purrr::map2_dfr (Ric.A.hi, wcviRPs$SREP/Scale, Sgen.fn2)
+    
+    #----------------------------------------------------------------------------
+    # Add Sgen and revised SMSY to wcviRPs data frame
+    #----------------------------------------------------------------------------
+    
+    # For case with low Sgen case (higher prod from RR)
+    wcviRPs <- wcviRPs %>% mutate (SGEN = SGENcalcs.lo$SGEN) %>% 
+      mutate(SGEN=round(SGEN*Scale,0))
+    wcviRPs <- wcviRPs %>% mutate (a.par = SGENcalcs.lo$apar) %>% 
+      mutate(a.par=round(a.par,2))
+    wcviRPs <- wcviRPs %>% mutate (SMSY = SGENcalcs.lo$SMSY) %>% 
+      mutate(SMSY=round(SMSY*Scale,0))
+    
+    wcviRPs <- wcviRPs[c("Stock", "SGEN", "SMSY", "SMSYLL", "SMSYUL", "SREP", 
+                         "SREPLL", "SREPUL", "a.par")]#"CU"
+    
+    # Write this to a csv file so that it can be called in plotting functions
+    if (remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_noEnh_lowSgen.csv")
+    if (!remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_wEnh_lowSgen.csv")
+      
+  }# if(prod == "RunReconstruction"){
   
-  # When incorporating uncertainty in Ricker A:
-  Sig.Ric.A <- 0.255 #0.51 for a wider plausible bound
-  # Sig.Ric.A derived from 95% CL of lower and upper plausible limits = 
-  # 0.5 logA - 1.5 logA (Luedke pers. comm. Dec 2020)
-  # See distribution below:
-  # test <- seq(0,4, len=40)
-  # plot(x=test, y=dnorm(test, 1,0.255), type="l", xlab="LogA", 
-  # ylab="Probability Density", ylim=c(0,5))
-  # # With this sigma, 95% of probablity density is within bounds mean 
-  # +/- 0.50 (assuming range 0.5-1.5, mean=1). 0.255*1.96 = 0.50
-  # lines(x=test, y=dnorm(test, 1,0.51))# With this sigma, 95% of probablity 
-  # density is within bounds mean +/- 1.0 
-  # (assuming range 0-2.0, mean=1). 0.510*1.96 = 1.0
-  
-  #Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
-  
-  SGENcalcs <- purrr::map2_dfr (Ric.A, wcviRPs$SREP/Scale, Sgen.fn2)
-  
-  
-  
-  #----------------------------------------------------------------------------
-  # Add Sgen and revised SMSY to wcviRPs data frame
-  #----------------------------------------------------------------------------
-  
-  wcviRPs <- wcviRPs %>% mutate (SGEN = SGENcalcs$SGEN) %>% 
-    mutate(SGEN=round(SGEN*Scale,0))
-  wcviRPs <- wcviRPs %>% mutate (a.par = SGENcalcs$apar) %>% 
-    mutate(a.par=round(a.par,2))
-  wcviRPs <- wcviRPs %>% mutate (SMSY = SGENcalcs$SMSY) %>% 
-    mutate(SMSY=round(SMSY*Scale,0))
-  
-  wcviRPs <- wcviRPs[c("Stock", "SGEN", "SMSY", "SMSYLL", "SMSYUL", "SREP", 
-                       "SREPLL", "SREPUL", "a.par")]#"CU"
-  
-  # Write this to a csv file so that it can be called in plotting functions
-  # write.csv(wcviRPs, "DataOut/wcviRPs.csv")
-  if (remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_noEnh.csv")
-  if (!remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_wEnh.csv")
   
   
   #----------------------------------------------------------------------------
@@ -213,8 +287,10 @@ Get.LRP <- function (remove.EnhStocks=TRUE, Bern_logistic=FALSE, LOO = NA){
   Inlet_Sum_csv <- Inlet_Sum_csv %>%  pivot_longer(cols=Inlet_Names) %>% 
     rename(BroodYear=Years, Inlet=name, Escapement=value)
   
+  n_inlets <- length(WCVIStocks %>% select(CU, Inlet) %>% distinct() %>% pull(Inlet))
+  
   WCVIStocks_inlets <- WCVIStocks %>% select(CU, Inlet) %>% distinct() %>% 
-    add_column(Inlet_ID=1:5)
+    add_column(Inlet_ID=1:n_inlets)
   
   
   Inlet_Sum_csv <- Inlet_Sum_csv %>% left_join(WCVIStocks_inlets, by="Inlet")
@@ -223,7 +299,7 @@ Get.LRP <- function (remove.EnhStocks=TRUE, Bern_logistic=FALSE, LOO = NA){
                                              Spawners=Escapement) %>% 
     add_column(Recruits = NA)
     
-  write.csv(Inlet_Sum_csv, file="DataOut/Inlet_Sum.csv", row.names=F)
+  if(remove.EnhStocks) write.csv(Inlet_Sum_csv, file="DataOut/Inlet_Sum.csv", row.names=F)
   #----------------------------------------------------------------------------
   # Sum escapements across indicators within CUs
   #----------------------------------------------------------------------------

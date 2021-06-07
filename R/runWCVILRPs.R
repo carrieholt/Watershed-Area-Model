@@ -47,30 +47,46 @@ runIWAM(remove.EnhStocks = FALSE, removeSkagit = FALSE,
 # accounting for uncertainty in LRP from the logistic regression
 # Keep Bern_logistic = FALSE for now, as for WCVI CK, there are no years ppn=1
 # so Bernoulli logistic regression cannot be esimated
-Get.LRP(remove.EnhStocks = TRUE, Bern_logistic=FALSE)$out$LRP
 
-Get.LRP(remove.EnhStocks = FALSE, Bern_logistic=FALSE)$out$LRP
+# There are two assumptions about productivity, (1) from life-stage model with 
+# expert opinion (W. Luedke pers. comm.), and (2) from "RunReconstruction
+# which assumes same harvest rates across wCVI Chinook stocks (D. Dobson 
+# pers. comm.)  The default is the life-stage model with expert opinion (1)
+
+Get.LRP(remove.EnhStocks = TRUE, Bern_logistic=FALSE, 
+        prod="LifeStageModel")$out$LRP
+
+Get.LRP(remove.EnhStocks = FALSE, Bern_logistic=FALSE, 
+        prod="LifeStageModel")$out$LRP
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
-# Step 3 (see WCVILRPs_boostrap.R)
+# Step 3 
 # Run LRP code to derive inlet-level Sgen and SMU level LRPs for WCVI CK,
 # further accounting for uncertainty in the underlying benchmarks by 
 # bootstrapping the benchmark estimates from the watershed-area model, and 
 # productivity estimates from a plausible range derived from expert opinion
+# Function to run bootstrapped uncertainty is here: R/WCVILRPs_boostrap.R
+
+# This code estimates LRPs based on Binomial regression. The Bernoulli 
+# regression is not possible for WCVI CK because there are no years of data 
+# where all inlets are > lower benchmarks
+# See RmdReports/WCVI_LRPs_Binomial.Rmd and WCVI_LRPs_Bernoulli.Rmd
 
 nBS <- 200 # number trials for bootstrapping
 outBench <- list() 
 
 for (k in 1:nBS) {
-  out <- Get.LRP.bs(remove.EnhStocks = TRUE, Bern_logistic=FALSE)
+  out <- Get.LRP.bs(remove.EnhStocks=TRUE, Bern_logistic=FALSE)
+  
+  # Save LRPs for each bootstrap
   outLRP <- as.data.frame(out$out$LRP) 
   if(k==1) LRP.bs <- data.frame(fit=outLRP$fit, upr=outLRP$upr, lwr=outLRP$lwr)
   if(k>1) LRP.bs <- add_row(LRP.bs, outLRP)
   
+  # Save benchmarks for each boostraap  
   outBench[[k]] <- out$bench
 }
-# hist(LRP.bs$fit)
 
 # # Is 200 enough trials? Yes
 # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
@@ -83,22 +99,34 @@ hist(LRP.samples)
 LRP.boot <- quantile(LRP.samples, probs=c(0.05, 0.5, 0.95))
 names(LRP.boot) <- c("lwr", "LRP", "upr")
 
+
+nameStocks <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
+  filter(Stock != "Cypre") %>% select(Stock)
+nameStocks <- unique(nameStocks)
+
+
+
+# Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th and 
+# 95th percentiles
 SGEN.bs <- select(as.data.frame(outBench), starts_with("SGEN"))
-rownames(SGEN.bs) <- stock_SMSY$Stock
-SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.05), 
-                        lwr=apply(SGEN.bs, 1, quantile, 0.5),
+rownames(SGEN.bs) <- nameStocks$Stock
+SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.5), 
+                        lwr=apply(SGEN.bs, 1, quantile, 0.05),
                         upr=apply(SGEN.bs, 1, quantile, 0.95) )
 
 SMSY.bs <- select(as.data.frame(outBench), starts_with("SMSY"))
-rownames(SMSY.bs) <- stock_SMSY$Stock
+rownames(SMSY.bs) <- nameStocks$Stock
 SMSY.boot <- data.frame(SMSY= apply(SMSY.bs, 1, quantile, 0.05), 
-                        lwr=apply(SMSY.bs, 1, quantile, 0.5),
+                        lwr=apply(SMSY.bs, 1, quantile, 0.05),
                         upr=apply(SMSY.bs, 1, quantile, 0.95) )
 
-#Print median and upper and lower 95% intervals for LRP, SGEN & SMSY
-LRP.boot
-SGEN.boot
-SMSY.boot
+SREP.bs <- select(as.data.frame(outBench), starts_with("SREP"))
+rownames(SREP.bs) <- nameStocks$Stock
+SREP.boot <- data.frame(SREP= apply(SREP.bs, 1, quantile, 0.5), 
+                        lwr=apply(SREP.bs, 1, quantile, 0.05),
+                        upr=apply(SREP.bs, 1, quantile, 0.95) )
+
+boot <- list(LRP.boot=LRP.boot, SGEN.boot=SGEN.boot, SMSY.boot=SMSY.boot, SREP.boot=SREP.boot)
 
 
 #-------------------------------------------------------------------------------
@@ -108,6 +136,6 @@ SMSY.boot
 #-------------------------------------------------------------------------------
 # Step 4
 # Plot outputs
-# See RmdReports/WCVI_LRPs.Rmd
+# See RmdReports/WCVI_LRPs_Binomial.Rmd and WCVI_LRPs_Bernoulli.Rmd
 #-------------------------------------------------------------------------------
 

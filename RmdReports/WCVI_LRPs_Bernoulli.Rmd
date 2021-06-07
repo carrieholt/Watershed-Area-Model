@@ -1,0 +1,266 @@
+---
+title: "WCVI Empirical Bernoulli LRPs"
+author: "Carrie Holt"
+date: "June 7, 2021"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir = normalizePath(".."))  
+
+
+library(tidyverse)
+library(ggplot2)
+library(gsl)
+library(TMB)
+library(viridis)
+
+```
+
+This report contains analyses used to estimate preliminary LRPs for WCVI Chinook based on an empirical Bernoulli logistic regression. However, because there were no years when all inlets were above lower benchmarks, LRPs could not be generated for WCVI Chinook. This report documents the analyses. Only indicators stocks with average PNI > 0.5 were included in these preliminary analyses. Non-enhanced indicator stocks are: Artlish, Bedwell/Ursus, Cayeghle,Kaouk, Marble, Megin, Moyeha, Nahmint, Tahsis, and Tahsish. Enhanced indicators are: Burman,  Conuma, Leiner, Nitinat, Sarita,  Somass,  Zeballos,  San Juan, Tranquil, and Gold. Note, Tranquil is considered enhanced although PNI data are not available for this stock, and has been moved. Also, Gold have been moved to the enhanced category. Although a large portion of the fish in this system are not marked (PNI =0.52), most of the unmarked spawners are thought to be second generation (or descendants of) hatchery-origin fish from Robertson Creek hatchery. There is no evidence of the original natural-spawners in this system.
+
+Status was estimated for each inlet with non-enhanced indicators (5 inlets), by comparing total abundances against lower benchmark Sgen, spawner abundances that will result in recovery to SMSY within one generation under equilibrium conditions in the absence of fishing. Benchmarks were estimated for each inlet using watershed-area model, where watershed areas for stocks within each inlet were summed to estimate inlet-level SREP (spawner abundances at replacement). sgen was
+then estimated from SREP and productivity (Ricker loga) values drawn from a normal distribution with mean (1) and 95% CIs (0-2) derived from expert opinion and life-stage models for WCVI Chinook (W. Luedke pers. comm.). An alternative assumption about productivity based on a run-reconstruction assuming equal harvest rates across wCVI Chinook stocks is provided below.
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.cap = "**Figure 1**. Time series of spawner abundances by inlet for indicator WCVI Chinook stocks with average PNI >0.5. Three reference points are included: SREP from the watershed-area model (horizontal green line) with 95% prediction intervals (green shaded area), and SMSY (horizontal yellow line) and SGEN (horizontal blue line) from watershed-area SREP values and expert-derived estimates of productivity."}
+source("R/helperFunctions.r")
+source("R/WCVILRPs.r")
+source("R/PlotSR.r")
+source("R/WCVILRPs_bootstrap.R")
+
+xx <- Get.LRP(remove.EnhStocks=TRUE, Bern_logistic=TRUE, 
+              prod="LifeStageModel")
+
+plotWCVI_timeseries(WCVIEsc=xx$WCVIEsc, remove.EnhStocks = TRUE, 
+                    prod="LifeStageModel")
+
+
+```
+What is the inlet-level status?
+```{r, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.cap = "**Figure 2**. Annual inlet status, where 0 is indicates below the lower benchmark and 1 indicates above the lower benchmark."}
+
+par(mfrow=c(5,1), cex=0.5,  mar = c(2, 4, 2, 1) + 0.1)
+Years <- rownames(xx$WCVIEsc)
+
+for (i in c(4,2,5,1,3)){
+  plot(x=Years, y=xx$Inlet_Status[,i], pch=20, xlab="", ylab="", ylim=c(0,1), las=1 , yaxp=c(0,1,1))
+  mtext(colnames(xx$Inlet_Status)[i], side=3, line=0.5, at="1952", adj=0, cex=0.8)
+  if(i==5) mtext("Inlet Status = Below Benchmark (0) or Above Benchmark (1)", side=2, line=2, cex=1)
+
+}
+
+
+```
+
+
+For each year, CU-level status is red when any one inlet within the CU is below SGEN (lower benchmark) in that year.  If all inlets within a CU are above their lower benchmark, then status is amber or green.
+
+```{r , echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.cap = "**Figure 3**. Annual CU Status, where 0 is indicates below the lower benchmark and 1 indicates above the lower benchmark."}
+
+par(mfrow=c(3,1), cex=1.1,  mar = c(2, 5, 2, 1) + 0.1)
+Years <- rownames(xx$WCVIEsc)
+
+for (i in c(2,1,3)){
+  plot(x=Years, y=xx$CU_Status[,i], pch=20, xlab="", ylab="", ylim=c(0,1), las=1 , yaxp=c(0,1,1))
+  mtext(colnames(xx$CU_Status)[i], side=3, line=0.5, at="1952", adj=0, cex=1.2)
+  if(i==1) mtext("CU Status = Below Benchmark (0) or Above Benchmark (1)", side=2, line=2, cex=1.4)
+
+}
+
+```
+
+SMU-level status is identified from the proportion of CUs that are in the red zone. Only years when status of all three CUs are available are plotted and used in the logistic regression to derive an LRP (n=13).
+```{r , echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.cap = "**Figure 4**. Time-series indicating whether all CUs within the SMU are above their lower benchmark."}
+
+
+par(mfrow=c(1,1), cex=1.1,  mar = c(2, 3, 2, 1) + 0.1)
+plot(x=Years, y=floor(xx$SMU_ppn), pch=20, xlab="", ylab="", ylim=c(0,1), las=1)
+mtext("WCVI SMU", side=3, line=0.5, at="1952", adj=0, cex=1.4)
+mtext("CU Status = Below Benchmark (0) or Above Benchmark (1)", side=2, line=2, cex=1.4)
+
+```
+
+The LRP cannot be derived from a logistic regression of aggregate abundances as there are no years when all inlets are greater than their lower benchmark..
+
+
+
+To capture uncertainties in underlying benchmarks, the procedure was re-iterated over multiple random samples of SREP from the watershed-area model (capturing uncertainty in SREP) and samples of productivity (Ricker a) from plausible ranges derived from expert opinion. 
+```{r , echo=FALSE, include=FALSE}
+
+nBS <- 200 # number trials for bootstrapping
+outBench <- list() 
+  
+for (k in 1:nBS) {
+  out <- Get.LRP.bs(Bern_logistic=TRUE)
+  
+  # Save benchmarks for each bootstrap  
+  outBench[[k]] <- out$bench
+}
+ 
+  # # Is 200 enough trials? Yes
+  # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
+  # plot(running.mean)
+  
+
+
+nameStocks <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
+  filter(Stock != "Cypre") %>% select(Stock)
+nameStocks <- unique(nameStocks)
+
+  
+# Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th and 
+# 95th percentiles
+SGEN.bs <- select(as.data.frame(outBench), starts_with("SGEN"))
+rownames(SGEN.bs) <- nameStocks$Stock
+SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.5), 
+                        lwr=apply(SGEN.bs, 1, quantile, 0.05),
+                        upr=apply(SGEN.bs, 1, quantile, 0.95) )
+  
+SMSY.bs <- select(as.data.frame(outBench), starts_with("SMSY"))
+rownames(SMSY.bs) <- nameStocks$Stock
+SMSY.boot <- data.frame(SMSY= apply(SMSY.bs, 1, quantile, 0.05), 
+                        lwr=apply(SMSY.bs, 1, quantile, 0.05),
+                        upr=apply(SMSY.bs, 1, quantile, 0.95) )
+  
+SREP.bs <- select(as.data.frame(outBench), starts_with("SREP"))
+rownames(SREP.bs) <- nameStocks$Stock
+SREP.boot <- data.frame(SREP= apply(SREP.bs, 1, quantile, 0.5), 
+                        lwr=apply(SREP.bs, 1, quantile, 0.05),
+                        upr=apply(SREP.bs, 1, quantile, 0.95) )
+
+boot <- list(SGEN.boot=SGEN.boot, SMSY.boot=SMSY.boot, SREP.boot=SREP.boot)
+
+
+```
+
+```{r fig.cap = "**Figure 6**. Time-series of inlet abundances (summation of indicators stocks with average PNI >0.5) relative to watershed-area based benchmarks with bootstrapped CIs."}
+
+
+plotWCVI_timeseries(WCVIEsc=xx$WCVIEsc, remove.EnhStocks = TRUE, 
+                    prod="LifeStageModel", boot=boot)
+
+```
+
+
+
+Projection-based LRPs can be estimated based on assumed stock-recruitment parameters from watershed-area model, independent life-stage specific modeling and expert opinion. THe following logistic curve is based projections of CU-specific population dynamics over 100 years to identify aggregate abundances with at least 50% probability of all component CUs being above lower (watershed-area-based) benchmarks. In this example, the stock parameters were assumed to be known and consistent with those used to derive lower benchmarks from the watershed-area models (nTrials=100). This is a preliminary projection-based LRP value (to be updated); projection-based LRPs have not been developed for SMU with enhanced stocks. 
+
+```{r fig.cap = "**Figure 7**. Time-series of SMU abundances (summation of indicators stocks with average PNI >0.5) relative to projection-based LRP."}
+# Calculate projection-based LRP from SalmonLRP_RetroEval git repo
+projLRP <- data.frame(read.csv("c:/github/SalmonLRP_RetroEval/WCVIChinookStudy/DataOut/ProjectedLRPs/ProjectedLRPs.csv"))
+projLRP <- projLRP %>% filter(OM=="cvER0.21.recCorSca0.n2000.mcmc") %>% pull(LRP)# To Fix once completed projection-based LRPs
+projLRP <- data.frame(fit=projLRP)
+plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc, out=projLRP, WCVI_Esc=xx$WCVIEsc)
+
+
+#plotWCVI_SMUtimeseries(SMU_Esc=yy$SMU_Esc, out=yy$out$LRP, WCVI_Esc=yy$WCVIEsc)
+
+```
+
+## Alternative assumption about productivity
+We considered an alternative (higher) assumption about productivity where mean productivities (Ricker loga) values were derived from CU-specific run reconstructions for wCVI Chinook assuming that harvest rates were the same across WCVI Chinook Stocks equal to those from Roberston Creek hatchery fish. The mean log(a) values for WCVI South, WCVI Nootka and Kyuquot, and wCVI North were: 1.139, 1.578, and 1.530.
+
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.cap = "**Figure 8**. Time series of spawner abundances by inlet for indicator WCVI Chinook stocks with average PNI >0.5. Three reference points are included: SREP from the watershed-area model (horizontal green line) with 95% prediction intervals (green shaded area), and SMSY (horizontal yellow line) and SGEN (horizontal blue line) from watershed-area SREP values and estimates of productivity from a run reconstruction."}
+yy <- Get.LRP(remove.EnhStocks=TRUE, Bern_logistic=TRUE, 
+              prod="RunReconstruction")
+
+plotWCVI_timeseries(WCVIEsc=yy$WCVIEsc, remove.EnhStocks = TRUE, 
+                    prod="RunReconstruction")
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.cap = "**Figure 9**. Annual inlet status, where 0 is indicates below the lower benchmark and 1 indicates above the lower benchmark, where benchmarks assuming productivity estimated from a run reconstruction."}
+
+par(mfrow=c(5,1), cex=0.5,  mar = c(2, 4, 2, 1) + 0.1)
+Years <- rownames(yy$WCVIEsc)
+
+for (i in c(4,2,5,1,3)){
+  plot(x=Years, y=yy$Inlet_Status[,i], pch=20, xlab="", ylab="", ylim=c(0,1), las=1 , yaxp=c(0,1,1))
+  mtext(colnames(yy$Inlet_Status)[i], side=3, line=0.5, at="1952", adj=0, cex=0.8)
+  if(i==5) mtext("Inlet Status = Below Benchmark (0) or Above Benchmark (1)", side=2, line=2, cex=1)
+
+}
+```
+
+```{r , echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.cap = "**Figure 10**. Annual CU Status, where 0 is indicates below the lower benchmark and 1 indicates above the lower benchmark, where benchmarks assuming productivity estimated from a run reconstruction."}
+
+par(mfrow=c(3,1), cex=1.1,  mar = c(2, 5, 2, 1) + 0.1)
+Years <- rownames(yy$WCVIEsc)
+
+for (i in c(2,1,3)){
+  plot(x=Years, y=yy$CU_Status[,i], pch=20, xlab="", ylab="", ylim=c(0,1), las=1 , yaxp=c(0,1,1))
+  mtext(colnames(yy$CU_Status)[i], side=3, line=0.5, at="1952", adj=0, cex=1.2)
+  if(i==1) mtext("CU Status = Below Benchmark (0) or Above Benchmark (1)", side=2, line=2, cex=1.4)
+
+}
+
+```
+
+```{r , echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.cap = "**Figure 11**. Time-series indicating whether all CUs within the SMU are above their lower benchmark, where benchmarks assuming productivity estimated from a run reconstruction."}
+
+
+par(mfrow=c(1,1), cex=1.1,  mar = c(2, 3, 2, 1) + 0.1)
+plot(x=Years, y=floor(yy$SMU_ppn), pch=20, xlab="", ylab="", ylim=c(0,1), las=1)
+mtext("WCVI SMU", side=3, line=0.5, at="1952", adj=0, cex=1.4)
+mtext("CU Status = Below Benchmark (0) or Above Benchmark (1)", side=2, line=2, cex=1.4)
+
+```
+
+```{r , echo=FALSE, include=FALSE}
+
+nBS <- 200 # number trials for bootstrapping
+outBench <- list() 
+  
+for (k in 1:nBS) {
+  out <- Get.LRP.bs(Bern_logistic=TRUE, prod="RunReconstruction")
+  
+  # Save benchmarks for each bootstrap  
+  outBench[[k]] <- out$bench
+}
+ 
+  # # Is 200 enough trials? Yes
+  # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
+  # plot(running.mean)
+  
+
+
+nameStocks <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
+  filter(Stock != "Cypre") %>% select(Stock)
+nameStocks <- unique(nameStocks)
+
+  
+# Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th and 
+# 95th percentiles
+SGEN.bs <- select(as.data.frame(outBench), starts_with("SGEN"))
+rownames(SGEN.bs) <- nameStocks$Stock
+SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.5), 
+                        lwr=apply(SGEN.bs, 1, quantile, 0.05),
+                        upr=apply(SGEN.bs, 1, quantile, 0.95) )
+  
+SMSY.bs <- select(as.data.frame(outBench), starts_with("SMSY"))
+rownames(SMSY.bs) <- nameStocks$Stock
+SMSY.boot <- data.frame(SMSY= apply(SMSY.bs, 1, quantile, 0.05), 
+                        lwr=apply(SMSY.bs, 1, quantile, 0.05),
+                        upr=apply(SMSY.bs, 1, quantile, 0.95) )
+  
+SREP.bs <- select(as.data.frame(outBench), starts_with("SREP"))
+rownames(SREP.bs) <- nameStocks$Stock
+SREP.boot <- data.frame(SREP= apply(SREP.bs, 1, quantile, 0.5), 
+                        lwr=apply(SREP.bs, 1, quantile, 0.05),
+                        upr=apply(SREP.bs, 1, quantile, 0.95) )
+
+boot <- list(SGEN.boot=SGEN.boot, SMSY.boot=SMSY.boot, SREP.boot=SREP.boot)
+
+
+```
+
+```{r fig.cap = "**Figure 6**. Time-series of inlet abundances (summation of indicators stocks with average PNI >0.5) relative to watershed-area based benchmarks with bootstrapped CIs."}
+
+
+plotWCVI_timeseries(WCVIEsc=yy$WCVIEsc, remove.EnhStocks = TRUE, 
+                    prod="RunReconstruction", boot=boot)
+
+```

@@ -61,6 +61,7 @@ Type objective_function<Type>:: operator() ()
   DATA_VECTOR(WA);
   DATA_VECTOR(Scale);
   DATA_IVECTOR(Stream);
+  DATA_INTEGER(biasCor);
   //DATA_INTEGER(N_stream);
   //DATA_INTEGER(N_ocean);
   //DATA_IVECTOR(order_noChick);
@@ -120,7 +121,12 @@ Type objective_function<Type>:: operator() ()
   for (int i = 0; i<N_Obs_std; i++){
     
     //LogR_Pred_std(i) = logA_std(stk_std(i)) + log(S_std(i)) - exp(logB_std(stk_std(i))) * S_std(i);
-    LogRS_Pred_std(i) = logA_std(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i);
+    if(biasCor == 0 ){
+      LogRS_Pred_std(i) = logA_std(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i);
+      }
+    if(biasCor == 1 ){
+      LogRS_Pred_std(i) = logA_std(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i) - pow(sigma_std(stk_std(i)), 2) / Type(2);
+    }
     
     //ans += -dnorm(LogR_Pred_std(i), logR_std(i),  sigma_std(stk_std(i)), true);
     ans += -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);

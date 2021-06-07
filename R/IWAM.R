@@ -39,11 +39,11 @@ source ("R/PlotSR.r")
 # remove.EnhStocks <- TRUE # A logical representing if enhanced stocks should 
   # be removed for WCVI CK case study
 # removeSkagit <- FALSE # A logical representing if Skagit should be removed
-# mod <- "Liermann_PriorRicSig_PriorDeltaSig" # A character for the TMB model 
+ mod <- "Liermann_PriorRicSig_PriorDeltaSig" # A character for the TMB model 
   # to be used. Optoins include:
   #"Liermann_HalfNormRicVar_FixedDelta"
   #"Ricker_AllMod"#"Liermann"#""Ricker_AllMod"
-  #IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"
+  #"IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"
   #"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"
   #"IWAM_FixedSep"#"IWAM_FixedCombined"
 # plot <- FALSE # A logical representing if plots should be produced
@@ -208,6 +208,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   # 2. Create data and parameter lists for TMB
   # ---------------------------------------------------------------------------------------
   
+  # Only rho_Start used. Disregard other TMB_Input
   TMB_Inputs <- list(rho_Start = 0.0, logDelta1_start=3.00, logDelta2_start =log(0.72), 
                      logDeltaSigma_start = -0.412, logMuDelta1_mean= 5, logMuDelta1_sig= 10, 
                      logMuDelta2_mean=-0.5, logMuDelta2_sig= 10, Tau_Delta1_dist= 0.1, 
@@ -245,6 +246,9 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     
   }
   
+  if(mod=="IWAM_FixedSep_RicStd"){
+    data$biasCor <- as.numeric(TRUE)
+  }
   if (mod=="Liermann"){
     data$Tau_dist <- 0.01#TMB_Inputs$Tau_sigma
     data$logMuA_mean <- 1.5
@@ -264,6 +268,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     data$SigRicPriorNorm <- as.numeric(F)
     data$SigRicPriorGamma <- as.numeric(T)
     data$SigRicPriorCauchy <- as.numeric(F)
+    data$biasCor <- as.numeric(TRUE)
     data$Tau_dist <- 0.1
     
     data$sigDelta_mean <- 0.80# See KFrun.R, #For half-normal use N(0,1)
@@ -274,29 +279,29 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     data$SigDeltaPriorGamma <- as.numeric(T)
     data$SigDeltaPriorCauchy <- as.numeric(F)
     data$Tau_D_dist <- 1
-    data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% 
+    data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>%
       filter(lh==1) %>% pull(lnWA)
     # Add aggregated WAs at inlet level
-    InletlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% group_by(Inlet) %>% 
-      summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>% 
+    InletlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% group_by(Inlet) %>%
+      summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>%
       filter(Inlet !="Nitinat")
-    InletlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% filter(Enh==0) %>% 
-      group_by(Inlet) %>% summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>% 
+    InletlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% filter(Enh==0) %>%
+      group_by(Inlet) %>% summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>%
       filter(Inlet !="Nitinat")
-    CUlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% group_by(CU) %>% 
+    CUlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% group_by(CU) %>%
       summarize(CUlnWA = log(sum(WA)))
-    CUlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% filter(Enh==0) %>% 
+    CUlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% filter(Enh==0) %>%
       group_by(CU) %>% summarize(CUlnWA = log(sum(WA)))
-    if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA, 
+    if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA,
                                              CUlnWAnoEnh$CUlnWA)
-    if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA, 
+    if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
                                               CUlnWA$CUlnWA )
-    # data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% 
+
+    ## Code for using Parken et al. test stocks:
+    # data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>%
     # filter(lh==0) %>% pull(lnWA)
-    # data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>% 
+    # data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>%
     # filter(lh==1) %>% pull(lnWA)
-    
-    # Sum WAs over inlets. Remove San Juan, becuase that Inlet has only 1 stock = San Juan
     
     
   }
@@ -437,7 +442,8 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) 
     param$Delta2ocean <- 0#log(0.72/(1-0.72)) 
     param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
-    
+  }
+ if (mod=="Liermann"| mod=="Liermann_PriorRicSig_PriorDeltaSig"){ 
     param$logNu1 <- 3#10# with skagit 2.881
     param$logNu1ocean <- 0# with skagit 2.881
     param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) 
@@ -529,7 +535,11 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     }
   }
   
-  
+  # ## For uniform priors on Ricker var (set all Ricker Sig priors above to F)
+  # upper[names(upper) == "logSigma_std"] <- log(2) 
+  # lower[names(lower) == "logSigma_std"] <- log(0) #Inf!
+  # upper[names(upper) == "logSigmaA"] <- log(2) 
+  # lower[names(lower) == "logSigmaA"] <- log(0) #Inf!
   
   opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5), 
                 lower=lower, upper=upper)
@@ -704,24 +714,27 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   #---------------------------------------------------------------------------------
   # Save parameter estimates to plot distribution of logA values (box plots)
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
-  #saveRDS( All_Est, paste( "DataOut/All_Est_Ricker_std.RDS", sep="") )# mod "IWAM_FixedSep_RicStd"
+  #saveRDS( All_Est, paste( "DataOut/All_Est_Ricker_std_wBC.RDS", sep="") )# mod "IWAM_FixedSep_RicStd"
   
-  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.1.RDS", sep="") )
-  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.1.RDS", sep="") )
-  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.001.RDS", sep="") )
+  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.1_wBC.RDS", sep="") )
+  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.01_wBC.RDS", sep="") )
+  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.001_wBC.RDS", sep="") )
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.01_invGammaA0.001.RDS", sep="") )
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.001_invGammaA0.01.RDS", sep="") )
-  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_uniformSigmaPrior.RDS", sep="") )
+  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_uniformSigmaPrior_wBC.RDS", sep="") )
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_uniform1SigmaPrior.RDS", sep="") )
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_noSigmaAPrior.RDS", sep="") )
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_noSigmaPrior.RDS", sep="") )
   ## For Liermann_HalfCauchyRicVar and Liermann_HalfNormalRicVar
-  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") ) 
+  ##saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") ) 
+  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_HalfNormRicVar_wBC.RDS", sep="") ) 
+  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_HalfCauchyRicVar_wBC.RDS", sep="") ) 
+  #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_noPriorRicVar_wBC.RDS", sep="") ) 
   
   #---------------------------------------------------------------------------------
   # Plot WA regression
   if(plot==TRUE){
-    png(paste("DataOut/WAregSMSY_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
+    png(paste("DataOut/WAregSMSY_", mod, "_wBC.png", sep=""), width=7, height=7, units="in", res=500)
     par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
     if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
     if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -736,7 +749,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
                           PredlnWA = data$PredlnWA, title1=title_plot, mod)
     dev.off()
     
-    png(paste("DataOut/WAregSREP_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
+    png(paste("DataOut/WAregSREP_", mod, "_wBC.png", sep=""), width=7, height=7, units="in", res=500)
     #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
     par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
     if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -842,20 +855,20 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
   
   # Write SMSY and SREP with PIs to file
-  if(remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh.csv")
-  if(!remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh.csv")
+  if(remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh_wBC.csv")
+  if(!remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh_wBC.csv")
   
 }# End of runIWAM() function
 
 
 #---------------------------------------------------------------------------------------------------
-# #Code for deriving SMSY and SREP for Parken et al. 2006 test stocks 
+# #Code for deriving SMSY and SREP for Parken et al. 2006 test stocks
 #  StockNamess <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 0) %>% pull(Stock)
 #  StockNameso <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 1) %>% pull(Stock)
-
-# #To get confidence intervals:   
-### TestSMSY <- TestSMSY %>% mutate (UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error)) %>% 
-### add_column(Source="IWAM")
+# 
+# #To get confidence intervals:
+# ## TestSMSY <- TestSMSY %>% mutate (UL = exp(Estimate + 1.96*Std..Error), LL = exp(Estimate - 1.96*Std..Error)) %>%
+# ## add_column(Source="IWAM")
 #  #Split this out by stream and ocean type as they have different linear regerssions
 #  TestSMSYs <- All_Ests %>% filter (Param %in% c("TestlnSMSYs"))  %>% add_column(Stock = StockNamess)
 #  TestSMSYo <- All_Ests %>% filter (Param %in% c("TestlnSMSYo"))  %>% add_column(Stock = StockNameso)
@@ -869,13 +882,13 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
 #  TestSMSYs <- TestSMSYs %>% add_column(LL=exp(TestSMSYs_PI$lwr), UL=exp(TestSMSYs_PI$upr))
 #  TestSMSYo <- TestSMSYo %>% add_column(LL=exp(TestSMSYo_PI$lwr), UL=exp(TestSMSYo_PI$upr))
 #  TestSMSY <- TestSMSYs %>% bind_rows(TestSMSYo)
-#  TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% dplyr::select(-Std..Error, - Param, -Estimate) %>% 
+#  TestSMSY <- TestSMSY %>% mutate (SMSY = exp(Estimate)) %>% dplyr::select(-Std..Error, - Param, -Estimate) %>%
 #    add_column( Source="IWAM")
 # #Compare IWAM estiamates of SMSY with those in Parken et al for test stocks (with UL and LL (these are 5th and 95th bootstrap estimates not CIs)
-#  ParkenTestStocks <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>% 
+#  ParkenTestStocks <- read.csv("DataIn/ParkenTestStocks.csv") %>% rename(LL=SMSY5th, UL=SMSY95th) %>%
 #    dplyr::select(-WA, -CV, -lh, -Area) %>% add_column (Source="Parken")
 #  ParkenTestSMSY <- full_join(TestSMSY, ParkenTestStocks)
-#---------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------
 
 
 

@@ -22,7 +22,7 @@ t_col <- function(color, percent = 50, name = NULL) {
 
 # Plot SR curves
 
-PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks_surv, r2, removeSkagit, mod) {
+PlotSRCurve <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar, stksNum_surv, stks_surv, r2, removeSkagit, mod) {
   Stks <- unique(SRDat$Stocknumber)
   NStks <- length(Stks)
   par(mfrow=c(5,5), mar=c(2, 2, 1, 0.1) + 0.1)
@@ -115,12 +115,14 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
     if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta")  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     #else polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     
-    SMSY_std <- SMSY_std %>% right_join(names) %>% filter(Name==name$Name)#filter(Stocknumber != 22)
-    
-    if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="Ricker_AllMod"){
-      if(i %in% stksNum_ar) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
-      if(i %in% stksNum_surv) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
+    if(!is.null(SMSY_std)) {
+      SMSY_std <- SMSY_std %>% right_join(names) %>% filter(Name==name$Name)#filter(Stocknumber != 22) 
+      if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="Ricker_AllMod"){
+        if(i %in% stksNum_ar) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
+        if(i %in% stksNum_surv) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
+      }
     }
+    
     
     ParkenSMSY <- read.csv("DataIn/ParkenSMSY.csv")
     #if (removeSkagit==TRUE) ParkenSMSY <- ParkenSMSY %>% filter(Name != "Skagit")
@@ -137,7 +139,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, stks
 
 # Plot SR linearized model
 
-PlotSRLinear <- function(SRDat, All_Est, SMSY_std, stksNum_ar, stksNum_surv, r2, removeSkagit) {
+PlotSRLinear <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar, stksNum_surv, r2, removeSkagit) {
   Stks <- unique(SRDat$Stocknumber)
   NStks <- length(Stks)
   par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
@@ -488,15 +490,16 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   #par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   All_Est_Liermann <- readRDS("DataOut/All_Est_Liermann.RDS")
   All_Est_Ricker_AllMod <- readRDS("DataOut/All_Est_Ricker_AllMod.RDS")
-  All_Est_Ricker_std <- readRDS("DataOut/All_Est_Ricker_std.RDS")
-  All_Est_Liermann_SepRicA <- readRDS("DataOut/All_Est_Liermann_SepRicA.RDS")
-  All_Est_Liermann_HalfNormRicVar <- readRDS("DataOut/All_Est_Liermann_HalfNormRicVar.RDS")
-  All_Est_Liermann_HalfCauchyRicVar <- readRDS("DataOut/All_Est_Liermann_HalfCauchyRicVar.RDS")
-  All_Est_Liermann_SepRicA_uniformSigmaPrior <- readRDS("DataOut/All_Est_Liermann_SepRicA_uniformSigmaPrior.RDS")
-  All_Est_Liermann_SepRicA_noSigmaPrior <- readRDS("DataOut/All_Est_Liermann_SepRicA_noSigmaPrior.RDS")
-  All_Est_Liermann_SepRicA_invGamma0.001 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.001.RDS")
+  All_Est_Ricker_std <- readRDS("DataOut/All_Est_Ricker_std_wBC.RDS")
+  All_Est_Ricker_std_noWAreg <- readRDS("DataOut/All_Est_Ricker_std_noWAreg_wBC.RDS")#From CheckAR1.r
+  All_Est_Liermann_SepRicA <- readRDS("DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_invGamma0.01_wBC.RDS")#readRDS("DataOut/All_Est_Liermann_SepRicA.RDS")#r
+  All_Est_Liermann_HalfNormRicVar <-readRDS( "DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_HalfNormRicVar_wBC.RDS")#readRDS("DataOut/All_Est_Liermann_HalfNormRicVar.RDS")
+  All_Est_Liermann_HalfCauchyRicVar <- readRDS( "DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_HalfCauchyRicVar_wBC.RDS")#readRDS("DataOut/All_Est_Liermann_HalfCauchyRicVar.RDS")
+  All_Est_Liermann_SepRicA_uniformSigmaPrior <- readRDS( "DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_uniformSigmaPrior_wBC.RDS")#readRDS("DataOut/All_Est_Liermann_SepRicA_uniformSigmaPrior.RDS")
+  All_Est_Liermann_SepRicA_noSigmaPrior <- readRDS( "DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_noPriorRicVar_wBC.RDS")# readRDS("DataOut/All_Est_Liermann_SepRicA_noSigmaPrior.RDS")
+  All_Est_Liermann_SepRicA_invGamma0.001 <- readRDS("DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_invGamma0.001_wBC.RDS")#readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.001.RDS")
   #All_Est_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.1.RDS")
-  All_Est_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_invGamma0.1.RDS")
+  All_Est_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_invGamma0.1_wBC.RDS")
   All_Est_Liermann_SepRicA_invGamma0.01_invGammaA0.001 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.01_invGammaA0.001.RDS")
   All_Est_Liermann_SepRicA_invGamma0.001_invGammaA0.01 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.001_invGammaA0.01.RDS")
   
@@ -512,32 +515,33 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   RicALsep_none <- All_Est_Liermann_SepRicA_noSigmaPrior %>% filter (Param=="logA")
   RicAR <- All_Est_Ricker_AllMod %>% filter (Param=="logA")
   RicARstd <- All_Est_Ricker_std %>% filter (Param=="logA")#(Param=="logA_std")
+  RicARstd_noWAreg <- All_Est_Ricker_std_noWAreg %>% filter (Param=="logA")#(Param=="logA_std")
   nRicAL <- length(RicALsep$Estimate)
   nRicAstd <- length(RicARstd$Estimate)
 
   
   #box.data <- data.frame(RicLogA=c(RicAL$Estimate,RicALsep$Estimate, RicAR$Estimate), Model=c(rep("Hierarchical_logA_combined",nRicA),rep("Hierarchical_logA_sep",nRicA), rep("Fixed_logA",nRicA)))
-  box.data <- data.frame(RicLogA = c(RicARstd$Estimate, RicALsep_0.1$Estimate, RicALsep$Estimate, RicALsep_0.001$Estimate, 
+  box.data <- data.frame(RicLogA = c(RicARstd_noWAreg$Estimate, RicARstd$Estimate, RicALsep_0.1$Estimate, RicALsep$Estimate, RicALsep_0.001$Estimate, 
                                    RicALhNRV$Estimate, RicALhCRV$Estimate, RicALsep_uni$Estimate, RicALsep_none$Estimate), 
-                         Model = c(rep("Fixed\neffects",nRicAstd), rep("InvGamma\n(0.1, 0.1)", nRicAL), 
+                         Model = c(rep("Fixed\neffects\nNoWAreg",nRicAstd), rep("Fixed\neffects",nRicAstd), rep("InvGamma\n(0.1, 0.1)", nRicAL), 
                                  rep("InvGamma\n(0.01,0.01)",nRicAL), rep("Inv\nGamma\n(0.001, 0.001)", nRicAL),
                                  rep("Half\nNormal\n(0,1)",nRicAL), 
                                  rep("Half\nCauchy\n(0,1)",nRicAL),  
                                  rep("Uniform\n(0,2)",nRicAL), rep("No priors\nSigmas",nRicAL)), 
-                         lh = c(RicARstd$lh, RicALsep_0.1$lh, RicALsep$lh, RicALsep_0.001$lh, 
+                         lh = c(RicARstd$lh, RicARstd$lh, RicALsep_0.1$lh, RicALsep$lh, RicALsep_0.001$lh, 
                                       RicALhNRV$lh, RicALhCRV$lh, RicALsep_uni$lh, RicALsep_none$lh) )
   
-  order <- data.frame(Model=unique(box.data$Model), order=1:8)
+  order <- data.frame(Model=unique(box.data$Model), order=1:9)
   box.data <- box.data %>% left_join(order, by="Model")
   #Add reorder to as.factor(Model), I think, but need to specify order as above 1:8. Add column to dataframe to do this, of length 200.
   # see my old dplyr code on adding new columns with string of numbers aligned with a factor (IWAM.r)
   cols<-viridis(4, alpha=0.9)
-  cols.order <- c(grey(0.5), cols[3], cols[2], t_col(color=cols[1], percent=70), t_col(cols[1], percent=50), t_col(cols[1], percent=30), "white", cols[4])
+  cols.order <- c(grey(0.2), grey(0.5), cols[3], cols[2], t_col(color=cols[1], percent=70), t_col(cols[1], percent=50), t_col(cols[1], percent=30), "white", cols[4])
   #print cols.order and then cut and past into line: scale_fill_manual below. These are the colours I used in the plot of priors. can add a legend to quickly see how ggplot reorders this befor plotting
   
   ggplot(box.data, aes(x=reorder(as.factor(Model),order), y=RicLogA, fill=as.factor(Model))) +  
-    geom_boxplot() + 
-    scale_fill_manual(values=c("#808080", "#35B779E6", "#31688EE6", "#4401544C", "#4401547F", "#440154B2", "white", "#FDE725E6" )) +
+    geom_boxplot(outlier.size=-1) + 
+    scale_fill_manual(values=c("#808080", "#808080", "#35B779E6", "#31688EE6", "#4401544C", "#4401547F", "#440154B2", "white", "#FDE725E6" )) +
     #scale_fill_viridis(discrete = TRUE, alpha=0.6) + 
     geom_jitter(color="black", shape=as.factor(box.data$lh), size=2, alpha=0.9) + #,aes(shape=lh)?. I like shape 16,17
     scale_shape_manual(values=c(16,17)) + #Does not work 
@@ -552,9 +556,9 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
   #points(x=jitter(rep(2,nRicA)), y=RicAR$Estimate, pch=20)
 }
 
-#png(paste("DataOut/RicADist_ComparePriors.png", sep=""), width=7, height=7, units="in", res=500)
-#plotRicA()
-#dev.off()
+# png(paste("DataOut/RicADist_ComparePriors_wBC.png", sep=""), width=7, height=7, units="in", res=500)
+# plotRicA()
+# dev.off()
 
 plotTestStocks <- function(data = ParkenTestSMSY){
   
@@ -582,7 +586,11 @@ plotTestStocks <- function(data = ParkenTestSMSY){
 # S.Thompson 31092.91 126981.7 62834.95    IWAM
 # S.Thompson 37300.00  87000.0 57600.00 Parken
 
-# png(paste("DataOut/TestStock_PI.png", sep=""), width=9, height=7, units="in", res=500)
+# With bias correction invGamm0.1 for Rsig and inGamm1 deltaSig
+#Stock       LL       UL     SMSY Source
+#TestlnSMSYo.9 S.Thompson 42839.86 150375.6 80262.51   IWAM
+
+# png(paste("DataOut/TestStock_PI_wBC.png", sep=""), width=9, height=7, units="in", res=500)
 # plotTestStocks()
 # dev.off()
 
@@ -655,23 +663,38 @@ plotWCVIBenchmarks <- function(data = WCVIEscQuant){
 #plotWCVIBenchmarks()
 #dev.off()
 
-plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=FALSE){
+plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=TRUE, 
+                                prod="LifeStageModel", boot=NULL){
   
  
   Years <- rownames(WCVIEsc)
   
-  #EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  "Somass",  "Zeballos", "San Juan")
-  EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% filter (Enh==1) %>%
-    pull(Stock)
+  #EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  "Somass",  
+  # "Zeballos", "San Juan")
+  EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% 
+    filter (Enh==1) %>% pull(Stock)
   EnhStocks <- as.character(EnhStocks)
   
   # remove Artlish: 23 Dec 2020
   
-  if(remove.EnhStocks) WCVI_RPs <- as.data.frame(read.csv("DataOut/wcviRPs_noEnh.csv")) %>% 
-    rename(StockNames=Stock)  %>% filter (StockNames != "Little Zeballos")
- 
-  if(!remove.EnhStocks) WCVI_RPs <- as.data.frame(read.csv("DataOut/wcviRPs_wEnh.csv")) %>% 
-    rename(StockNames=Stock)  %>% filter (StockNames != "Little Zeballos")
+  if(prod=="LifeStageModel"){
+    if(remove.EnhStocks) WCVI_RPs <- 
+        as.data.frame(read.csv("DataOut/wcviRPs_noEnh.csv")) %>% 
+        rename(StockNames=Stock)  %>% filter (StockNames != "Little Zeballos")
+    
+    if(!remove.EnhStocks) WCVI_RPs <- 
+        as.data.frame(read.csv("DataOut/wcviRPs_wEnh.csv")) %>% 
+        rename(StockNames=Stock)  %>% filter (StockNames != "Little Zeballos")
+  }#End of if(prod=="LifeStageModel")
+  
+  if(prod=="RunReconstruction"){
+    if(remove.EnhStocks) WCVI_RPs <- 
+        as.data.frame(read.csv("DataOut/wcviRPs_noEnh_lowSgen.csv")) %>% 
+        rename(StockNames=Stock)  %>% filter (StockNames != "Little Zeballos")
+    if(!remove.EnhStocks) print("Error. wcviRPs_wEnh_lowSgen.csv does not exist. 
+                                Need to generate it for with Enhancement 
+                                scenario")
+  }# End of if(prod=="RunReconstruction")
  
  if (remove.EnhStocks) WCVI_RPs <- WCVI_RPs %>% filter(StockNames %not in% c(EnhStocks)) 
   
@@ -738,6 +761,21 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=FALSE){
     # CIs for SMSY from WA-model with previous assumption about productivity
     #polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_rps$SMSYLL[i],2), rep(WCVI_rps$SMSYUL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
     polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_rps$SREPLL[i],2), rep(WCVI_rps$SREPUL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
+   
+      if(!is.null(boot)){
+       smsy.U <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
+       smsy.L <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
+       polygon(x=c(range(Years), rev(range(Years))), y=c(rep(smsy.L,2), rep(smsy.U,2)), col=col.pal.light[4], border=NA)#col.pal[3])
+       sgen.U <- boot$SGEN.boot %>% add_column(stock=row.names(boot$SGEN.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
+       sgen.L <- boot$SGEN.boot %>% add_column(stock=row.names(boot$SGEN.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
+       polygon(x=c(range(Years), rev(range(Years))), y=c(rep(sgen.L,2), rep(sgen.U,2)), col=col.pal.light[2], border=NA)#col.pal[3])
+       srep.U <- boot$SREP.boot %>% add_column(stock=row.names(boot$SREP.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
+       srep.L <- boot$SREP.boot %>% add_column(stock=row.names(boot$SREP.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
+       polygon(x=c(range(Years), rev(range(Years))), y=c(rep(sgen.L,2), rep(sgen.U,2)), col=col.pal.light[3], border=NA)#col.pal[3])
+       
+       #WHY IS BOOTSTRPPED interval for SMSY so much higher than the point estimate? Am I using the correct mean/sig to bootstrap SMSY (wBC), ie.., comparing apples to apples?
+       
+     }
   }
   
   
@@ -775,19 +813,19 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
 
   par(mfrow=c(1,1), mar = c(2, 3, 2, 1) + 0.1)
 
-  ymax <- 50000#max(out$upr, SMU_Esc, na.rm=T)#30000
+  ymax <- max(out$upr, out$fit, SMU_Esc, na.rm=T)#50000
   plot(x= Years, y= SMU_Esc, type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax))
   points(x= Years, y= SMU_Esc, col=col.pal[1], pch=19)
   axis(side=1, tick=TRUE, pos=0, padj=-0.9)#-1.8
   abline(h=0)
   axis(side=2)
   mtext("WCVI SMU", side=3, line=0.5, at="1960", cex=1.5)
-  # legend(x="topleft", legend=NA, title= paste( "   LRP=", signif(out$fit,4) ), bty="n" )
-  # abline(h=out$fit, col=col.pal[2], lwd=2)
+  legend(x="topleft", legend=NA, title= paste( "   LRP=", signif(out$fit,4) ), bty="n" )
+  abline(h=out$fit, col=col.pal[2], lwd=2)
   # #Projected LRP from "ProjectedLRPs.csv"
   # abline(h=projLRPa, col=col.pal[4], lwd=2)#abline(h=projLRP$fit, col=col.pal[4], lwd=2)
   # CIs for LRP from TMB logistic regression
-  # polygon(x=as.numeric(c(range(Years), rev(range(Years)))), y=c(rep(out$lwr,2), rep(out$upr,2)), col=col.pal.light[3], border=NA)
+  polygon(x=as.numeric(c(range(Years), rev(range(Years)))), y=c(rep(out$lwr,2), rep(out$upr,2)), col=col.pal.light[3], border=NA)
 }
 
  # xx <- Get.LRP(remove.EnhStocks=TRUE)

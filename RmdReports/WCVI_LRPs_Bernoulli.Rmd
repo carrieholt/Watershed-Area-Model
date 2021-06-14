@@ -146,12 +146,12 @@ plotWCVI_timeseries(WCVIEsc=xx$WCVIEsc, remove.EnhStocks = TRUE,
 
 
 
-Projection-based LRPs can be estimated based on assumed stock-recruitment parameters from watershed-area model, independent life-stage specific modeling and expert opinion. THe following logistic curve is based projections of CU-specific population dynamics over 100 years to identify aggregate abundances with at least 50% probability of all component CUs being above lower (watershed-area-based) benchmarks. In this example, the stock parameters were assumed to be known and consistent with those used to derive lower benchmarks from the watershed-area models (nTrials=100). This is a preliminary projection-based LRP value (to be updated); projection-based LRPs have not been developed for SMU with enhanced stocks. 
+Projection-based LRPs can be estimated based on assumed stock-recruitment parameters from watershed-area model, independent life-stage specific modeling and expert opinion. THe following logistic curve is based projections of CU-specific population dynamics over 100 years to identify aggregate abundances with at least 50% probability of all component CUs being above lower (watershed-area-based) benchmarks. In this example, the stock parameters were assumed to be known and consistent with those used to derive lower benchmarks from the watershed-area models (nTrials=2000). This is a preliminary projection-based LRP value; projection-based LRPs have not been developed for SMU with enhanced stocks. 
 
 ```{r fig.cap = "**Figure 7**. Time-series of SMU abundances (summation of indicators stocks with average PNI >0.5) relative to projection-based LRP."}
 # Calculate projection-based LRP from SalmonLRP_RetroEval git repo
-projLRP <- data.frame(read.csv("c:/github/SalmonLRP_RetroEval/WCVIChinookStudy/DataOut/ProjectedLRPs/ProjectedLRPs.csv"))
-projLRP <- projLRP %>% filter(OM=="cvER0.21.recCorSca0.n2000.mcmc") %>% pull(LRP)# To Fix once completed projection-based LRPs
+projLRP <- data.frame(read.csv("c:/github/SalmonLRP_RetroEval/WCVIChinookStudy/DataOut/ProjectedLRPs/ProjectedLRPscvER0.21Allp.csv"))
+projLRP <- projLRP %>% filter(ProbThresh=="0.5") %>% pull(LRP)# To Fix once completed projection-based LRPs
 projLRP <- data.frame(fit=projLRP)
 plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc, out=projLRP, WCVI_Esc=xx$WCVIEsc)
 

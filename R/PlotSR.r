@@ -811,17 +811,17 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
   #N_stk <- length(StockNames) - 5 #omit the 5 inlets
   
 
-  par(mfrow=c(1,1), mar = c(2, 3, 2, 1) + 0.1)
+  par(mfrow=c(1,1), mar = c(2, 4, 2, 1) + 0.1, cex.lab=1.3)
 
-  ymax <- max(out$upr, out$fit, SMU_Esc, na.rm=T)#50000
-  plot(x= Years, y= SMU_Esc, type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax))
+  ymax <- max(out$upr, out$fit, SMU_Esc, na.rm=T)#55000
+  plot(x= Years, y= SMU_Esc, type="l", lwd=3, col=col.pal[1], ylab="Aggregate Spawner abundances", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax))
   points(x= Years, y= SMU_Esc, col=col.pal[1], pch=19)
   axis(side=1, tick=TRUE, pos=0, padj=-0.9)#-1.8
   abline(h=0)
   axis(side=2)
   mtext("WCVI SMU", side=3, line=0.5, at="1960", cex=1.5)
-  legend(x="topleft", legend=NA, title= paste( "   LRP=", signif(out$fit,4) ), bty="n" )
-  abline(h=out$fit, col=col.pal[2], lwd=2)
+  #legend(x="topleft", legend=NA, title= paste( "   LRP=", signif(out$fit,4) ), bty="n" )
+  #abline(h=out$fit, col=col.pal[2], lwd=2)
   # #Projected LRP from "ProjectedLRPs.csv"
   # abline(h=projLRPa, col=col.pal[4], lwd=2)#abline(h=projLRP$fit, col=col.pal[4], lwd=2)
   # CIs for LRP from TMB logistic regression
@@ -852,21 +852,21 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
 # projLRPh <- projLRPAllp %>% filter(ProbThresh=="0.66") %>% pull(LRP)
 # projLRPi <- projLRPAllp %>% filter(ProbThresh=="0.9") %>% pull(LRP)
 # projLRPj <- projLRPAllp %>% filter(ProbThresh=="0.99") %>% pull(LRP)
-# # # #   
-# # # # projLRP <- data.frame(fit=projLRPa)
-# png(paste("DataOut/WCVI_SMUtimeseries_projLRPcvER0.21pValues_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
-# plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc[38:length(xx$SMU_Esc)], out=xx$out$LRP, WCVI_Esc=xx$WCVIEsc[38:length(xx$SMU_Esc),])
-# # abline(h=projLRPa, col="salmon", lwd=2)
-# # abline(h=projLRPb, col="aquamarine3", lwd=2)
-# # abline(h=projLRPc, col="black", lwd=2)
-# # abline(h=projLRPd, col=viridis(3)[1], lwd=2)
-# # abline(h=projLRPe, col=viridis(3)[2], lwd=2)
-# # abline(h=projLRPf, col=viridis(3)[3], lwd=2)
-#  abline(h=projLRPg, col="orange", lwd=2)
-# abline(h=projLRPh, col=viridis(4)[3], lwd=2)
-# abline(h=projLRPi, col=viridis(4)[2], lwd=2)
-# abline(h=projLRPj, col=viridis(4)[1], lwd=2)
-# dev.off()
+# # # # #   
+# # # # # projLRP <- data.frame(fit=projLRPa)
+png(paste("DataOut/WCVI_SMUtimeseries_projLRPcvER0.21pValues_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
+plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc[38:length(xx$SMU_Esc)], out=xx$out$LRP, WCVI_Esc=xx$WCVIEsc[38:length(xx$SMU_Esc),])
+# abline(h=projLRPa, col="salmon", lwd=2)
+# abline(h=projLRPb, col="aquamarine3", lwd=2)
+# abline(h=projLRPc, col="black", lwd=2)
+# abline(h=projLRPd, col=viridis(3)[1], lwd=2)
+# abline(h=projLRPe, col=viridis(3)[2], lwd=2)
+# abline(h=projLRPf, col=viridis(3)[3], lwd=2)
+ abline(h=projLRPg, col="orange", lwd=2)
+abline(h=projLRPh, col=viridis(4)[3], lwd=2)
+abline(h=projLRPi, col=viridis(4, alpha=0.4)[2], lwd=2)
+abline(h=projLRPj, col=viridis(4, alpha=0.2)[1], lwd=2)
+dev.off()
 
 # Current geometric mean?
 # dum <- xx$WCVIEsc[61:64,c("Kyuquot", "Clayoquot", "Quatsino", "Barkley", "Nootka/Esperanza", "WCVI Nootka & Kyuquot", "WCVI South", "WCVI North")] 

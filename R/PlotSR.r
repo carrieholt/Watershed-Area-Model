@@ -974,6 +974,63 @@ plotLogistic <- function(Data, Preds, LRP, useGenMean = F, plotName, outDir, p=0
 #if(yy$out$LRP$lwr<=0) yy$out$LRP$lwr <-1
 
 
+#===============================================================================
+# Plot annual indicator abundance plots (WCVIO
+#===============================================================================
+
+WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% 
+  dplyr::select (-"Little.Zeballos")
+
+WCVIEsc <- WCVIEsc %>% add_column(Year=as.numeric( rownames(WCVIEsc) ) )
+# Take "." out of name as in escapement data
+WCVIEsc_names <- sapply(colnames(WCVIEsc), 
+                        function(x) (gsub(".", " ", x, fixed=TRUE) ) )
+WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
+  (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
+WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
+  (gsub("Nootka Esperanza", "Nootka/Esperanza", x, fixed=TRUE) ) )
+colnames(WCVIEsc) <- WCVIEsc_names 
+
+EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% filter (Enh==1) %>%
+  pull(Stock)
+EnhStocks <- as.character(EnhStocks)
+
+#EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  
+#               "Somass",  "Zeballos", "San Juan", "Tranquil")
+# Artlish removed from Enhanced stocks 23 Dec. 2020
+# Tranquil added 18 Jan 2021
+
+
+if (remove.EnhStocks) {WCVIEsc <- WCVIEsc %>% dplyr::select(-EnhStocks) }
+
+Years <- rownames(WCVIEsc)
+
+# Get stock information for WCVI Chinook & Remove Cypre as it's not an 
+# indicator stocks
+WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
+  filter (Stock != "Cypre")
+if (remove.EnhStocks) WCVIStocks <- WCVIStocks %>% 
+  filter(Stock %not in% EnhStocks)
+
+Inlet_Names <- unique(WCVIStocks$Inlet)
+Inlet_Sum <- matrix(NA, nrow=length(Years), ncol=length(Inlet_Names))
+colnames(Inlet_Sum) <- Inlet_Names
+CU_Names <- unique(WCVIStocks$CU)
+
+WCVIEsc_long <- pivot_longer(WCVIEsc, cols = WCVIStocks$Stock, 
+                             names_to = "Stock" , values_to = "Spawners")
+Enh_ <- WCVIStocks %>% select(c(Stock, Enh))
+WCVIEsc_long <- left_join(WCVIEsc_long, Enh_)
+
+IndicatorTimeSeries <- ggplot (WCVIEsc_long, aes (x=Year, y=Spawners, group=Enh)) + 
+  geom_line( aes(colour = Enh)) + 
+  facet_wrap(~Stock, scales="free") + 
+  theme(legend.position = "none")
+
+ggsave("DataOut/IndicatorTimeSeries.png", plot = IndicatorTimeSeries, 
+       height = 5, width = 8, units = "in") 
+
+
 #==================================================================
 # Plot annual inlet status plot (WCVI(
 #==============================================================

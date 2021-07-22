@@ -551,7 +551,7 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
 run.bootstraps <- FALSE
 
 if (run.bootstraps){
-  nBS <- 200 # number trials for bootstrapping
+  nBS <- 500 # number trials for bootstrapping
   outBench <- list() 
   
   for (k in 1:nBS) {
@@ -571,7 +571,7 @@ if (run.bootstraps){
   # values with uncertainty of each LRP value from TMB
   LRP.samples <- rnorm(nBS*10, LRP.bs$fit, (LRP.bs$fit - LRP.bs$lwr) / 1.96)
   hist(LRP.samples)
-  LRP.boot <- quantile(LRP.samples, probs=c(0.05, 0.5, 0.95))
+  LRP.boot <- quantile(LRP.samples, probs=c(0.025, 0.5, 0.975))
   names(LRP.boot) <- c("lwr", "LRP", "upr")
   
   # Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th and 
@@ -583,23 +583,31 @@ if (run.bootstraps){
 
   rownames(SGEN.bs) <- stockNames
   SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.5), 
-                          lwr=apply(SGEN.bs, 1, quantile, 0.05),
-                          upr=apply(SGEN.bs, 1, quantile, 0.95) )
+                          lwr=apply(SGEN.bs, 1, quantile, 0.025),
+                          upr=apply(SGEN.bs, 1, quantile, 0.975) )
   
   SMSY.bs <- select(as.data.frame(outBench), starts_with("SMSY"))
   rownames(SMSY.bs) <- stockNames
   SMSY.boot <- data.frame(SMSY= apply(SMSY.bs, 1, quantile, 0.5), 
-                          lwr=apply(SMSY.bs, 1, quantile, 0.05),
-                          upr=apply(SMSY.bs, 1, quantile, 0.95) )
+                          lwr=apply(SMSY.bs, 1, quantile, 0.025),
+                          upr=apply(SMSY.bs, 1, quantile, 0.975) )
   
   SREP.bs <- select(as.data.frame(outBench), starts_with("SREP"))
   rownames(SREP.bs) <- stockNames
   SREP.boot <- data.frame(SREP= apply(SREP.bs, 1, quantile, 0.5), 
-                          lwr=apply(SREP.bs, 1, quantile, 0.05),
-                          upr=apply(SREP.bs, 1, quantile, 0.95) )
+                          lwr=apply(SREP.bs, 1, quantile, 0.025),
+                          upr=apply(SREP.bs, 1, quantile, 0.975) )
   
   boot <- list(LRP.boot=LRP.boot, SGEN.boot=SGEN.boot, SMSY.boot=SMSY.boot, 
                SREP.boot=SREP.boot)
+  
+  df1 <- data.frame(boot[["SGEN.boot"]], Stock=rownames(boot[["SGEN.boot"]]), RP="SGEN") 
+  df1 <- df1 %>% rename(Value=SGEN)
+  df2 <- data.frame(boot[["SREP.boot"]], Stock=rownames(boot[["SREP.boot"]]), RP="SREP")
+  df2 <- df2 %>% rename(Value=SREP)
+  dfout <- add_row(df1,df2)
+  rownames(dfout) <- NULL
+  write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs.csv") 
 }
 
 

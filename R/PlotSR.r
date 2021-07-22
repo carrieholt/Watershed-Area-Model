@@ -847,26 +847,26 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
 #   projLRPc <- data.frame(read.csv("c:/github/SalmonLRP_RetroEval/WCVIChinookStudy/DataOut/ProjectedLRPs/ProjectedLRPscvER0_Allp.csv")) %>%
 #     filter(ProbThresh=="0.5") %>% pull(LRP)
 # 
-projLRPAllp <- data.frame(read.csv("c:/github/SalmonLRP_RetroEval/WCVIChinookStudy/DataOut/ProjectedLRPs/ProjectedLRPsbaseER_ALLp.csv"))
-projLRPg <- projLRPAllp %>% filter(ProbThresh=="0.5") %>% pull(LRP)
-projLRPh <- projLRPAllp %>% filter(ProbThresh=="0.66") %>% pull(LRP)
-projLRPi <- projLRPAllp %>% filter(ProbThresh=="0.9") %>% pull(LRP)
-projLRPj <- projLRPAllp %>% filter(ProbThresh=="0.99") %>% pull(LRP)
-# # # # #
-# # # # # projLRP <- data.frame(fit=projLRPa)
-png(paste("DataOut/WCVI_SMUtimeseries_projLRPbaseERpValues_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
-plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc[38:length(xx$SMU_Esc)], out=xx$out$LRP, WCVI_Esc=xx$WCVIEsc[38:length(xx$SMU_Esc),])
-# abline(h=projLRPa+100, col="salmon", lwd=2)
-# abline(h=projLRPb, col="aquamarine3", lwd=2)
-# abline(h=projLRPc, col="black", lwd=2)
-# abline(h=projLRPd, col=viridis(3)[1], lwd=2)
-# abline(h=projLRPe, col=viridis(3)[2], lwd=2)
-# abline(h=projLRPf, col=viridis(3)[3], lwd=2)
-abline(h=projLRPg, col="orange", lwd=2)
-abline(h=projLRPh, col=viridis(4, alpha=0.2)[3], lwd=2)
-# abline(h=projLRPi, col=viridis(4, alpha=0.)[2], lwd=2)
-# abline(h=projLRPj, col=viridis(4, alpha=0.2)[1], lwd=2)
-dev.off()
+# projLRPAllp <- data.frame(read.csv("c:/github/SalmonLRP_RetroEval/WCVIChinookStudy/DataOut/ProjectedLRPs/ProjectedLRPsbaseER_ALLp.csv"))
+# projLRPg <- projLRPAllp %>% filter(ProbThresh=="0.5") %>% pull(LRP)
+# projLRPh <- projLRPAllp %>% filter(ProbThresh=="0.66") %>% pull(LRP)
+# projLRPi <- projLRPAllp %>% filter(ProbThresh=="0.9") %>% pull(LRP)
+# projLRPj <- projLRPAllp %>% filter(ProbThresh=="0.99") %>% pull(LRP)
+# # # # # #
+# # # # # # projLRP <- data.frame(fit=projLRPa)
+# png(paste("DataOut/WCVI_SMUtimeseries_projLRPbaseERpValues_noEnh.png", sep=""), width=9, height=4, units="in", res=500)
+# plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc[38:length(xx$SMU_Esc)], out=xx$out$LRP, WCVI_Esc=xx$WCVIEsc[38:length(xx$SMU_Esc),])
+# # abline(h=projLRPa+100, col="salmon", lwd=2)
+# # abline(h=projLRPb, col="aquamarine3", lwd=2)
+# # abline(h=projLRPc, col="black", lwd=2)
+# # abline(h=projLRPd, col=viridis(3)[1], lwd=2)
+# # abline(h=projLRPe, col=viridis(3)[2], lwd=2)
+# # abline(h=projLRPf, col=viridis(3)[3], lwd=2)
+# abline(h=projLRPg, col="orange", lwd=2)
+# abline(h=projLRPh, col=viridis(4, alpha=0.2)[3], lwd=2)
+# # abline(h=projLRPi, col=viridis(4, alpha=0.)[2], lwd=2)
+# # abline(h=projLRPj, col=viridis(4, alpha=0.2)[1], lwd=2)
+# dev.off()
 
 # Current geometric mean?
 # dum <- xx$WCVIEsc[61:64,c("Kyuquot", "Clayoquot", "Quatsino", "Barkley", "Nootka/Esperanza", "WCVI Nootka & Kyuquot", "WCVI South", "WCVI North")] 
@@ -978,58 +978,62 @@ plotLogistic <- function(Data, Preds, LRP, useGenMean = F, plotName, outDir, p=0
 # Plot annual indicator abundance plots (WCVIO
 #===============================================================================
 
-WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% 
-  dplyr::select (-"Little.Zeballos")
-
-WCVIEsc <- WCVIEsc %>% add_column(Year=as.numeric( rownames(WCVIEsc) ) )
-# Take "." out of name as in escapement data
-WCVIEsc_names <- sapply(colnames(WCVIEsc), 
-                        function(x) (gsub(".", " ", x, fixed=TRUE) ) )
-WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
-  (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
-WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
-  (gsub("Nootka Esperanza", "Nootka/Esperanza", x, fixed=TRUE) ) )
-colnames(WCVIEsc) <- WCVIEsc_names 
-
-EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% filter (Enh==1) %>%
-  pull(Stock)
-EnhStocks <- as.character(EnhStocks)
-
-#EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  
-#               "Somass",  "Zeballos", "San Juan", "Tranquil")
-# Artlish removed from Enhanced stocks 23 Dec. 2020
-# Tranquil added 18 Jan 2021
-
-
-if (remove.EnhStocks) {WCVIEsc <- WCVIEsc %>% dplyr::select(-EnhStocks) }
-
-Years <- rownames(WCVIEsc)
-
-# Get stock information for WCVI Chinook & Remove Cypre as it's not an 
-# indicator stocks
-WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
-  filter (Stock != "Cypre")
-if (remove.EnhStocks) WCVIStocks <- WCVIStocks %>% 
-  filter(Stock %not in% EnhStocks)
-
-Inlet_Names <- unique(WCVIStocks$Inlet)
-Inlet_Sum <- matrix(NA, nrow=length(Years), ncol=length(Inlet_Names))
-colnames(Inlet_Sum) <- Inlet_Names
-CU_Names <- unique(WCVIStocks$CU)
-
-WCVIEsc_long <- pivot_longer(WCVIEsc, cols = WCVIStocks$Stock, 
-                             names_to = "Stock" , values_to = "Spawners")
-Enh_ <- WCVIStocks %>% select(c(Stock, Enh))
-WCVIEsc_long <- left_join(WCVIEsc_long, Enh_)
-
-IndicatorTimeSeries <- ggplot (WCVIEsc_long, aes (x=Year, y=Spawners, group=Enh)) + 
-  geom_line( aes(colour = Enh)) + 
-  facet_wrap(~Stock, scales="free") + 
-  theme(legend.position = "none")
-
-ggsave("DataOut/IndicatorTimeSeries.png", plot = IndicatorTimeSeries, 
-       height = 5, width = 8, units = "in") 
-
+PlotAnnualIndicator <- FALSE
+if(PlotAnnualIndicator){
+  WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% 
+    dplyr::select (-"Little.Zeballos")
+  
+  WCVIEsc <- WCVIEsc %>% add_column(Year=as.numeric( rownames(WCVIEsc) ) )
+  # Take "." out of name as in escapement data
+  WCVIEsc_names <- sapply(colnames(WCVIEsc), 
+                          function(x) (gsub(".", " ", x, fixed=TRUE) ) )
+  WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
+    (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
+  WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
+    (gsub("Nootka Esperanza", "Nootka/Esperanza", x, fixed=TRUE) ) )
+  colnames(WCVIEsc) <- WCVIEsc_names 
+  
+  EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% filter (Enh==1) %>%
+    pull(Stock)
+  EnhStocks <- as.character(EnhStocks)
+  
+  #EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  
+  #               "Somass",  "Zeballos", "San Juan", "Tranquil")
+  # Artlish removed from Enhanced stocks 23 Dec. 2020
+  # Tranquil added 18 Jan 2021
+  
+  
+  if (remove.EnhStocks) {WCVIEsc <- WCVIEsc %>% dplyr::select(-EnhStocks) }
+  
+  Years <- rownames(WCVIEsc)
+  
+  # Get stock information for WCVI Chinook & Remove Cypre as it's not an 
+  # indicator stocks
+  WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
+    filter (Stock != "Cypre")
+  if (remove.EnhStocks) WCVIStocks <- WCVIStocks %>% 
+    filter(Stock %not in% EnhStocks)
+  
+  Inlet_Names <- unique(WCVIStocks$Inlet)
+  Inlet_Sum <- matrix(NA, nrow=length(Years), ncol=length(Inlet_Names))
+  colnames(Inlet_Sum) <- Inlet_Names
+  CU_Names <- unique(WCVIStocks$CU)
+  
+  WCVIEsc_long <- pivot_longer(WCVIEsc, cols = WCVIStocks$Stock, 
+                               names_to = "Stock" , values_to = "Spawners")
+  Enh_ <- WCVIStocks %>% select(c(Stock, Enh))
+  WCVIEsc_long <- left_join(WCVIEsc_long, Enh_)
+  
+  IndicatorTimeSeries <- ggplot (WCVIEsc_long, aes (x=Year, y=Spawners, group=Enh)) + 
+    geom_line( aes(colour = Enh)) + 
+    facet_wrap(~Stock, scales="free") + 
+    theme(legend.position = "none")
+  
+  ggsave("DataOut/IndicatorTimeSeries.png", plot = IndicatorTimeSeries, 
+         height = 5, width = 8, units = "in") 
+  
+  
+}
 
 #==================================================================
 # Plot annual inlet status plot (WCVI(

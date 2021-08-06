@@ -1,7 +1,7 @@
 ---
 title: "WCVI Empirical Bernoulli LRPs"
 author: "Carrie Holt"
-date: "June 7, 2021"
+date: "Aug 6, 2021"
 output:
   html_document: default
   word_document: default
@@ -150,7 +150,7 @@ Projection-based LRPs can be estimated based on assumed stock-recruitment parame
 
 ```{r fig.cap = "**Figure 7**. Time-series of SMU abundances (summation of indicators stocks with average PNI >0.5) relative to projection-based LRP."}
 # Calculate projection-based LRP from SalmonLRP_RetroEval git repo
-projLRP <- data.frame(read.csv("c:/github/SalmonLRP_RetroEval/WCVIChinookStudy/DataOut/ProjectedLRPs/ProjectedLRPscvER0.21Allp.csv"))
+projLRP <- data.frame(read.csv("c:/github/SalmonLRP_RetroEval/WCVIChinookStudy/DataOut/ProjectedLRPs/ProjectedLRPsbaseER_ALLp.csv"))
 projLRP <- projLRP %>% filter(ProbThresh=="0.5") %>% pull(LRP)# To Fix once completed projection-based LRPs
 projLRP <- data.frame(fit=projLRP)
 plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc, out=projLRP, WCVI_Esc=xx$WCVIEsc)

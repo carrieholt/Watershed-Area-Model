@@ -821,7 +821,7 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
   axis(side=2)
   mtext("WCVI SMU", side=3, line=0.5, at="1960", cex=1.5)
   #legend(x="topleft", legend=NA, title= paste( "   LRP=", signif(out$fit,4) ), bty="n" )
-  #abline(h=out$fit, col=col.pal[2], lwd=2)
+  abline(h=out$fit, col=col.pal[2], lwd=2)
   # #Projected LRP from "ProjectedLRPs.csv"
   # abline(h=projLRPa, col=col.pal[4], lwd=2)#abline(h=projLRP$fit, col=col.pal[4], lwd=2)
   # CIs for LRP from TMB logistic regression

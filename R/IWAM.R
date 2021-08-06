@@ -282,15 +282,20 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>%
       filter(lh==1) %>% pull(lnWA)
     # Add aggregated WAs at inlet level
-    InletlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% group_by(Inlet) %>%
+    InletlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+      filter(Stock != "Cypre") %>% group_by(Inlet) %>%
       summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>%
       filter(Inlet !="Nitinat")
-    InletlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% filter(Enh==0) %>%
-      group_by(Inlet) %>% summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>%
+    InletlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+      filter(Stock != "Cypre") %>% filter(Enh==0) %>%
+      group_by(Inlet) %>% summarize(InletlnWA = log(sum(WA))) %>% 
+      filter(Inlet != "San Juan") %>%
       filter(Inlet !="Nitinat")
-    CUlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% group_by(CU) %>%
+    CUlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+      filter(Stock != "Cypre") %>% group_by(CU) %>%
       summarize(CUlnWA = log(sum(WA)))
-    CUlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% filter(Enh==0) %>%
+    CUlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+      filter(Stock != "Cypre") %>% filter(Enh==0) %>%
       group_by(CU) %>% summarize(CUlnWA = log(sum(WA)))
     if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA,
                                              CUlnWAnoEnh$CUlnWA)

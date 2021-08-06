@@ -671,7 +671,7 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=TRUE,
   
   #EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  "Somass",  
   # "Zeballos", "San Juan")
-  EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% 
+  EnhStocks <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
     filter (Enh==1) %>% pull(Stock)
   EnhStocks <- as.character(EnhStocks)
   
@@ -754,8 +754,9 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=TRUE,
     abline(h=0)
     axis(side=2)
     mtext(WCVI_rps$StockNames[i], side=3, line=0.5, at="1960")
-    legend(x="topleft", legend=NA, title= paste( "   Sgen=", WCVI_rps$SGEN[i] ), bty="n" )
-    abline(h=WCVI_rps$SMSY[i], col=col.pal[4], lwd=2)
+    if(is.null(boot)) legend(x="topleft", legend=NA, title= paste( "   Sgen=", WCVI_rps$SGEN[i] ), bty="n" )
+    if(!is.null(boot)) {if(is.list(boot)) abline(h=WCVI_rps$SMSY[i], col=col.pal[4], lwd=2) }
+    if(is.null(boot)) {abline(h=WCVI_rps$SMSY[i], col=col.pal[4], lwd=2) }
     abline(h=WCVI_rps$SREP[i], col=col.pal[3], lwd=2)
     abline(h=WCVI_rps$SGEN[i], col=col.pal[2], lwd=2)
     # CIs for SMSY from WA-model with previous assumption about productivity
@@ -763,15 +764,29 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=TRUE,
     polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_rps$SREPLL[i],2), rep(WCVI_rps$SREPUL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
    
       if(!is.null(boot)){
-       smsy.U <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
-       smsy.L <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
-       polygon(x=c(range(Years), rev(range(Years))), y=c(rep(smsy.L,2), rep(smsy.U,2)), col=col.pal.light[4], border=NA)#col.pal[3])
-       sgen.U <- boot$SGEN.boot %>% add_column(stock=row.names(boot$SGEN.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
-       sgen.L <- boot$SGEN.boot %>% add_column(stock=row.names(boot$SGEN.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
-       polygon(x=c(range(Years), rev(range(Years))), y=c(rep(sgen.L,2), rep(sgen.U,2)), col=col.pal.light[2], border=NA)#col.pal[3])
-       srep.U <- boot$SREP.boot %>% add_column(stock=row.names(boot$SREP.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
-       srep.L <- boot$SREP.boot %>% add_column(stock=row.names(boot$SREP.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
-       polygon(x=c(range(Years), rev(range(Years))), y=c(rep(sgen.L,2), rep(sgen.U,2)), col=col.pal.light[3], border=NA)#col.pal[3])
+        if(is.list(boot)){
+          smsy.U <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
+          smsy.L <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
+          polygon(x=c(range(Years), rev(range(Years))), y=c(rep(smsy.L,2), rep(smsy.U,2)), col=col.pal.light[4], border=NA)#col.pal[3])
+          sgen.U <- boot$SGEN.boot %>% add_column(stock=row.names(boot$SGEN.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
+          sgen.L <- boot$SGEN.boot %>% add_column(stock=row.names(boot$SGEN.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
+          polygon(x=c(range(Years), rev(range(Years))), y=c(rep(sgen.L,2), rep(sgen.U,2)), col=col.pal.light[2], border=NA)#col.pal[3])
+          srep.U <- boot$SREP.boot %>% add_column(stock=row.names(boot$SREP.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
+          srep.L <- boot$SREP.boot %>% add_column(stock=row.names(boot$SREP.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
+          polygon(x=c(range(Years), rev(range(Years))), y=c(rep(srep.L,2), rep(srep.U,2)), col=col.pal.light[3], border=NA)#col.pal[3])
+        }
+        if(!is.list(boot)){
+          # smsy.U <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SMSY") %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
+          # smsy.L <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
+          # polygon(x=c(range(Years), rev(range(Years))), y=c(rep(smsy.L,2), rep(smsy.U,2)), col=col.pal.light[4], border=NA)#col.pal[3])
+          sgen.U <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SGEN") %>% filter(Stock== WCVI_rps$StockNames[i]) %>% pull(upr)
+          sgen.L <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SGEN") %>% filter(Stock== WCVI_rps$StockNames[i]) %>% pull(lwr)
+          polygon(x=c(range(Years), rev(range(Years))), y=c(rep(sgen.L,2), rep(sgen.U,2)), col=col.pal.light[2], border=NA)#col.pal[3])
+          srep.U <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SREP") %>% filter(Stock== WCVI_rps$StockNames[i]) %>% pull(upr)
+          srep.L <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SREP") %>% filter(Stock== WCVI_rps$StockNames[i]) %>%  pull(lwr)
+          polygon(x=c(range(Years), rev(range(Years))), y=c(rep(srep.L,2), rep(srep.U,2)), col=col.pal.light[3], border=NA)#col.pal[3])
+          
+        }
        
        #WHY IS BOOTSTRPPED interval for SMSY so much higher than the point estimate? Am I using the correct mean/sig to bootstrap SMSY (wBC), ie.., comparing apples to apples?
        
@@ -780,6 +795,13 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=TRUE,
   
   
 }
+
+# xx <- Get.LRP(remove.EnhStocks=TRUE, Bern_logistic=TRUE,
+#               prod="LifeStageModel")
+# png(paste("DataOut/WCVI_inlet_timeseries_nEnh_bs.png", sep=""), width=9, height=7, units="in", res=500)
+# plotWCVI_timeseries(WCVIEsc=xx$WCVIEsc, remove.EnhStocks = TRUE,
+#                     prod="LifeStageModel", boot=TRUE)
+# dev.off()
 
 ## yy <- Get.LRP(remove.EnhStocks=FALSE)
 # png(paste("DataOut/WCVI_inlet_timeseries_wEnh.png", sep=""), width=9, height=7, units="in", res=500)

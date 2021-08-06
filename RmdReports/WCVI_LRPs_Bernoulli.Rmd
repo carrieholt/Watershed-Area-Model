@@ -142,6 +142,8 @@ boot <- list(SGEN.boot=SGEN.boot, SMSY.boot=SMSY.boot, SREP.boot=SREP.boot)
 plotWCVI_timeseries(WCVIEsc=xx$WCVIEsc, remove.EnhStocks = TRUE, 
                     prod="LifeStageModel", boot=boot)
 
+
+
 ```
 
 

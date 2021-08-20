@@ -47,7 +47,7 @@ source("R/helperFunctions.r")
 #See WCVILRPs_bootstrap.R for version that includes uncertainty in RicA and SREP
 
 Get.LRP <- function (remove.EnhStocks=TRUE, prod="LifeStageModel",
-                     Bern_logistic=FALSE, LOO = NA){
+                     Bern_logistic=FALSE, LOO = NA, BoxTidwell=FALSE){
 
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
@@ -412,13 +412,15 @@ Get.LRP <- function (remove.EnhStocks=TRUE, prod="LifeStageModel",
   SMUlogisticData <- data.frame(SMU_Esc) %>% 
     add_column(ppn=SMU_ppn, Years=as.numeric(Years)) %>% 
     filter(SMU_Esc != "NA")
-  
+  #save(SMUlogisticData,  CU_Names, file="DataIn/BoxTidwellInput.rda")
   data <- list()
   data$N_Stks <- length(CU_Names)
   digits <- count.dig(SMU_Esc)
   ScaleSMU <- min(10^(digits -1 ), na.rm=T)
   
   data$LM_Agg_Abund <- SMUlogisticData$SMU_Esc/ScaleSMU
+  if(BoxTidwell) data$LM_Agg_AbundxLn <- SMUlogisticData$SMU_Esc/ScaleSMU * 
+    log(SMUlogisticData$SMU_Esc/ScaleSMU)
   data$N_Above_BM <- SMUlogisticData$ppn * data$N_Stks
   #data$Above_BM <- floor(SMUlogisticData$ppn)
   # data$AboveBM =  0 and 1s for Bernoulli regression (1 = all CUs > benchmark
@@ -464,18 +466,22 @@ Get.LRP <- function (remove.EnhStocks=TRUE, prod="LifeStageModel",
   param <- list()
   param$B_0 <- -2
   param$B_1 <- 0.1
-  
+  if(BoxTidwell) param$B_2 <- 0.1
   
   #dyn.unload(dynlib(paste("TMB_Files/Logistic_LRPs", sep="")))
   #compile(paste("TMB_Files/Logistic_LRPs.cpp", sep=""))
-  dyn.load(dynlib(paste("TMB_Files/Logistic_LRPs", sep="")))
+  if(!BoxTidwell) {
+    dyn.load(dynlib(paste("TMB_Files/Logistic_LRPs", sep="")))
+    
+    obj <- MakeADFun(data, param, DLL="Logistic_LRPs", silent=TRUE)
+    
+    opt <- nlminb(obj$par, obj$fn, obj$gr, control = 
+                    list(eval.max = 1e5, iter.max = 1e5))
+    pl <- obj$env$parList(opt$par) 
+    #summary(sdreport(obj), p.value=TRUE)
+    
+ 
 
-  obj <- MakeADFun(data, param, DLL="Logistic_LRPs", silent=TRUE)
-  
-  opt <- nlminb(obj$par, obj$fn, obj$gr, control = 
-                  list(eval.max = 1e5, iter.max = 1e5))
-  pl <- obj$env$parList(opt$par) 
-  #summary(sdreport(obj), p.value=TRUE)
   
   # Get parameter estimates and logit predicted values for CIs
   All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE))
@@ -520,7 +526,26 @@ Get.LRP <- function (remove.EnhStocks=TRUE, prod="LifeStageModel",
               CU_Status=CU_Status, Inlet_Status=Inlet_Status, SMU_ppn=SMU_ppn, 
               LRPppn=data$p, nLL=obj$report()$ans, LOO=LOO))
   
-   
+  }
+  #dyn.unload(dynlib(paste("TMB_Files/Logistic_LRPs_BoxTidwell", sep="")))
+  #compile(paste("TMB_Files/Logistic_LRPs_BoxTidwell.cpp", sep=""))
+  if(BoxTidwell) {
+    dyn.load(dynlib(paste("TMB_Files/Logistic_LRPs_BoxTidwell", sep="")))
+    
+    obj <- MakeADFun(data, param, DLL="Logistic_LRPs_BoxTidwell", silent=TRUE)
+    
+    opt <- nlminb(obj$par, obj$fn, obj$gr, control = 
+                    list(eval.max = 1e5, iter.max = 1e5))
+    pl <- obj$env$parList(opt$par) 
+    #summary(sdreport(obj), p.value=TRUE)
+    All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE))
+
+    All_Ests$Param <- row.names(All_Ests)
+    All_Ests$Param <- sapply(All_Ests$Param, function(x) 
+      (unlist(strsplit(x, "[.]"))[[1]]))
+    
+    BoxTidwellp <- All_Ests %>% filter(Param=="B_2") %>% pull(Pr...z.2..)
+  } 
 }
 
 #Get.LRP(remove.EnhStocks = TRUE)

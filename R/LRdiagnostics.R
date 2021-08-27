@@ -6,77 +6,121 @@
 
 # Function 2: LOO_LRdiagnostic, performs leave-one-out cross-validation by 
 # iteratively re-running LRP estimation of subsets of data, leaving one data 
-# point out each time, and estimating classification accuracy on removed data point
+# point out each time, and estimating classification accuracy on removed data 
+# point
 #-------------------------------------------------------------------------------
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Assumptions of logistic regression
-# 1. The relationship between aggregate abundance and logit(proportions) is
-#  linear
-# 2. The observed proportions are independent (not autocorrelated)
-# 3. There are no influential values (outliers)
-# 4. There is no multicollinearity among predictors (NA, only 1 predictor)
-# -------------------------------------------------------------------------------
+# 1. The relationship between aggregate abundance and logit(proportions) or log-
+# odds is linear.
+
+# 2. The observations are independent of each other (i.e., residuals are not 
+# autocorrelated).
+
+# 3. There are no influential outliers. 
+
+# 4. The sample size is sufficiently large. Logistic regression assumes that the 
+# sample size of the data set if large enough to draw valid conclusions from the 
+# fitted logistic regression model.
+
+# 5. There is no multicollinearity among predictors (NA, only 1 predictor)
+#-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 # Function 1: LRdiagnostic, performs diagnostics using the entire time-series 
 # of data
 
 # Steps:
-# 1. Estimate Pearson resiudals and deviance residuals (Assumption 3).
-#   Are deviance residuals >2?
-# 2a. Plot residuals against fitted values (Assumption 1).
-#   Is there a trend in residuals over fitted values?
-# 2b. Plot autocorrelation among residuals Assumption 2).
-#   Are residuals autocorrelated?
-# 3. Evaluate statistical significance of model coefficients.
-# 4. Evaluate Pearson Chi-squared statistic (goodness of fit).
-#   Is there statistical evidence for lack of fit?
-# 5. Evaluate Deviance G-squared statistic (goodness of fit)
-#   Is there statistical evidence for lack of fit?
-# 6. Evaluate quasi-Rsquared.
-#   What is the ratio of the fit to the null model?
-# 7. Evaluate Wald test
-#   Is deviance significantly reduced with predictor, Aggregate abundance?
-# 8. Evaluate hit rate.
-#   What is the classification accuracy of the LRP based on the logistic
-#   regression?
+# 1. Box-Tidwell test to assess linearity (Assumption 1). 
+
+# 2. Estimate Pearson residuals and deviance residuals, and plot residuals 
+# against fitted values. 
+
+# 3. Plot autocorrelation among residuals. Are residuals autocorrelated? 
+# (Assumption 2)
+
+# 4. Are deviance residuals >3, i.e., are they outliers? (Assumption 3)  
+
+# 5. Evaluate if sample size is sufficient. 
+
+# 6. Evaluate statistical significance of model coefficients using Wald's Test.
+
+# 7. Evaluate goodness-of-fit based on ratio of Deviance to the null model 
+# (~likelihood-ratio test).
+
+# 8. Evaluate quasi-Rsquared. What is the ratio of the fit to the null model?
+
+# 9. Evaluate hit ratio. What is the classification accuracy of the LRP based on 
+# the logistic regression?
+
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 # Arguments:
+
+# SMUlogisticData = Dataframe containing 3 columns: Years, SMU_Esc (annual 
+# aggregate escapement to the SMU), and ppn (vector of 0 and 1's indicating if 
+# all CUs are above the lower benchmark (1) or not (0); also accepts  proportion 
+# of CUs that are above their lower benchmark in each year).
+
+# CU_Names = vector of the CU names within the SMU
+
 # All_Ests = Dataframe containing parameters of logistic regression, B_0 and B_1
 #   with p values (All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE)))
+
 # AggAbund = Vector of scaled observed aggregate abundances, with NAs removed
+
 # obsPpnAboveBM = Vectors of observed ppn of CUs above their lower benchmarks
 #   with NAs removed
+
 # p = the proportion of CUs that must be > their benchmark when defining LRP
+
 # nLL = negLogLikehood = ans from TMB file, outputted with REPORT(ans); in TMB
 #   and then called in R with obj$report()$ans
+
 # dir = name of directory where plots should be saved followed by /
+
 # plotname = filename for residual plots
 
-# # Carrie's inputs for testing
-zz <- Get.LRP(remove.EnhStocks = TRUE)
-All_Ests <- zz$out$All_Ests
-AggAbundRaw <- zz$SMU_Esc
-digits <- count.dig(AggAbundRaw)
-ScaleSMU <- min(10^(digits -1 ), na.rm=T)
-AggAbund <- AggAbundRaw/ScaleSMU
-AggAbund <- AggAbund[!is.na(AggAbund)]
-obsPpnAboveBM <- zz$out$Logistic_Data$yy
-p <- zz$LRPppn
-nLL <- zz$nLL
-dir <- "DataOut/"
-plotname <- "WCVI_ResidPlots"
+#----------------------------------------------------------------------------
+## Carrie's inputs for testing
+
+# zz <- Get.LRP(remove.EnhStocks = TRUE)
+# All_Ests <- zz$out$All_Ests
+# AggAbundRaw <- zz$SMU_Esc
+# digits <- count.dig(AggAbundRaw)
+# ScaleSMU <- min(10^(digits -1 ), na.rm=T)
+# AggAbund <- AggAbundRaw/ScaleSMU
+# AggAbund <- AggAbund[!is.na(AggAbund)]
+# obsPpnAboveBM <- zz$out$Logistic_Data$yy
+# p <- zz$LRPppn
+# nLL <- zz$nLL
+# dir <- "DataOut/"
+# plotname <- "WCVI_ResidPlots"
 # 
-# input<- list(All_Ests=All_Ests, AggAbund=AggAbund,
-#              obsPpnAboveBM=obsPpnAboveBM, p=p, nLL=nLL,dir="", plotname="test")
-# save(input, file="DataIn/Input_LRdiagnostics.rda")
+# SMUlogisticData <- zz$out$Logistic_Data %>% rename(Years=yr, SMU_Esc =xx , 
+#                                                   ppn=yy)
+# CU_Names <- names(zz$CU_Status)
+
+# input1<- list(SMUlogisticData=SMUlogisticData, CU_Names=CU_Names)
+# save(input1, file="DataIn/Input_BoxTidwell.rda")
 # 
-# LRdiagOut <- LRdiagnostics(All_Ests=All_Ests, AggAbund=AggAbund, 
-#                             obsPpnAboveBM=obsPpnAboveBM, p=p, nLL=nLL, dir=dir, 
-#                             plotname=plotname)
+# input2<- list(All_Ests=All_Ests, AggAbund=AggAbund,
+#              obsPpnAboveBM=obsPpnAboveBM, p=p, nLL=nLL,dir="",
+#              plotname="test")
+# save(input2, file="DataIn/Input_LRdiagnostics.rda")
+#----------------------------------------------------------------------------
+
+
+load("DataIn/Input_LRdiagnostics.rda")
+load("DataIn/Input_BoxTidwell.rda")
+
+LRdiagOut <- LRdiagnostics(SMUlogisticData = SMUlogisticData, 
+                           CU_Names = CU_Names, All_Ests = All_Ests, 
+                           AggAbund = AggAbund, obsPpnAboveBM = obsPpnAboveBM, 
+                           p = p, nLL = nLL, dir = dir, plotname=plotname)
+
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
@@ -91,8 +135,8 @@ plotname <- "WCVI_ResidPlots"
 #-------------------------------------------------------------------------------
 # Function:
 
-LRdiagnostics <- function(All_Ests, AggAbund, obsPpnAboveBM, p, nLL, dir, 
-                          plotname){
+LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund, 
+                          obsPpnAboveBM, p, nLL, dir, plotname){
   
   #-------------------------------------------------------------------------------
   # Source functions and libraries

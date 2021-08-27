@@ -9,7 +9,9 @@ output:
 
 ```{r setup, include=FALSE, echo=FALSE}
 
-knitr::opts_chunk$set(echo = TRUE)
+
+
+knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_knit$set(root.dir = normalizePath(".."))  
 
 
@@ -97,21 +99,22 @@ CU_Names
 ```
 
 Then generate inputs for logistic regression and run the regression with an additional interaction term, aggregate abundances x ln(aggregate abundance). A significant interaction term indicates that the relationship is not linear.
-This code requires that a "Logistic_LRPs_BoxTidwell.cpp" file with a logistic regression that includes this interaction term has been compiled and is in the directory "TMB_Inputs". A significant Box-Tidwell statistic indicates a lack of linearity in the relationship between aggregate abundances and log-odds.
+This code requires that a "Logistic_LRPs_BoxTidwell.cpp" file with a logistic regression that includes this interaction term has been compiled and is in the directory "TMB_Inputs". A significant Box-Tidwell statistic indicates a lack of linearity in the relationship between aggregate abundances and log-odds (Fox et al. 2016, p. 326-328).
 
-For references, see pdf at bottom of https://www.researchgate.net/post/Thesis-Help-Binary-Logistic-Regression-Linearity-Assumption
+
+<!--Fox et al. 2016 is statistics from library; to photocopy for my records
+Also, see pdf at bottom of https://www.researchgate.net/post/Thesis-Help-Binary-Logistic-Regression-Linearity-Assumption
 or http://www.statisticalassociates.com/logistic10.htm
-
-<!--I have requested Fox et al. 2015 from the library. Another option for a reference (could request this from library) Fox et al. 2019 https://us.sagepub.com/en-us/nam/an-r-companion-to-applied-regression/book246125#contents-->
+-->
 
 
 ```{r boxTidwell, warning=FALSE, message=FALSE, error=FALSE}
   #-------------------------------------------------------------------------------
   # Step 1. Box-Tidwell test to assess linearity between aggregate abundances
-  #       and log-odds of all CUs being above thier lower benchmarks. 
+  #       and log-odds of all CUs being above their lower benchmarks. 
   #-------------------------------------------------------------------------------
 
-
+  # See Fox et al. 2016 
   source("R/helperFunctions.r")
 
   Bern_logistic <- FALSE # For this dummy example on WCVI CK, otherwise set to TRUE
@@ -173,8 +176,6 @@ p <- input$p
 nLL <- input$nLL
 dir <- input$dir
 plotname <- input$plotname
-
-source("R/helperFunctions.r") # contains function ggplot.corr()
 
 
 
@@ -338,6 +339,8 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
   # Evaluate statistical significance of model coefficients using Wald's test,
   # where Wald's statistic = coefficient/SE(coefficient))
   # Statistical significant is shown in p-value from model output.
+  # Agresti et al. (2006); useful for large sample size, but often not adequate
+  # when sample sizes are small
   #-------------------------------------------------------------------------------
   
   signTable <-  All_Ests %>% filter(Param %in% c("B_0", "B_1")) %>% 
@@ -362,7 +365,7 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
   # deviance, and evaluating this ratio relative to  a Chi-square distribution 
   # (df = 1, the difference in the number of parameters) 
   # P < 0.05 indicates a significant lack of fit.
-  # Agresti et al. 2007 (LRT); Ahmad et al. 2011 (definition of deviance)
+  # Agresti et al. 2007 (LRT); Ahmad et al. 2011 (definition of deviance as -2LL)
   
 
   Deviance <- sum(DevResid^2)
@@ -370,10 +373,12 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
   NullDev <- deviance(glm( obsPpnAboveBM ~ 1 , family = 
                              quasibinomial))
 
-  p.DRT <- signif( pchisq(q= - (NullDev-Deviance), df=1), digits=2)
+  p.DRT <- signif( pchisq(q= - (- NullDev + Deviance), df=1), digits=2)
+  
   
   names(p.DRT) <- c("p.DRT")
-  # There is no evidence for lack of fit.
+  p.DRT
+  # P-value is significant (<0.05) indicating a lack of fit.
   
   
   # Note, Roback and Legler 2021 suggest evaluating overall model fit based on 
@@ -383,7 +388,9 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
   # See section 6.5.6: https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
   
   
-  # p.DevChiSq <- 1-pchisq(q=Deviance, df=length(DevResid)-2)
+  #### p.DevChiSq <- 1-pchisq(q=Deviance, df=length(DevResid)-2)
+  # Use this version: https://online.stat.psu.edu/stat501/lesson/15/15.4
+  # p.DevChiSq <- pchisq(q=Deviance, df=length(DevResid)-2)
   # names(p.DevChiSq) <- c("p.DevChiSq")
   # p.DevChiSq
 
@@ -392,7 +399,8 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
   # Or equivalently, based on Pearson residuals, where sum of squared 
   # Pearson's residuals is,
   # Pearson <- sum(PearResid^2)
-  # p.PearChiSq <- 1 - pchisq(q=Pearson, df=length(PearResid)-2)
+  ##### p.PearChiSq <- 1 - pchisq(q=Pearson, df=length(PearResid)-2)
+  # p.PearChiSq <- pchisq(q=Pearson, df=length(PearResid)-2)
   # names(p.PearChiSq) <- c("PearChiSq")
   # p.PearChiSq
   # Section 1.4 of https://www.flutterbys.com.au/stats/tut/tut10.5a.html
@@ -407,10 +415,10 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
 
 ```
 
-8. What is quasiR2? This is a ratio indicating how close is the fit to being perfect or the worst (not the percentage of variance explained by the logistic model, as in linear models)
+8. What is the quasiR2? This is a ratio indicating how close is the fit to being perfect or the worst (not the percentage of variance explained by the logistic model, as in linear models)
 ```{r}
   #-------------------------------------------------------------------------------
-  # Step 6. 
+  # Step 8. 
   # Evaluate quasi-Rsquared.
   #   What is the ratio of the fit to the null model?
   #-------------------------------------------------------------------------------
@@ -429,52 +437,12 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
   names(quasiR2) <- c("quasiR2")
   
   quasiR2
-
+  # The null model is a better fit to the data than the fitted model because of 
+  # the penalty, so quasiR2 is negative.
   
   
 ```
-
-??. Wald test
-Is this likelihood ration test? Do I need the likelihoods instead of Deviance? If so, how doI get likelihood? Is 'Pearson' sufficient?
-
-```{r}
-  #-------------------------------------------------------------------------------
-  # Step ??. 
-  # Evaluate Wald test
-  #   Is the predictor, 'Aggregate Abundance', a significant predictor of the ppn
-  #   of CUs > their lower benchmark?
-  #-------------------------------------------------------------------------------
-  
-  # The Wald test evaluates the significance of a predictor based on difference 
-  # in Deviances between the specificed model and a reduced model without the 
-  # predictor
-  # See Section 4.7 https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
-  p.Wald <- signif( pchisq(q=(Deviance-NullDev), df=1), digits=2)
-  names(p.Wald) <- c("p.Wald")
-  p.Wald
-  
-  
-  # CHECK THESE BEFORE DELETING THIS SECTION
-  
-  #https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
-  
-  
-  # https://www.sciencedirect.com/topics/mathematics/wald-test#:~:text=The%20test%20statistic%20for%20the,follows%20a%20standard%20normal%20distribution.
-  
-  # https://bookdown.org/egarpor/SSS2-UC3M/logreg-inference.html
-  # https://bookdown.org/egarpor/SSS2-UC3M/multlin-inference.html#eq:normp2
-  
-  # http://web.pdx.edu/~newsomj/mlrclass/ho_significance.pdf
-  
-  # https://bookdown.org/roback/bookdown-BeyondMLR/ch-logreg.html
-  
-  # check Wald agaisnt LR test: https://www.ics.uci.edu/~dgillen/STAT211/Handouts/lecture10.pdf
-  
-  # overall approach: https://online.stat.psu.edu/stat501/lesson/15/15.4
-  
-```
-
-9. What is the classifiation accuracy?
+9. What is the classification accuracy?
 ```{r}
   #-----------------------------------------------------------------------------
   # Step 9. 
@@ -509,15 +477,16 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
   #------------------------------------------------------------------------------
   # Step 10.
   # Evaluate hit ratio using leave-one-out cross validation from a confusion
-  # matrix. Contains 4 sub-steps, 9.1-9.4.
+  # matrix. Contains 4 sub-steps, 10.1-10.4.
   #   What is the classification accuracy of the LRP using out-of-sample data?
   #------------------------------------------------------------------------------
 
 
-  # Step 9.1: Estimate logistic regression iteratively, removing a single year
+  # Step 10.1: Estimate logistic regression iteratively, removing a single year
   # each time
 
-  n <- 18 # length of time-series used in logistic regression
+  # Get length of time-series used in logistic regression, n
+  n <- length(which(!is.na(Get.LRP(remove.EnhStocks = TRUE)$SMU_ppn)))[1]
   source("R/WCVILRPs.R") # required to use the Get.LRP() function for the 
   # WCVI case study
   
@@ -529,7 +498,7 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
     All_Ests <- zz$out$All_Ests
 
     if(i==1){ # These remain constant over iterations
-      # Step 9.2: Get observed time-series of aggregate raw abundances that includes all
+      # Step 10.2: Get observed time-series of aggregate raw abundances that includes all
       # data and then scale to units near 1-10
       AggAbundRaw <- zz$out$Logistic_Data$xx
       digits <- count.dig(AggAbundRaw)
@@ -540,10 +509,9 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
       obsPpnAboveBM <- zz$out$Logistic_Data$yy
       # Get threshold p value (ppn of CUs>benchmark) used to estimate LRP
       p <- zz$LRPppn
-      #dir <- "DataOut/"
     }
 
-   # Step 9.3: Get predicted ppn of CUs above their lower benchmark for the year
+   # Step 10.3: Get predicted ppn of CUs above their lower benchmark for the year
     # that was held out
     B_0 <- All_Ests %>% filter(Param=="B_0") %>% pull(Estimate)
     B_1 <- All_Ests %>% filter(Param=="B_1") %>% pull(Estimate)
@@ -551,7 +519,7 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
     predPpnAboveBM[i] <- inv_logit(B_0 + B_1*AggAbund[i])
   } # End of for i in 1:18
 
-  # Step 9.4: Calculate Hit Ratio
+  # Step 10.4: Calculate Hit Ratio
 
   # In which years did the model predict aggregate abundances >LRP?
   yHat <- predPpnAboveBM > p
@@ -567,6 +535,23 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
   hitRatio <- round(hitRatio, digits=2)
 
   hitRatio
+  # In this case accuracy was perfect because all y and yhat values were FALSE
+
+```
+```{r additional references}
+  #https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
+  
+  
+  # https://www.sciencedirect.com/topics/mathematics/wald-test#:~:text=The%20test%20statistic%20for%20the,follows%20a%20standard%20normal%20distribution.
+  
+  # https://bookdown.org/egarpor/SSS2-UC3M/logreg-inference.html
+  # https://bookdown.org/egarpor/SSS2-UC3M/multlin-inference.html#eq:normp2
+  
+  # http://web.pdx.edu/~newsomj/mlrclass/ho_significance.pdf
+  
+  # https://bookdown.org/roback/bookdown-BeyondMLR/ch-logreg.html
+  
+  # overall approach: https://online.stat.psu.edu/stat501/lesson/15/15.4
 
 ```
 

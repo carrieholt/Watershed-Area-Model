@@ -156,10 +156,10 @@ or http://www.statisticalassociates.com/logistic10.htm
   All_Ests$Param <- sapply(All_Ests$Param, function(x) 
     (unlist(strsplit(x, "[.]"))[[1]]))
     
-  BoxTidwellp <- All_Ests %>% filter(Param=="B_2") %>% pull(Pr...z.2..)
-  BoxTidwellp <- round(BoxTidwellp,2)    
-  names(BoxTidwellp) <- c("Box-Tidwell p-value")
-  BoxTidwellp
+  pBoxTidwell <- All_Ests %>% filter(Param=="B_2") %>% pull(Pr...z.2..)
+  pBoxTidwell <- round(pBoxTidwell,2)    
+  names(pBoxTidwell) <- c("Box-Tidwell p-value")
+  pBoxTidwell
 
 ```
 
@@ -179,9 +179,9 @@ plotname <- input$plotname
 
 
 
- #-------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------
   # Step 2. Estimate Pearson resiudals and deviance residuals. 
-  #-------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------
   
   # Get observed and predicted ppn of CUs above their lower benchmark
   B_0 <- All_Ests %>% filter(Param=="B_0") %>% pull(Estimate)
@@ -333,7 +333,7 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
 ```
 
 6. Evaluate statistical significance of model coefficients using Wald's Test.
-```{r}
+```{r warning=FALSE, message=FALSE, error=FALSE}
   #-------------------------------------------------------------------------------
   # step 6. 
   # Evaluate statistical significance of model coefficients using Wald's test,
@@ -354,7 +354,7 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
 
 
 7. Evaluate the overall goodness-of-fit of the logistic model based ratio of Deviance to the null model (~likelihood-ratio test)
-```{r}
+```{r warning=FALSE, message=FALSE, error=FALSE}
  #-------------------------------------------------------------------------------
   # Step 7. 
   # Evaluate goodness-of-fit based on ratio of Deviance to the null model 
@@ -373,11 +373,11 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
   NullDev <- deviance(glm( obsPpnAboveBM ~ 1 , family = 
                              quasibinomial))
 
-  p.DRT <- signif( pchisq(q= - (- NullDev + Deviance), df=1), digits=2)
+  pDRT <- signif( pchisq(q= - (- NullDev + Deviance), df=1), digits=2)
   
   
-  names(p.DRT) <- c("p.DRT")
-  p.DRT
+  names(pDRT) <- c("pDRT")
+  pDRT
   # P-value is significant (<0.05) indicating a lack of fit.
   
   
@@ -416,7 +416,7 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
 ```
 
 8. What is the quasiR2? This is a ratio indicating how close is the fit to being perfect or the worst (not the percentage of variance explained by the logistic model, as in linear models)
-```{r}
+```{r warning=FALSE, message=FALSE, error=FALSE}
   #-------------------------------------------------------------------------------
   # Step 8. 
   # Evaluate quasi-Rsquared.
@@ -443,7 +443,7 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
   
 ```
 9. What is the classification accuracy?
-```{r}
+```{r warning=FALSE, message=FALSE, error=FALSE}
   #-----------------------------------------------------------------------------
   # Step 9. 
   # Evaluate hit ratio from a confusion matrix
@@ -473,7 +473,7 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
 10. Leave-one-out cross validation:  classification accuracy
 Sequentially remove one data point at a time, re-estimate logistic regression and LRP, and then calculate Hit Ratio (classification accurarcy) by comparing predicted and observed values for the data point that was held out. See LRdiagnostics.R for details on how to adapt this diagnostic for other case studies.
 
-```{r}
+```{r warning=FALSE, message=FALSE, error=FALSE}
   #------------------------------------------------------------------------------
   # Step 10.
   # Evaluate hit ratio using leave-one-out cross validation from a confusion
@@ -482,13 +482,14 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
   #------------------------------------------------------------------------------
 
 
-  # Step 10.1: Estimate logistic regression iteratively, removing a single year
-  # each time
-
-  # Get length of time-series used in logistic regression, n
+  # Step 10.1: Get length of time-series used in logistic regression, n
   n <- length(which(!is.na(Get.LRP(remove.EnhStocks = TRUE)$SMU_ppn)))[1]
   source("R/WCVILRPs.R") # required to use the Get.LRP() function for the 
-  # WCVI case study
+
+  # Step 10.2: Estimate logistic regression iteratively, removing a single year
+  # each time
+
+  # WCVI case study:
   
   predPpnAboveBM <- NA
 
@@ -498,8 +499,8 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
     All_Ests <- zz$out$All_Ests
 
     if(i==1){ # These remain constant over iterations
-      # Step 10.2: Get observed time-series of aggregate raw abundances that includes all
-      # data and then scale to units near 1-10
+      # Step 10.3: Get observed time-series of aggregate raw abundances that 
+      # includes all data and then scale to units near 1-10
       AggAbundRaw <- zz$out$Logistic_Data$xx
       digits <- count.dig(AggAbundRaw)
       ScaleSMU <- min(10^(digits -1 ), na.rm=T)
@@ -511,15 +512,14 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
       p <- zz$LRPppn
     }
 
-   # Step 10.3: Get predicted ppn of CUs above their lower benchmark for the year
-    # that was held out
+    # Step 10.4: Get predicted ppn of CUs above their lower benchmark for the 
+    # year that was held out
     B_0 <- All_Ests %>% filter(Param=="B_0") %>% pull(Estimate)
     B_1 <- All_Ests %>% filter(Param=="B_1") %>% pull(Estimate)
-    #predPpnAboveBM <- inv_logit(B_0 + B_1*AggAbund)
     predPpnAboveBM[i] <- inv_logit(B_0 + B_1*AggAbund[i])
-  } # End of for i in 1:18
+  } # End of for i in 1:n
 
-  # Step 10.4: Calculate Hit Ratio
+  # Step 10.5: Calculate Hit Ratio
 
   # In which years did the model predict aggregate abundances >LRP?
   yHat <- predPpnAboveBM > p
@@ -535,10 +535,11 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
   hitRatio <- round(hitRatio, digits=2)
 
   hitRatio
-  # In this case accuracy was perfect because all y and yhat values were FALSE
+  # For WCVI Chinook, accuracy was perfect because all y and yhat values were 
+  # FALSE
 
 ```
-```{r additional references}
+```{r additional references, warning=FALSE, message=FALSE, error=FALSE}
   #https://bookdown.org/egarpor/SSS2-UC3M/logreg-deviance.html
   
   

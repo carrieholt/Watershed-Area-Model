@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 # Functions to run diagnostics on logistic regression to estimate LRPs for 
 # Pacific salmon
-# Date last revised: 30 Aug 2021
+# Date last revised: 31 Aug 2021
 # Created by: Carrie Holt
 #-------------------------------------------------------------------------------
 
@@ -133,6 +133,7 @@ library(TMB)
 library(here)
 
 source(here::here("R", "helperFunctions.r"))
+source(here::here("R", "WCVILRPs.R")) # Needed for Step 10 (LOO) only
 
 #----------------------------------------------------------------------------
 # Input data
@@ -650,17 +651,17 @@ LOO_LRdiagnostics <- function(remove.EnhStocks=TRUE){
 # Run code using WCVI CK input data from above
 # load("DataIn/Input_LRdiagnostics.rda")
 
-# LRdiagOut <- LRdiagnostics(SMUlogisticData = input$SMUlogisticData,
-#                            CU_Names = input$CU_Names,
-#                            All_Ests = input$All_Ests,
-#                            AggAbund = input$AggAbund,
-#                            obsPpnAboveBM = input$obsPpnAboveBM,
-#                            p = input$p, nLL = input$nLL,
-#                            Bern_logistic = input$Bern_logistic,
-#                            dir = input$dir, plotname = input$plotname)
-# 
-# 
-# LOO_LRdiagOut <- LOO_LRdiagnostics(remove.EnhStocks=TRUE)
+LRdiagOut <- LRdiagnostics(SMUlogisticData = input$SMUlogisticData,
+                           CU_Names = input$CU_Names,
+                           All_Ests = input$All_Ests,
+                           AggAbund = input$AggAbund,
+                           obsPpnAboveBM = input$obsPpnAboveBM,
+                           p = input$p, nLL = input$nLL,
+                           Bern_logistic = input$Bern_logistic,
+                           dir = input$dir, plotname = input$plotname)
+
+
+LOO_LRdiagOut <- LOO_LRdiagnostics(remove.EnhStocks=TRUE)
 #-------------------------------------------------------------------------------
 
 

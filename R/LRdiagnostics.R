@@ -238,33 +238,42 @@ LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund,
   PearResid <- (obsPpnAboveBM - predPpnAboveBM) / sqrt(predPpnAboveBM * 
                                                          (1 - predPpnAboveBM)) 
   
-  # Deviance residual: Eq3.16 https://data.princeton.edu/wws509/notes/c3s8
-  # setting n=1 (number of trials at each observation of x). Also Fox et al. 
-  # 2016, p. 412.
+  # Deviance residual:  Fox et al. 2016, p. 412. setting n=1, number of trials 
+  # at each observation of x)
   # To avoid NANs, use ifelse statement in the eqn, as suggested here:
   # https://www.datascienceblog.net/post/machine-learning/interpreting_
   # generalized_linear_models/#:~:text=For%20type%20%3D%20%22pearson%22%2
   # 0%2C,%CB%86f(xi)
+  # See also Eq3.16 https://data.princeton.edu/wws509/notes/c3s8 for old version
+  
   
   binom.resid <- function(y, mu) {
-    y * log( ifelse(y== 0, 1, y/mu)) + (1-y) * log( 
-      ifelse(y==1 ,1,(1-y)/(1-mu) ) )  
+    y * log( ifelse(y== 0, 1, mu/y)) + (1-y) * log( 
+      ifelse(y==1 ,1,(1-mu)/(1-y) ) )  
   }
-  
-  
-  DevResid <- sign(obsPpnAboveBM - predPpnAboveBM ) * 
-    sqrt( 2 * binom.resid(y=obsPpnAboveBM, mu=predPpnAboveBM) ) 
-  
 
+  DevResid <- sign(obsPpnAboveBM - predPpnAboveBM ) * 
+    sqrt( -2 * binom.resid(y=obsPpnAboveBM, mu=predPpnAboveBM) ) 
+  
+  
+  # binom.resid.old <- function(y, mu) {
+  #   y * log( ifelse(y== 0, 1, y/mu)) + (1-y) * log( 
+  #     ifelse(y==1 ,1,(1-y)/(1-mu) ) )  
+  # }
+  # 
+  # DevResid.old <- sign(obsPpnAboveBM - predPpnAboveBM ) * 
+  #   sqrt( 2 * binom.resid.old(y=obsPpnAboveBM, mu=predPpnAboveBM) ) 
+  
+  
   ## Testing. Residuals match output from R using glm objects 
-  # Must temporarily set penalty to FALSE)
-  Fit_Mod <- glm( ppn ~ SMU_Esc , family = quasibinomial, data=SMUlogisticData)
-  B_0 <- Fit_Mod$coef[1]
-  B_1 <- Fit_Mod$coef[2]
-  obsPpnAboveBM <- SMUlogisticData$ppn
-  predPpnAboveBM <- inv_logit(B_0 + B_1*SMUlogisticData$SMU_Esc)
-  residuals(Fit_Mod, type="pearson")
-  residuals(Fit_Mod, type="deviance")
+  # Must temporarily set penalty to FALSE before running:
+  # Fit_Mod <- glm( ppn ~ SMU_Esc , family = quasibinomial, data=SMUlogisticData)
+  # B_0 <- Fit_Mod$coef[1]
+  # B_1 <- Fit_Mod$coef[2]
+  # obsPpnAboveBM <- SMUlogisticData$ppn
+  # predPpnAboveBM <- inv_logit(B_0 + B_1*SMUlogisticData$SMU_Esc)
+  # residuals(Fit_Mod, type="pearson")
+  # residuals(Fit_Mod, type="deviance")
   
   # Put data for diagnostics in a dataframe for plotting
   diagData <- data.frame(predPppnAboveBM = predPpnAboveBM, 

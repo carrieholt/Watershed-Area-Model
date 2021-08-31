@@ -201,23 +201,23 @@ plotname <- input$plotname
   PearResid <- (obsPpnAboveBM - predPpnAboveBM) / sqrt(predPpnAboveBM * 
                                                           (1 - predPpnAboveBM)) 
 
-  # Deviance residual: Eq3.16 https://data.princeton.edu/wws509/notes/c3s8
-  # setting n=1 (number of trials at each observation of x)
+  # Deviance residual:  Fox et al. 2016, p. 412. setting n=1, number of trials 
+  # at each observation of x)
   # To avoid NANs, use ifelse statement in the eqn, as suggested here:
   # https://www.datascienceblog.net/post/machine-learning/interpreting_
-  # generalized_linear_models/#:~:text=For%20type%20%3D%20%22pearson%22%20%2C,%
-  # CB%86f(xi)
+  # generalized_linear_models/#:~:text=For%20type%20%3D%20%22pearson%22%2
+  # 0%2C,%CB%86f(xi)
+
   
   binom.resid <- function(y, mu) {
-    y * log( ifelse(y== 0, 1, y/mu)) + (1-y) * log( 
-      ifelse(y==1 ,1,(1-y)/(1-mu) ) )  
+    y * log( ifelse(y== 0, 1, mu/y)) + (1-y) * log( 
+      ifelse(y==1 ,1,(1-mu)/(1-y) ) )  
   }
-  
-  
+
   DevResid <- sign(obsPpnAboveBM - predPpnAboveBM ) * 
-    sqrt( 2 * binom.resid(y=obsPpnAboveBM, mu=predPpnAboveBM) ) 
+    sqrt( -2 * binom.resid(y=obsPpnAboveBM, mu=predPpnAboveBM) ) 
   
-   
+  
   # Put data for diagnostics in a dataframe for plotting
   diagData <- data.frame(predPppnAboveBM = predPpnAboveBM, 
                          PearResid = PearResid, DevResid=DevResid)

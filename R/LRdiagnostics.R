@@ -1,10 +1,14 @@
 #-------------------------------------------------------------------------------
-# Functions to run diagnostics on logistic regression
+# Functions to run diagnostics on logistic regression to estimate LRPs for 
+# Pacific salmon
+# Date last revised: 30 Aug 2021
+# Created by: Carrie Holt
+#-------------------------------------------------------------------------------
 
-# Function 1: LRdiagnostic, performs diagnostics using the entire time-series 
+# Function 1: LRdiagnostic(), performs diagnostics using the entire time-series 
 # of data
 
-# Function 2: LOO_LRdiagnostic, performs leave-one-out cross-validation by 
+# Function 2: LOO_LRdiagnostic(), performs leave-one-out cross-validation by 
 # iteratively re-running LRP estimation of subsets of data, leaving one data 
 # point out each time, and estimating classification accuracy on removed data 
 # point
@@ -12,6 +16,7 @@
 
 #-------------------------------------------------------------------------------
 # Assumptions of logistic regression
+#-------------------------------------------------------------------------------
 # 1. The relationship between aggregate abundance and logit(proportions) or log-
 # odds is linear.
 
@@ -28,7 +33,7 @@
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
-# Function 1: LRdiagnostic, performs diagnostics using the entire time-series 
+# Function 1: LRdiagnostic(), performs diagnostics using the entire time-series 
 # of data (Function 2 is below)
 
 # Steps:
@@ -42,7 +47,7 @@
 
 # 4. Are deviance residuals >3, i.e., are they outliers? (Assumption 3)  
 
-# 5. Evaluate if sample size is sufficient. 
+# 5. Evaluate if sample size is sufficient. (Assumption 4)
 
 # 6. Evaluate statistical significance of model coefficients using Wald's Test.
 
@@ -88,7 +93,7 @@
 
 #----------------------------------------------------------------------------
 ## Carrie's inputs for testing
-
+# 
 # source("R/WCVILRPs.R")
 # zz <- Get.LRP(remove.EnhStocks = TRUE)
 # All_Ests <- zz$out$All_Ests
@@ -100,7 +105,7 @@
 # obsPpnAboveBM <- zz$out$Logistic_Data$yy
 # p <- zz$LRPppn
 # nLL <- zz$nLL
-# Bern_logistic <- as.numeric(FALSE) #For this dummy example on WCVI; usually 
+# Bern_logistic <- as.numeric(FALSE) #For this dummy example on WCVI; usually
 #                                    #set to TRUE
 # dir <- "DataOut/"
 # plotname <- "WCVI_ResidPlots"
@@ -109,19 +114,13 @@
 #                                                   ppn=yy)
 # CU_Names <- names(zz$CU_Status)
 # 
-# save(SMUlogisticData=SMUlogisticData, CU_Names=CU_Names,
-#      file="DataIn/Input_BoxTidwell.rda")
-# save(All_Ests=All_Ests, AggAbund=AggAbund, obsPpnAboveBM=obsPpnAboveBM, p=p,
-#      nLL=nLL, file="DataIn/Input_LRdiagnostics.rda")
+# input <- list(SMUlogisticData=SMUlogisticData, CU_Names=CU_Names,
+#            All_Ests=All_Ests, AggAbund=AggAbund,
+#            obsPpnAboveBM=obsPpnAboveBM, p=p, nLL=nLL,
+#            Bern_logistic=Bern_logistic, dir="",
+#            plotname="test")
+# save(input, file="DataIn/Input_LRdiagnostics.rda")
 
-
-#----------------------------------------------------------------------------
-# Input data
-
-load("DataIn/Input_LRdiagnostics.rda")
-load("DataIn/Input_BoxTidwell.rda")
-dir <- ""
-plotname <- "test"
 
 #----------------------------------------------------------------------------
 # Libraries
@@ -131,27 +130,31 @@ library(ggplot2)
 library(viridis)
 library(patchwork)
 library(TMB)
+library(here)
 
-source("R/helperFunctions.r")
+source(here::here("R", "helperFunctions.r"))
 
 #----------------------------------------------------------------------------
-# Run code
+# Input data
 
-# LRdiagOut <- LRdiagnostics(SMUlogisticData = SMUlogisticData, 
-#                            CU_Names = CU_Names, All_Ests = All_Ests, 
-#                            AggAbund = AggAbund, obsPpnAboveBM = obsPpnAboveBM, 
-#                            p = p, nLL = nLL, Bern_logistic = Bern_logistic, 
-#                            dir = dir, plotname=plotname)
+load(here::here("DataIn", "Input_LRdiagnostics.rda"))
+SMUlogisticData <- input$SMUlogisticData
+CU_Names <- input$CU_Names
+All_Ests <- input$All_Ests
+AggAbund  <- input$AggAbund
+obsPpnAboveBM <- input$obsPpnAboveBM
+p <- input$p
+nLL <- input$nLL
+Bern_logistic <- input$Bern_logistic
+dir <- input$dir
+plotname <- input$plotname
 
-#-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 # Returns:
-# - png of plots of residuals and their autocorrelation (step 2) stored in 
-#   directory, dir
-# - list of outputs from steps 1, 3-8
+# - list of outputs from steps 1-9
+# - png of plots of residuals and their autocorrelation stored in directory, dir
 #-------------------------------------------------------------------------------
-
 
 
 #-------------------------------------------------------------------------------
@@ -292,7 +295,7 @@ LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund,
           plot.title = element_text(size = 20)
     ) 
   p1+p2
-  
+  ggsave(p1+p2, file=paste(dir, plotname, ".png", sep=""))
   
   #-----------------------------------------------------------------------------
   # Step 3:
@@ -306,6 +309,7 @@ LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund,
   p4 <- ggplot.corr(data=DevResid, title="Deviance residuals") 
   
   p3+p4
+  ggsave(p3+p4, file=paste(dir, plotname, "acf.png"))
   
   
   #-----------------------------------------------------------------------------
@@ -481,70 +485,7 @@ LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund,
   hitRatio
   
   
-  #------------------------------------------------------------------------------
-  # Step 10.
-  # Evaluate hit ratio using leave-one-out cross validation from a confusion
-  # matrix. Contains 4 sub-steps, 10.1-10.4.
-  #   What is the classification accuracy of the LRP using out-of-sample data?
-  #------------------------------------------------------------------------------
-  
-  
-  # Step 10.1: Estimate logistic regression iteratively, removing a single year
-  # each time
-  
-  # Get length of time-series used in logistic regression, n
-  n <- length(which(!is.na(Get.LRP(remove.EnhStocks = TRUE)$SMU_ppn)))[1]
-  source("R/WCVILRPs.R") # required to use the Get.LRP() function for the 
-  # WCVI case study
-  
-  predPpnAboveBM <- NA
-  
-  for (i in 1:n){
-    # Estimate logistic regression using function Get.LRP
-    zz <- Get.LRP(remove.EnhStocks = TRUE, LOO=i)
-    All_Ests <- zz$out$All_Ests
-    
-    if(i==1){ # These remain constant over iterations
-      # Step 10.2: Get observed time-series of aggregate raw abundances that includes all
-      # data and then scale to units near 1-10
-      AggAbundRaw <- zz$out$Logistic_Data$xx
-      digits <- count.dig(AggAbundRaw)
-      ScaleSMU <- min(10^(digits -1 ), na.rm=T)
-      AggAbund <- AggAbundRaw/ScaleSMU
-      # Get time-series of observed ppns of CUs> benchamark, including all
-      # data
-      obsPpnAboveBM <- zz$out$Logistic_Data$yy
-      # Get threshold p value (ppn of CUs>benchmark) used to estimate LRP
-      p <- zz$LRPppn
-    }
-    
-    # Step 10.3: Get predicted ppn of CUs above their lower benchmark for the year
-    # that was held out
-    B_0 <- All_Ests %>% filter(Param=="B_0") %>% pull(Estimate)
-    B_1 <- All_Ests %>% filter(Param=="B_1") %>% pull(Estimate)
-    #predPpnAboveBM <- inv_logit(B_0 + B_1*AggAbund)
-    predPpnAboveBM[i] <- inv_logit(B_0 + B_1*AggAbund[i])
-  } # End of for i in 1:18
-  
-  # Step 10.4: Calculate Hit Ratio
-  
-  # In which years did the model predict aggregate abundances >LRP?
-  yHat <- predPpnAboveBM > p
-  # In which years were observed aggregate abundances >LRP?
-  y <- obsPpnAboveBM > p
-  
-  # Confusion Matrix
-  confMat <- table(y, yHat)
-  
-  # What is the accuracy in classifying observed aggregate abundances?
-  # Hit ratio = ratio of correct classification
-  hitRatio <- sum(diag(confMat))/sum(confMat)
-  hitRatio <- round(hitRatio, digits=2)
-  
-  hitRatio
-  # For WCVI Chinook, accuracy was perfect because all y and yhat values were 
-  # FALSE
-  
+   
   
   # The hit matrix will be always biased towards unrealistically good
   # classification rates when computed with the same sample used for
@@ -555,7 +496,7 @@ LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund,
   #-----------------------------------------------------------------------------
   # Output
   out <- list()
-  out$BoxTidwellp <- BoxTidwellp
+  out$pBoxTidwell <- pBoxTidwell
   out$DevResid <- DevResid
   out$PearResid <- DevResid
   out$p1 <- p1
@@ -570,6 +511,7 @@ LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund,
   out$confMat <- confMat
   out$hitRatio <- hitRatio
 
+  
   return(out)
   
 } # End of Function 1: LRdiagnostics()
@@ -619,8 +561,7 @@ LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund,
 # Arguments:
 # remove.EnhStocks = logical specifying if enhanced stocks are removed 
   # (PNI<0.5)
-# n = length of time-series over with to iteravely remove a data point in the 
-  # logistic regression
+
 
 
 # Note, LOO_LRdiagnists() calls the function Get.LRP() which generates the 
@@ -696,12 +637,30 @@ LOO_LRdiagnostics <- function(remove.EnhStocks=TRUE){
   
   # What is the accuracy in classifying observed aggregate abundances?
   # Hit ratio = ratio of correct classification
-  hitRatio <- sum(diag(confMat))/sum(confMat)
-  hitRatio <- round(hitRatio, digits=2)
+  hitRatio_LOO <- sum(diag(confMat))/sum(confMat)
+  hitRatio_LOO <- round(hitRatio_LOO, digits=2)
   
-  return(hitRatio=hitRatio)
+  return(hitRatio=hitRatio_LOO)
 }# End of Function 2: LOO_LRdiagnostics()
 
 
+
+
+#----------------------------------------------------------------------------
+# Run code using WCVI CK input data from above
+# load("DataIn/Input_LRdiagnostics.rda")
+
+# LRdiagOut <- LRdiagnostics(SMUlogisticData = input$SMUlogisticData,
+#                            CU_Names = input$CU_Names,
+#                            All_Ests = input$All_Ests,
+#                            AggAbund = input$AggAbund,
+#                            obsPpnAboveBM = input$obsPpnAboveBM,
+#                            p = input$p, nLL = input$nLL,
+#                            Bern_logistic = input$Bern_logistic,
+#                            dir = input$dir, plotname = input$plotname)
+# 
+# 
+# LOO_LRdiagOut <- LOO_LRdiagnostics(remove.EnhStocks=TRUE)
+#-------------------------------------------------------------------------------
 
 

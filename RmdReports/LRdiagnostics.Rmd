@@ -1,7 +1,7 @@
 ---
 title: "Logistic Regression Diagnostics"
 author: "Carrie Holt"
-date: "April 1, 2021"
+date: "August 31, 2021"
 output:
   html_document: default
   word_document: default
@@ -21,6 +21,8 @@ library(ggplot2)
 library(viridis)
 library(patchwork)
 library(TMB)
+library(here)
+library(bookdown)
 
 ```
 
@@ -44,7 +46,7 @@ library(TMB)
 
 4. Are deviance residuals >3, i.e., are they outliers? (Assumption 3)  
 
-5. Evaluate if sample size is sufficient. 
+5. Evaluate if sample size is sufficient. (Assumption 4)
 
 6. Evaluate statistical significance of model coefficients using Wald's Test.
 
@@ -81,6 +83,8 @@ p = the proportion of CUs that must be > their benchmark when defining LRP, for 
 
 nLL = negLogLikehood = ans from TMB file, outputted with REPORT(ans); in TMB
   and then called in R with obj$report()$ans
+  
+Bern_logistic = 0/1. Is the logistic regression Bernoulli (TRUE, 1) or Binomial (FALSE, 0). For this dummy example  on WCVI set to FALSE; usually set to TRUE
 
 dir = name of directory where plots should be saved followed by /
 
@@ -88,13 +92,14 @@ plotname = filename for residual plots
 
 
 
-Step 1.  Box-Tidwell test to assess linearity (Assumption 1). First, data to run the logistic regression are loaded The rda file contain a list, "SMUlogisticData", and vector "CU_Names", and is saved on a "DataIn" directory.
+# Step 1.  
+Box-Tidwell test to assess linearity (Assumption 1). First, data to run the logistic regression are loaded The rda file contain a list, "SMUlogisticData", and vector "CU_Names", and is saved on a "DataIn" directory.
 
 ```{r}
-load("DataIn/BoxTidwellInput.rda")
-#load("BoxTidwellInput.rda")
-SMUlogisticData
-CU_Names
+load(here("DataIn", "Input_LRdiagnostics.rda"))
+SMUlogisticData <- input$SMUlogisticData 
+CU_Names <- input$CU_Names
+Bern_logistic <- input$Bern_logistic
 
 ```
 
@@ -108,16 +113,16 @@ or http://www.statisticalassociates.com/logistic10.htm
 -->
 
 
-```{r boxTidwell, warning=FALSE, message=FALSE, error=FALSE}
+```{r boxTidwell, warning=FALSE, message=FALSE, error=FALSE, echo=TRUE}
   #-------------------------------------------------------------------------------
   # Step 1. Box-Tidwell test to assess linearity between aggregate abundances
   #       and log-odds of all CUs being above their lower benchmarks. 
   #-------------------------------------------------------------------------------
 
   # See Fox et al. 2016 
-  source("R/helperFunctions.r")
+  source(here("R", "helperFunctions.r"))
 
-  Bern_logistic <- FALSE # For this dummy example on WCVI CK, otherwise set to TRUE
+
 
   data <- list()
   data$N_Stks <- length(CU_Names)
@@ -163,12 +168,13 @@ or http://www.statisticalassociates.com/logistic10.htm
 
 ```
 
-2. Estimate Pearson residuals and deviance residuals, and plot residuals against fitted values. First data are inputted from "Input_LRdiagnostics.rda".
+# Step 2. 
+Estimate Pearson residuals and deviance residuals, and plot residuals against fitted values. 
 
 
-```{r ResidPlot, fig.cap="Plot of Pearson and Deviance residuals against fitted values. Blue line is loess smoothed residuals and grey band is 95 percent confidence intervals.",warning=FALSE, message=FALSE, error=FALSE}
+```{r ResidPlot, fig.cap="Figure 1. Plot of Pearson and Deviance residuals against fitted values. Blue line is loess smoothed residuals and grey band is 95 percent confidence intervals.", echo=TRUE}
 
-load("DataIn/Input_LRdiagnostics.rda")
+
 All_Ests <- input$All_Ests
 AggAbund <- input$AggAbund
 obsPpnAboveBM <- input$obsPpnAboveBM
@@ -252,12 +258,13 @@ plotname <- input$plotname
           axis.title=element_text(size=14,face="bold"),
           plot.title = element_text(size = 20)
     ) 
-p1+p2
+  p1+p2
 
 ```
 
-3. Plot autocorrelation among residuals. Are residuals autocorrelated? (Assumption 2)
-```{r autocorrPlot, fig.cap="Plot of autocorrelation coefficients for Pearson and Deviance residuals.",warning=FALSE, message=FALSE, error=FALSE}
+# Step 3. 
+Plot autocorrelation among residuals. Are residuals autocorrelated? (Assumption 2)
+```{r autocorrPlot, fig.cap="Figure 2. Plot of autocorrelation coefficients for Pearson and Deviance residuals.", echo=TRUE}
   #-------------------------------------------------------------------------------
   # Step 3:
   #  Plot autocorrelation among residuals. Are residuals autocorrelated? 
@@ -273,10 +280,11 @@ p1+p2
 
 ```
 
-4. Are any residuals outliers? (i.e., are deviance residuals >3) (Assumption 3).  Note, we cannot yet evaluate influence test statistics such as Cook's distance because the hat  matrix is not provided in TMB outputs. 
+# Step 4. 
+Are any residuals outliers? (i.e., are deviance residuals >3) (Assumption 3).  Note, we cannot yet evaluate influence test statistics such as Cook's distance because the hat  matrix is not provided in TMB outputs. 
 
 
-```{r warning=FALSE, message=FALSE, error=FALSE}
+```{r warning=FALSE, message=FALSE, error=FALSE, echo=TRUE}
   #-------------------------------------------------------------------------------
   # Step 4:
   #  Are any residuals outliers? (i.e., are deviance residuals >3, Assumption 3)
@@ -302,9 +310,10 @@ p1+p2
 
 
 ```
-5. Evaluate if sample size is sufficient. As a rule of thumb, Peduzzi et al.(1996) suggests a minimum of 10 cases with the least frequent outcome for each explanatory variable (1 in this case). For example, if the expected probabilities are 0.50 and 0.50 (for 0 and 1, respectively), then the minimum sample size of at least (10*1) / 0.50 = 20 to avoid biases in model coefficients. 
+# Step 5. 
+Evaluate if sample size is sufficient. As a rule of thumb, Peduzzi et al.(1996) suggests a minimum of 10 cases with the least frequent outcome for each explanatory variable (1 in this case). For example, if the expected probabilities are 0.50 and 0.50 (for 0 and 1, respectively), then the minimum sample size of at least (10*1) / 0.50 = 20 to avoid biases in model coefficients. 
 
-```{r warning=FALSE, message=FALSE, error=FALSE}
+```{r warning=FALSE, message=FALSE, error=FALSE, echo=TRUE}
   #-------------------------------------------------------------------------------
   # Step 5:
     #  Evaluate if sample size is sufficient
@@ -332,8 +341,9 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
 
 ```
 
-6. Evaluate statistical significance of model coefficients using Wald's Test.
-```{r warning=FALSE, message=FALSE, error=FALSE}
+# Step 6. 
+Evaluate statistical significance of model coefficients using Wald's Test.
+```{r warning=FALSE, message=FALSE, error=FALSE, echo=TRUE}
   #-------------------------------------------------------------------------------
   # step 6. 
   # Evaluate statistical significance of model coefficients using Wald's test,
@@ -353,8 +363,9 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
 ```
 
 
-7. Evaluate the overall goodness-of-fit of the logistic model based ratio of Deviance to the null model (~likelihood-ratio test)
-```{r warning=FALSE, message=FALSE, error=FALSE}
+# Step 7. 
+Evaluate the overall goodness-of-fit of the logistic model based ratio of Deviance to the null model (~likelihood-ratio test)
+```{r warning=FALSE, message=FALSE, error=FALSE, echo=TRUE}
  #-------------------------------------------------------------------------------
   # Step 7. 
   # Evaluate goodness-of-fit based on ratio of Deviance to the null model 
@@ -415,8 +426,9 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
 
 ```
 
-8. What is the quasiR2? This is a ratio indicating how close is the fit to being perfect or the worst (not the percentage of variance explained by the logistic model, as in linear models)
-```{r warning=FALSE, message=FALSE, error=FALSE}
+# Step 8. 
+What is the quasiR2? This is a ratio indicating how close is the fit to being perfect or the worst (not the percentage of variance explained by the logistic model, as in linear models)
+```{r warning=FALSE, message=FALSE, error=FALSE, echo=TRUE}
   #-------------------------------------------------------------------------------
   # Step 8. 
   # Evaluate quasi-Rsquared.
@@ -442,8 +454,9 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
   
   
 ```
-9. What is the classification accuracy?
-```{r warning=FALSE, message=FALSE, error=FALSE}
+# Step 9. 
+What is the classification accuracy?
+```{r warning=FALSE, message=FALSE, error=FALSE, echo=TRUE}
   #-----------------------------------------------------------------------------
   # Step 9. 
   # Evaluate hit ratio from a confusion matrix
@@ -470,10 +483,11 @@ if (minSampleSize > sampleSize) print("Sample is below minimum suggested levels"
   
 ```
 
-10. Leave-one-out cross validation:  classification accuracy
+# Step 10. 
+Leave-one-out cross validation:  classification accuracy
 Sequentially remove one data point at a time, re-estimate logistic regression and LRP, and then calculate Hit Ratio (classification accurarcy) by comparing predicted and observed values for the data point that was held out. See LRdiagnostics.R for details on how to adapt this diagnostic for other case studies.
 
-```{r warning=FALSE, message=FALSE, error=FALSE}
+```{r warning=FALSE, message=FALSE, error=FALSE, echo=TRUE}
   #------------------------------------------------------------------------------
   # Step 10.
   # Evaluate hit ratio using leave-one-out cross validation from a confusion
@@ -483,8 +497,8 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
 
 
   # Step 10.1: Get length of time-series used in logistic regression, n
+  source(here("R", "WCVILRPs.R"))# required to use the Get.LRP() function for the 
   n <- length(which(!is.na(Get.LRP(remove.EnhStocks = TRUE)$SMU_ppn)))[1]
-  source("R/WCVILRPs.R") # required to use the Get.LRP() function for the 
 
   # Step 10.2: Estimate logistic regression iteratively, removing a single year
   # each time
@@ -531,10 +545,10 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
 
   # What is the accuracy in classifying observed aggregate abundances?
   # Hit ratio = ratio of correct classification
-  hitRatio <- sum(diag(confMat))/sum(confMat)
-  hitRatio <- round(hitRatio, digits=2)
+  hitRatio_LOO <- sum(diag(confMat))/sum(confMat)
+  hitRatio_LOO <- round(hitRatio_LOO, digits=2)
 
-  hitRatio
+  hitRatio_LOO
   # For WCVI Chinook, accuracy was perfect because all y and yhat values were 
   # FALSE
 

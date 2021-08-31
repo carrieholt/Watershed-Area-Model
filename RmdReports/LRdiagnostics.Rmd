@@ -205,8 +205,8 @@ plotname <- input$plotname
   # setting n=1 (number of trials at each observation of x)
   # To avoid NANs, use ifelse statement in the eqn, as suggested here:
   # https://www.datascienceblog.net/post/machine-learning/interpreting_
-  # generalized_linear_models/#:~:text=For%20type%20%3D%20%22pearson%22%2
-  # 0%2C,%CB%86f(xi)
+  # generalized_linear_models/#:~:text=For%20type%20%3D%20%22pearson%22%20%2C,%
+  # CB%86f(xi)
   
   binom.resid <- function(y, mu) {
     y * log( ifelse(y== 0, 1, y/mu)) + (1-y) * log( 
@@ -217,18 +217,7 @@ plotname <- input$plotname
   DevResid <- sign(obsPpnAboveBM - predPpnAboveBM ) * 
     sqrt( 2 * binom.resid(y=obsPpnAboveBM, mu=predPpnAboveBM) ) 
   
-
    
-  ## Testing. Residuals match output from R using glm objects
-  # ModDat <- data.frame(xx=data$LM_Agg_Abund, yy=SMUlogisticData$ppn)
-  # Fit_Mod <- glm( yy ~ xx , family = quasibinomial, data=ModDat)
-  # B_0 <- Fit_Mod$coef[1]
-  # B_1 <- Fit_Mod$coef[2]
-  # obsPpnAboveBM <- ModDat$yy
-  # predPpnAboveBM <- inv_logit(B_0 + B_1*ModDat$xx)
-  # residuals(Fit_Mod, type="pearson")
-  # residuals(Fit_Mod, type="deviance")
-
   # Put data for diagnostics in a dataframe for plotting
   diagData <- data.frame(predPppnAboveBM = predPpnAboveBM, 
                          PearResid = PearResid, DevResid=DevResid)

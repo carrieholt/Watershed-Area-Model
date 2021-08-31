@@ -94,32 +94,32 @@
 #----------------------------------------------------------------------------
 ## Carrie's inputs for testing
 # 
-# source("R/WCVILRPs.R")
-# zz <- Get.LRP(remove.EnhStocks = TRUE)
-# All_Ests <- zz$out$All_Ests
-# AggAbundRaw <- zz$SMU_Esc
-# digits <- count.dig(AggAbundRaw)
-# ScaleSMU <- min(10^(digits -1 ), na.rm=T)
-# AggAbund <- AggAbundRaw/ScaleSMU
-# AggAbund <- AggAbund[!is.na(AggAbund)]
-# obsPpnAboveBM <- zz$out$Logistic_Data$yy
-# p <- zz$LRPppn
-# nLL <- zz$nLL
-# Bern_logistic <- as.numeric(FALSE) #For this dummy example on WCVI; usually
-#                                    #set to TRUE
-# dir <- "DataOut/"
-# plotname <- "WCVI_ResidPlots"
-# 
-# SMUlogisticData <- zz$out$Logistic_Data %>% rename(Years=yr, SMU_Esc =xx ,
-#                                                   ppn=yy)
-# CU_Names <- names(zz$CU_Status)
-# 
-# input <- list(SMUlogisticData=SMUlogisticData, CU_Names=CU_Names,
-#            All_Ests=All_Ests, AggAbund=AggAbund,
-#            obsPpnAboveBM=obsPpnAboveBM, p=p, nLL=nLL,
-#            Bern_logistic=Bern_logistic, dir="",
-#            plotname="test")
-# save(input, file="DataIn/Input_LRdiagnostics.rda")
+source("R/WCVILRPs.R")
+zz <- Get.LRP(remove.EnhStocks = TRUE)
+All_Ests <- zz$out$All_Ests
+AggAbundRaw <- zz$SMU_Esc
+digits <- count.dig(AggAbundRaw)
+ScaleSMU <- min(10^(digits -1 ), na.rm=T)
+AggAbund <- AggAbundRaw/ScaleSMU
+AggAbund <- AggAbund[!is.na(AggAbund)]
+obsPpnAboveBM <- zz$out$Logistic_Data$yy
+p <- zz$LRPppn
+nLL <- zz$nLL
+Bern_logistic <- as.numeric(FALSE) #For this dummy example on WCVI; usually
+                                   #set to TRUE
+dir <- "DataOut/"
+plotname <- "WCVI_ResidPlots"
+
+SMUlogisticData <- zz$out$Logistic_Data %>% rename(Years=yr, SMU_Esc =xx ,
+                                                  ppn=yy)
+CU_Names <- names(zz$CU_Status)
+
+input <- list(SMUlogisticData=SMUlogisticData, CU_Names=CU_Names,
+           All_Ests=All_Ests, AggAbund=AggAbund,
+           obsPpnAboveBM=obsPpnAboveBM, p=p, nLL=nLL,
+           Bern_logistic=Bern_logistic, dir="",
+           plotname="test")
+save(input, file="DataIn/Input_LRdiagnostics.rda")
 
 
 #----------------------------------------------------------------------------
@@ -239,7 +239,8 @@ LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund,
                                                          (1 - predPpnAboveBM)) 
   
   # Deviance residual: Eq3.16 https://data.princeton.edu/wws509/notes/c3s8
-  # setting n=1 (number of trials at each observation of x)
+  # setting n=1 (number of trials at each observation of x). Also Fox et al. 
+  # 2016, p. 412.
   # To avoid NANs, use ifelse statement in the eqn, as suggested here:
   # https://www.datascienceblog.net/post/machine-learning/interpreting_
   # generalized_linear_models/#:~:text=For%20type%20%3D%20%22pearson%22%2
@@ -254,17 +255,16 @@ LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund,
   DevResid <- sign(obsPpnAboveBM - predPpnAboveBM ) * 
     sqrt( 2 * binom.resid(y=obsPpnAboveBM, mu=predPpnAboveBM) ) 
   
-  
-  
-  ## Testing. Residuals match output from R using glm objects
-  # ModDat <- data.frame(xx=data$LM_Agg_Abund, yy=SMUlogisticData$ppn)
-  # Fit_Mod <- glm( yy ~ xx , family = quasibinomial, data=ModDat)
-  # B_0 <- Fit_Mod$coef[1]
-  # B_1 <- Fit_Mod$coef[2]
-  # obsPpnAboveBM <- ModDat$yy
-  # predPpnAboveBM <- inv_logit(B_0 + B_1*ModDat$xx)
-  # residuals(Fit_Mod, type="pearson")
-  # residuals(Fit_Mod, type="deviance")
+
+  ## Testing. Residuals match output from R using glm objects 
+  # Must temporarily set penalty to FALSE)
+  Fit_Mod <- glm( ppn ~ SMU_Esc , family = quasibinomial, data=SMUlogisticData)
+  B_0 <- Fit_Mod$coef[1]
+  B_1 <- Fit_Mod$coef[2]
+  obsPpnAboveBM <- SMUlogisticData$ppn
+  predPpnAboveBM <- inv_logit(B_0 + B_1*SMUlogisticData$SMU_Esc)
+  residuals(Fit_Mod, type="pearson")
+  residuals(Fit_Mod, type="deviance")
   
   # Put data for diagnostics in a dataframe for plotting
   diagData <- data.frame(predPppnAboveBM = predPpnAboveBM, 

@@ -324,22 +324,23 @@ LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund,
   
   #-----------------------------------------------------------------------------
   # Step 4:
-  #  Are any residuals outliers? (i.e., are deviance residuals >3, Assumption 3)
+  #  Are any residuals outliers? (i.e., are deviance residuals >2, Assumption 3)
   #   Note, we cannot evaluate influence test statistics such as Cook's 
   #   distance because the hat matrix is not provided in TMB outputs
   #-----------------------------------------------------------------------------
   
-  # Observations with a deviance residual in excess of 3 indicate outlier, 
-  # Ahmad et al. 2011 (https://www.researchgate.net/publication/260368584_Diagnostic_for_Residual_Outliers_using_Deviance_Component_in_Binary_Logistic_Regression)
-  
-  # Possible stricter criteria: Observations with a deviance residual in excess 
-  # of 2 may indicate lack of fit. 
+  # Observations with a deviance residual in excess of 2 may indicate lack of 
+  # fit. 
   # https://data.princeton.edu/wws509/notes/c3s8
+  # https://www.statisticshowto.com/what-is-a-standardized-residuals/
   
   # See figures which show that deviance residuals for logistic regression >1
   # https://stats.idre.ucla.edu/stata/webbooks/logistic/chapter3/lesson-3-logistic-regression-diagnostics-2/
   
-  # maximum absolute residuals values < 3?
+  # Less strict alternative: deviance residual in excess of 3 indicate outlier, 
+  # Ahmad et al. 2011 (https://www.researchgate.net/publication/260368584_Diagnostic_for_Residual_Outliers_using_Deviance_Component_in_Binary_Logistic_Regression)
+  
+  # maximum absolute residuals values > 2?
   round(max(abs(PearResid)),2)
   
   round(max(abs(DevResid)), 2)
@@ -350,7 +351,7 @@ LRdiagnostics <- function(SMUlogisticData, CU_Names, All_Ests, AggAbund,
   #  Evaluate if sample size is sufficient
   #-----------------------------------------------------------------------------
   
-  # As a rule of thumb, as a rule of thumb, Peduzzi et al.(1996) suggests a 
+  # As a rule of thumb, Peduzzi et al.(1996) suggests a 
   # minimum of 10 cases with the least frequent outcome for each explanatory 
   # variable (1 in this case). For example, if the expected probabilities are 
   # 0.50 and 0.50 (for 0 and 1, respectively), then the minimum sample size of 

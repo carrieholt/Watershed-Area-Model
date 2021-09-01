@@ -47,7 +47,7 @@ source("R/helperFunctions.r")
 #See WCVILRPs_bootstrap.R for version that includes uncertainty in RicA and SREP
 
 Get.LRP <- function (remove.EnhStocks=TRUE, prod="LifeStageModel",
-                     Bern_logistic=FALSE, LOO = NA, BoxTidwell=FALSE){
+                     Bern_logistic=FALSE, p=0.95, LOO = NA, BoxTidwell=FALSE){
 
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
@@ -435,7 +435,7 @@ Get.LRP <- function (remove.EnhStocks=TRUE, prod="LifeStageModel",
   data$Pred_Abund <- seq(0, max(data$LM_Agg_Abund)*1.1, 0.1)
   if(remove.EnhStocks) data$Pred_Abund <- 
     seq(0, max(data$LM_Agg_Abund)*1.5, 0.1)
-  data$p <- 0.95#0.67
+  data$p <- p#0.95#0.67
   # Apply the penalty for the binomial regression only (not Bernoulli)
   if(Bern_logistic==FALSE) data$Penalty <- as.numeric(TRUE)
   if(Bern_logistic==TRUE) data$Penalty <- as.numeric(FALSE)

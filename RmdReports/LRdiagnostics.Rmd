@@ -70,7 +70,7 @@ name. It's extracted here for demonstration purposes.
 
 SMUlogisticData = Dataframe containing columns: Years, SMU_Esc (annual aggregate escapement to the SMU), and ppn (vector of 0 and 1's indicating if all CUs are above the lower benchmark (1) or not (0); also accepts  proportion of CUs that are above their lower benchmark in each year).
 
-CU_Names = the names of the CUs
+nCU = the number of component CUs in the SMU
 
 All_Ests = Dataframe containing parameters of logistic regression, B_0 and B_1
   with p values (All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE)))
@@ -93,12 +93,12 @@ plotname = filename for residual plots
 
 
 # Step 1.  
-Box-Tidwell test to assess linearity (Assumption 1). First, data to run the logistic regression are loaded The rda file contain a list, "SMUlogisticData", and vector "CU_Names", and is saved on a "DataIn" directory.
+Box-Tidwell test to assess linearity (Assumption 1). First, data to run the logistic regression are loaded The rda file contain a list, "SMUlogisticData", and integer of the number of component CUs, "nCU", and is saved on a "DataIn" directory.
 
 ```{r}
 load(here("DataIn", "Input_LRdiagnostics.rda"))
 SMUlogisticData <- input$SMUlogisticData 
-CU_Names <- input$CU_Names
+nCU <- input$nCU
 Bern_logistic <- input$Bern_logistic
 
 ```
@@ -125,7 +125,7 @@ or http://www.statisticalassociates.com/logistic10.htm
 
 
   data <- list()
-  data$N_Stks <- length(CU_Names)
+  data$N_Stks <- nCU
   digits <- count.dig(SMUlogisticData$SMU_Esc)
   ScaleSMU <- min(10^(digits -1 ), na.rm=T)
   

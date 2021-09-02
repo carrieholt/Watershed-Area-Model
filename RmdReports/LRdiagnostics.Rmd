@@ -63,8 +63,7 @@ library(bookdown)
   What is the classification accuracy of the LRP when we use out-of-sample
   predictions?
   
-This code to run the steps is wrapped inside a function LRdiagnostics() in a file of the same 
-name. It's extracted here for demonstration purposes.
+This code to run the steps is wrapped inside two functions LRdiagnostics() and LOO_LRdiagOut() in the file R/LRdiagnostics.R. It's extracted here for demonstration purposes.
 
 ## The arguments of the function are:
 
@@ -75,16 +74,9 @@ nCU = the number of component CUs in the SMU
 All_Ests = Dataframe containing parameters of logistic regression, B_0 and B_1
   with p values (All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE)))
 
-AggAbund = Vector of scaled observed aggregate abundances, with NAs removed
-
-obsPpnAboveBM = Vectors of 0 and 1's representing if all CUs above their lower benchmarks (1) or not (0) for         Bernoulli regression with NAs removed, or the proportion of CUs above their lower benchmark for binomial           regression
-
 p = the proportion of CUs that must be > their benchmark when defining LRP, for binomial regression only
 
-nLL = negLogLikehood = ans from TMB file, outputted with REPORT(ans); in TMB
-  and then called in R with obj$report()$ans
-  
-Bern_logistic = 0/1. Is the logistic regression Bernoulli (TRUE, 1) or Binomial (FALSE, 0). For this dummy example  on WCVI set to FALSE; usually set to TRUE
+Bern_logistic = A logical indicating if the logistic regression Bernoulli is (TRUE, or 1) or Binomial (FALSE, or 0). For this dummy example  on WCVI set to FALSE; usually set to TRUE
 
 dir = name of directory where plots should be saved followed by /
 
@@ -100,6 +92,7 @@ load(here("DataIn", "Input_LRdiagnostics.rda"))
 SMUlogisticData <- input$SMUlogisticData 
 nCU <- input$nCU
 Bern_logistic <- input$Bern_logistic
+p <- input$p
 
 ```
 
@@ -134,7 +127,7 @@ or http://www.statisticalassociates.com/logistic10.htm
     log(SMUlogisticData$SMU_Esc/ScaleSMU)
   data$N_Above_BM <- SMUlogisticData$ppn * data$N_Stks
   data$Pred_Abund <- seq(0, max(data$LM_Agg_Abund)*1.5, 0.1)
-  data$p <- 0.95#0.67
+  data$p <- p#0.95#0.67
   data$Penalty <- as.numeric(FALSE)# Penalty is not relevant with B_2 term.
 
   data$Bern_logistic <- as.numeric(Bern_logistic)
@@ -155,13 +148,13 @@ or http://www.statisticalassociates.com/logistic10.htm
                 control = list(eval.max = 1e5, iter.max = 1e5))
   pl <- obj$env$parList(opt$par) 
   #summary(sdreport(obj), p.value=TRUE)
-  All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE))
+  All_Ests_BT <- data.frame(summary(sdreport(obj), p.value=TRUE))
 
-  All_Ests$Param <- row.names(All_Ests)
-  All_Ests$Param <- sapply(All_Ests$Param, function(x) 
+  All_Ests_BT$Param <- row.names(All_Ests_BT)
+  All_Ests_BT$Param <- sapply(All_Ests_BT$Param, function(x) 
     (unlist(strsplit(x, "[.]"))[[1]]))
     
-  pBoxTidwell <- All_Ests %>% filter(Param=="B_2") %>% pull(Pr...z.2..)
+  pBoxTidwell <- All_Ests_BT %>% filter(Param=="B_2") %>% pull(Pr...z.2..)
   pBoxTidwell <- round(pBoxTidwell,2)    
   names(pBoxTidwell) <- c("Box-Tidwell p-value")
   pBoxTidwell
@@ -176,10 +169,6 @@ Estimate Pearson residuals and deviance residuals, and plot residuals against fi
 
 
 All_Ests <- input$All_Ests
-AggAbund <- input$AggAbund
-obsPpnAboveBM <- input$obsPpnAboveBM
-p <- input$p
-nLL <- input$nLL
 dir <- input$dir
 plotname <- input$plotname
 
@@ -189,16 +178,17 @@ plotname <- input$plotname
   # Step 2. Estimate Pearson resiudals and deviance residuals. 
   #-----------------------------------------------------------------------------
   
-  # Get observed and predicted ppn of CUs above their lower benchmark
+  # Get predicted probability of all CUs above their lower benchmark (or 
+  # proportion of CUs for binomial)
   B_0 <- All_Ests %>% filter(Param=="B_0") %>% pull(Estimate)
   B_1 <- All_Ests %>% filter(Param=="B_1") %>% pull(Estimate)
-  predPpnAboveBM <- inv_logit(B_0 + B_1*AggAbund)
+  predPpnAboveBM <- inv_logit(B_0 + B_1 * data$LM_Agg_Abund)
   
   
   # Pearson residuals: Eq3.15 https://data.princeton.edu/wws509/notes/c3s8
   # setting n=1 (number of trials at each observation of x)
   
-  PearResid <- (obsPpnAboveBM - predPpnAboveBM) / sqrt(predPpnAboveBM * 
+  PearResid <- (SMUlogisticData$ppn - predPpnAboveBM) / sqrt(predPpnAboveBM * 
                                                           (1 - predPpnAboveBM)) 
 
   # Deviance residual:  Fox et al. 2016, p. 412. setting n=1, number of trials 
@@ -214,8 +204,8 @@ plotname <- input$plotname
       ifelse(y==1 ,1,(1-mu)/(1-y) ) )  
   }
 
-  DevResid <- sign(obsPpnAboveBM - predPpnAboveBM ) * 
-    sqrt( -2 * binom.resid(y=obsPpnAboveBM, mu=predPpnAboveBM) ) 
+  DevResid <- sign(SMUlogisticData$ppn - predPpnAboveBM ) * 
+    sqrt( -2 * binom.resid(y=SMUlogisticData$ppn, mu=predPpnAboveBM) ) 
   
   
   # Put data for diagnostics in a dataframe for plotting
@@ -370,7 +360,7 @@ Evaluate the overall goodness-of-fit of the logistic model based ratio of Devian
 
   Deviance <- sum(DevResid^2)
 
-  NullDev <- deviance(glm( obsPpnAboveBM ~ 1 , family = 
+  NullDev <- deviance(glm( SMUlogisticData$ppn ~ 1 , family = 
                              quasibinomial))
 
   pDRT <- signif( pchisq(q= - (- NullDev + Deviance), df=1), digits=2)
@@ -426,8 +416,6 @@ What is the quasiR2? This is a ratio indicating how close is the fit to being pe
   
   # What is ratio of fit to the null model? This is a measure of the
   # strength of the relationship
-  NullDev <- deviance(glm( obsPpnAboveBM ~ 1 , family = 
-                             quasibinomial))
   quasiR2 <- 1 - Deviance/NullDev
   # This is not the percentage of variance explained by the logistic model, 
   # but rather a ratio indicating how close is the fit to being perfect 
@@ -457,7 +445,7 @@ What is the classification accuracy?
   # In which years did the model predict aggregate abundances >LRP?
   yHat <- predPpnAboveBM > p
   # In which years were observed aggregate abundances >LRP?
-  y <- obsPpnAboveBM > p
+  y <- SMUlogisticData$ppn > p
   
   # Confusion Matrix
   confMat <- table(y, yHat)
@@ -480,7 +468,7 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
   #------------------------------------------------------------------------------
   # Step 10.
   # Evaluate hit ratio using leave-one-out cross validation from a confusion
-  # matrix. Contains 4 sub-steps, 10.1-10.4.
+  # matrix. Contains 5 sub-steps, 10.1-10.5.
   #   What is the classification accuracy of the LRP using out-of-sample data?
   #------------------------------------------------------------------------------
 
@@ -508,15 +496,15 @@ Sequentially remove one data point at a time, re-estimate logistic regression an
       digits <- count.dig(AggAbundRaw)
       ScaleSMU <- min(10^(digits -1 ), na.rm=T)
       AggAbund <- AggAbundRaw/ScaleSMU
-      # Get time-series of observed ppns of CUs> benchamark, including all
-      # data
+      # Get time-series of observed data inidicating if all CUs> benchamark, 
+      # (or proportion for binomial), including all the data
       obsPpnAboveBM <- zz$out$Logistic_Data$yy
       # Get threshold p value (ppn of CUs>benchmark) used to estimate LRP
       p <- zz$LRPppn
     }
 
-    # Step 10.4: Get predicted ppn of CUs above their lower benchmark for the 
-    # year that was held out
+    # Step 10.4: Get predicted prob of all CUs above their lower benchmark for  
+    # the year that was held out (or proportion for binomial regression)
     B_0 <- All_Ests %>% filter(Param=="B_0") %>% pull(Estimate)
     B_1 <- All_Ests %>% filter(Param=="B_1") %>% pull(Estimate)
     predPpnAboveBM[i] <- inv_logit(B_0 + B_1*AggAbund[i])

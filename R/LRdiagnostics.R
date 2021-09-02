@@ -45,7 +45,7 @@
 # 3. Plot autocorrelation among residuals. Are residuals autocorrelated? 
 # (Assumption 2)
 
-# 4. Are deviance residuals >3, i.e., are they outliers? (Assumption 3)  
+# 4. Are deviance residuals >2, i.e., are they outliers? (Assumption 3)  
 
 # 5. Evaluate if sample size is sufficient. (Assumption 4)
 
@@ -74,18 +74,12 @@
 # All_Ests = Dataframe containing parameters of logistic regression, B_0 and B_1
 #   with p values (All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE)))
 
-# AggAbund = Vector of scaled observed aggregate abundances, with NAs removed
+# p = the probability that all CUs must be > their lower benchmark when
+#   defining the LRP for the Bernoulli logistic regression (or proportion of CUs 
+#   for binomial logistic regression)
 
-# obsPpnAboveBM = Vectors of observed ppn of CUs above their lower benchmarks
-#   with NAs removed
-
-# # p = the proportion of CUs that must be > their benchmark when defining LRP
-# 
-# # nLL = negLogLikehood = ans from TMB file, outputted with REPORT(ans); in TMB
-# #   and then called in R with obj$report()$ans
-
-# Bern_logistic = TRUE/FALSE. Is Bernoulli logistic regression used? (default). 
-#   If false, binomial regression used 
+# Bern_logistic = TRUE/FALSE. Is Bernoulli logistic regression used? (default = 
+#   TRUE or 1). If FALSE (or 0), binomial regression used 
 
 # dir = name of directory where plots should be saved followed by /
 
@@ -97,14 +91,7 @@
 # source("R/WCVILRPs.R")
 # zz <- Get.LRP(remove.EnhStocks = TRUE)
 # All_Ests <- zz$out$All_Ests
-# # AggAbundRaw <- zz$SMU_Esc
-# # digits <- count.dig(AggAbundRaw)
-# # ScaleSMU <- min(10^(digits -1 ), na.rm=T)
-# # AggAbund <- AggAbundRaw/ScaleSMU
-# # AggAbund <- AggAbund[!is.na(AggAbund)]
-# # obsPpnAboveBM <- zz$out$Logistic_Data$yy
 # p <- zz$LRPppn
-# # nLL <- zz$nLL
 # Bern_logistic <- as.numeric(FALSE) #For this dummy example on WCVI; usually
 #                                    #set to TRUE
 # dir <- "DataOut/"
@@ -115,9 +102,7 @@
 # nCU <- length(names(zz$CU_Status))
 # 
 # input <- list(SMUlogisticData=SMUlogisticData, nCU=nCU,
-#            All_Ests=All_Ests, #AggAbund=AggAbund,
-#            #obsPpnAboveBM=obsPpnAboveBM, p=p, nLL=nLL,
-#            p=p, Bern_logistic=Bern_logistic, dir="",
+#            All_Ests=All_Ests, p=p, Bern_logistic=Bern_logistic, dir="",
 #            plotname="test")
 # save(input, file="DataIn/Input_LRdiagnostics.rda")
 
@@ -133,7 +118,8 @@ library(TMB)
 library(here)
 
 source(here::here("R", "helperFunctions.r"))
-source(here::here("R", "WCVILRPs.R")) # Needed for Step 10 (LOO) only
+source(here::here("R", "WCVILRPs.R")) # Needed for Step 10 (LOO), specific to 
+# WCVI Chinook
 
 #----------------------------------------------------------------------------
 # Input data
@@ -146,10 +132,7 @@ if(caseStudy=="WCVIchinook") {
   SMUlogisticData <- input$SMUlogisticData
   nCU <- input$nCU
   All_Ests <- input$All_Ests
-  # AggAbund  <- input$AggAbund
-  # obsPpnAboveBM <- input$obsPpnAboveBM
   p <- input$p
-  # nLL <- input$nLL
   Bern_logistic <- input$Bern_logistic
   dir <- input$dir
   plotname <- input$plotname 
@@ -159,14 +142,11 @@ if(caseStudy=="WCVIchinook") {
 if(caseStudy=="ISCchum") {
   load(here::here("DataIn", "Input_logisticFit_ISC2018.rda"))
   
-  SMUlogisticData <- LRP_Mod$Logistic_Data %>% rename(ppn=yy, SMU_Esc=xx, Years=yr)
-  
+  SMUlogisticData <- LRP_Mod$Logistic_Data %>% rename(ppn=yy, SMU_Esc=xx, 
+                                                      Years=yr)
   nCU <- 4
   All_Ests <- LRP_Mod$All_Ests
-  # AggAbund  <- input$AggAbund
-  # obsPpnAboveBM <- input$obsPpnAboveBM
-  # p <- input$p
-  # nLL <- input$nLL
+  p <- input$p
   Bern_logistic <- input$Bern_logistic
   dir <- input$dir
   plotname <- input$plotname  
@@ -182,9 +162,8 @@ if(caseStudy=="ISCchum") {
 #-------------------------------------------------------------------------------
 # Function:
 
-LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, #AggAbund, 
-                          #obsPpnAboveBM, p, nLL, 
-                          p, Bern_logistic, dir, plotname){
+LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir, 
+                          plotname){
   
   #-----------------------------------------------------------------------------
   # Step 1. Box-Tidwell test to assess linearity between aggregate abundances
@@ -211,7 +190,7 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, #AggAbund,
     log(SMUlogisticData$SMU_Esc/ScaleSMU)
   data$N_Above_BM <- SMUlogisticData$ppn * data$N_Stks
   data$Pred_Abund <- seq(0, max(data$LM_Agg_Abund)*1.5, 0.1)
-  data$p <- p#0.95#0.67
+  data$p <- p
   data$Penalty <- as.numeric(FALSE)# Penalty is not relevant with B_2 term.
   
   data$Bern_logistic <- as.numeric(Bern_logistic)
@@ -248,17 +227,15 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, #AggAbund,
   # Step 2. Estimate Pearson resiudals and deviance residuals. 
   #-----------------------------------------------------------------------------
   
-  # Get observed and predicted ppn of CUs above their lower benchmark
+  # Get predicted probability of all CUs being above their lower benchmark (or
+  # proportion for binomial regression)
   B_0 <- All_Ests %>% filter(Param=="B_0") %>% pull(Estimate)
   B_1 <- All_Ests %>% filter(Param=="B_1") %>% pull(Estimate)
-  predPpnAboveBM <- inv_logit(B_0 + B_1*data$LM_Agg_Abund)#AggAbund)
+  predPpnAboveBM <- inv_logit(B_0 + B_1*data$LM_Agg_Abund)
   
   
   # Pearson residuals: Eq3.15 https://data.princeton.edu/wws509/notes/c3s8
   # setting n=1 (number of trials at each observation of x)
-  
-  # PearResid <- (obsPpnAboveBM - predPpnAboveBM) / sqrt(predPpnAboveBM * 
-  #                                                        (1 - predPpnAboveBM)) 
   
   PearResid <- (SMUlogisticData$ppn - predPpnAboveBM) / sqrt(predPpnAboveBM * 
                                                          (1 - predPpnAboveBM)) 
@@ -277,8 +254,6 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, #AggAbund,
       ifelse(y==1 ,1,(1-mu)/(1-y) ) )  
   }
 
-  # DevResid <- sign(obsPpnAboveBM - predPpnAboveBM ) * 
-  #   sqrt( -2 * binom.resid(y=obsPpnAboveBM, mu=predPpnAboveBM) ) 
   DevResid <- sign(SMUlogisticData$ppn - predPpnAboveBM ) * 
     sqrt( -2 * binom.resid(y=SMUlogisticData$ppn, mu=predPpnAboveBM) ) 
   
@@ -430,8 +405,6 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, #AggAbund,
   
   Deviance <- sum(DevResid^2)
   
-  # NullDev <- deviance(glm( obsPpnAboveBM ~ 1 , family = 
-  #                            quasibinomial))
   NullDev <- deviance(glm( SMUlogisticData$ppn ~ 1 , family = 
                              quasibinomial))
   
@@ -508,7 +481,6 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, #AggAbund,
   # In which years did the model predict aggregate abundances >LRP?
   yHat <- predPpnAboveBM > p
   # In which years were observed aggregate abundances >LRP?
-  #y <- obsPpnAboveBM > p
   y <- SMUlogisticData$ppn > p
   
   # Confusion Matrix
@@ -570,12 +542,14 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, #AggAbund,
 # 1. Get time-series length
 # 2. Run logistic regression iteratively removing one year in time-series 
 # each time
-# 3. Get observed ppn of CUs  above their lower benchmark (or 1 vs 0 for all CUs 
-# above lower benchmark or not) for the year that was held out (iteratively)
-# 4. Get predicted ppn of CUs above their lower benchmark (or probability of all 
-# CUs above their lower benchmark) for the year that was held out (iteratively)
+# 3. Get observed data (1 or 0 indicating if all CUs were  above their lower 
+# benchmark) for the year that was held out, iteratively (also accepts ppn of 
+# CUs above lower benchmark)
+# 4. Get predicted probability of all CUs above their lower benchmark (or 
+# proportion of all CUs above their lower benchmark) for the year that was held 
+# out (iteratively)
 # 5. Evaluate confusion matrix hit rate on the resulting time-series of 
-# predicted and observed ppns or probabilities.
+# predicted and observed probabilities (or ppns).
 
 
 # Note, this function will have to be adapted to case studies based on the 
@@ -661,8 +635,7 @@ LOO_LRdiagnostics <- function(remove.EnhStocks=TRUE){
    # that was held out
     B_0 <- All_Ests %>% filter(Param=="B_0") %>% pull(Estimate)
     B_1 <- All_Ests %>% filter(Param=="B_1") %>% pull(Estimate)
-    #predPpnAboveBM <- inv_logit(B_0 + B_1*AggAbund)
-    predPpnAboveBM[i] <- inv_logit(B_0 + B_1*AggAbund[i])
+    predPpnAboveBM[i] <- inv_logit(B_0 + B_1 * AggAbund[i])
   } # End of for i in 1:n
   
   # Step 5: Calculate Hit Ratio

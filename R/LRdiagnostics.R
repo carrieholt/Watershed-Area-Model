@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 # Functions to run diagnostics on logistic regression to estimate LRPs for 
 # Pacific salmon
-# Date last revised: 31 Aug 2021
+# Date last revised: 2 Sept 2021
 # Created by: Carrie Holt
 #-------------------------------------------------------------------------------
 
@@ -624,7 +624,7 @@ LOO_LRdiagnostics <- function(remove.EnhStocks=TRUE){
       digits <- count.dig(AggAbundRaw)
       ScaleSMU <- min(10^(digits -1 ), na.rm=T)
       AggAbund <- AggAbundRaw/ScaleSMU
-      # Get time-series of observed ppns of CUs> benchamark, including all
+      # Get time-series of observed ppns of CUs> benchmark, including all
       # data
       obsPpnAboveBM <- zz$out$Logistic_Data$yy
       # Get threshold p value (ppn of CUs>benchmark) used to estimate LRP
@@ -658,22 +658,22 @@ LOO_LRdiagnostics <- function(remove.EnhStocks=TRUE){
 
 
 
-
-#----------------------------------------------------------------------------
-# Run code using WCVI CK input data from above
-# load("DataIn/Input_LRdiagnostics.rda")
-
-LRdiagOut <- LRdiagnostics(SMUlogisticData = input$SMUlogisticData,
-                           nCU = input$nCU,
-                           All_Ests = input$All_Ests,
-                           #AggAbund = input$AggAbund,
-                           #obsPpnAboveBM = input$obsPpnAboveBM,
-                           p = input$p, #nLL = input$nLL,
-                           Bern_logistic = input$Bern_logistic,
-                           dir = input$dir, plotname = input$plotname)
-
-
-LOO_LRdiagOut <- LOO_LRdiagnostics(remove.EnhStocks=TRUE)
+# 
+# #----------------------------------------------------------------------------
+# # Run code using WCVI CK input data from above
+# # load("DataIn/Input_LRdiagnostics.rda")
+# 
+# LRdiagOut <- LRdiagnostics(SMUlogisticData = input$SMUlogisticData,
+#                            nCU = input$nCU,
+#                            All_Ests = input$All_Ests,
+#                            #AggAbund = input$AggAbund,
+#                            #obsPpnAboveBM = input$obsPpnAboveBM,
+#                            p = input$p, #nLL = input$nLL,
+#                            Bern_logistic = input$Bern_logistic,
+#                            dir = input$dir, plotname = input$plotname)
+# 
+# 
+# LOO_LRdiagOut <- LOO_LRdiagnostics(remove.EnhStocks=TRUE)
 #-------------------------------------------------------------------------------
 
 

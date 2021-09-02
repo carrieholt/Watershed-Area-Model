@@ -135,8 +135,8 @@ if(caseStudy=="WCVIchinook") {
   All_Ests <- input$All_Ests
   p <- input$p
   Bern_logistic <- input$Bern_logistic
-  dir <- input$dir
-  plotname <- input$plotname 
+  dir <- "DataOut/"#input$dir
+  plotname <- "WCVICK_LRdiag"#input$plotname 
 }
 
 # ISC Chum
@@ -307,7 +307,7 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
           plot.title = element_text(size = 20)
     ) 
   p1+p2
-  ggsave(p1+p2, file=paste(dir, plotname, ".png", sep=""))
+  ggsave(p2, file=paste(dir, plotname, ".png", sep=""))
   
   #-----------------------------------------------------------------------------
   # Step 3:
@@ -321,7 +321,7 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
   p4 <- ggplot.corr(data=DevResid, title="Deviance residuals") 
   
   p3+p4
-  ggsave(p3+p4, file=paste(dir, plotname, "acf.png"))
+  ggsave(p4, file=paste(dir, plotname, "acf.png", sep=""))
   
   
   #-----------------------------------------------------------------------------
@@ -669,12 +669,13 @@ LOO_LRdiagnostics <- function(remove.EnhStocks=TRUE){
 # 
 # LRdiagOut <- LRdiagnostics(SMUlogisticData = input$SMUlogisticData,
 #                            nCU = input$nCU,
-#                            All_Ests = input$All_Ests, p = input$p, 
+#                            All_Ests = input$All_Ests, p = input$p,
 #                            Bern_logistic = input$Bern_logistic,
 #                            dir = input$dir, plotname = input$plotname)
 # 
-# 
 # LOO_LRdiagOut <- LOO_LRdiagnostics(remove.EnhStocks=TRUE)
+# save(LRdiagOut, LOO_LRdiagOut, file="DataOut/LRdiagout.rda")
+
 #-------------------------------------------------------------------------------
 
 

@@ -105,6 +105,7 @@
 #            All_Ests=All_Ests, p=p, Bern_logistic=Bern_logistic, dir="",
 #            plotname="test")
 # save(input, file="DataIn/Input_LRdiagnostics.rda")
+## Not used: nLL<-obj$report()$ans
 
 
 #----------------------------------------------------------------------------
@@ -124,7 +125,7 @@ source(here::here("R", "WCVILRPs.R")) # Needed for Step 10 (LOO), specific to
 #----------------------------------------------------------------------------
 # Input data
 
-caseStudy <- "WCVIchinook"#"ISCchum"# 
+caseStudy <- "WCVIchinook"#"SSChum"# 
 
 if(caseStudy=="WCVIchinook") {
   load(here::here("DataIn", "Input_LRdiagnostics.rda"))
@@ -139,7 +140,7 @@ if(caseStudy=="WCVIchinook") {
 }
 
 # ISC Chum
-if(caseStudy=="ISCchum") {
+if(caseStudy=="SSChum") {
   load(here::here("DataIn", "Input_logisticFit_ISC2018.rda"))
   
   SMUlogisticData <- LRP_Mod$Logistic_Data %>% rename(ppn=yy, SMU_Esc=xx, 
@@ -392,13 +393,13 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
   #-----------------------------------------------------------------------------
   # Step 7. 
   # Evaluate goodness-of-fit based on ratio of Deviance to the null model 
-  #   Is there statistical evidence for lack of fit?
+  #   Is there an improvement in fit with the inclusion of the aggregate 
+  #   abundance variable? 
   #-----------------------------------------------------------------------------
   
   # Evaluate goodness of fit by comparing the residual deviance to null 
   # deviance, and evaluating this ratio relative to  a Chi-square distribution 
   # (df = 1, the difference in the number of parameters) 
-  # P < 0.05 indicates a significant lack of fit.
   # Agresti et al. 2007 (LRT); Ahmad et al. 2011 (definition of deviance as
   # -2LL)
   
@@ -408,12 +409,15 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
   NullDev <- deviance(glm( SMUlogisticData$ppn ~ 1 , family = 
                              quasibinomial))
   
-  pDRT <- signif( pchisq(q= - (- NullDev + Deviance), df=1), digits=2)
+  #pDRT <- signif( pchisq(q= - (- NullDev + Deviance), df=1), digits=2)
   
+  pDRT <- signif(1-pchisq(q= NullDev - Deviance, df=1), digits=2)
+  #https://stats.stackexchange.com/questions/6505/likelihood-ratio-test-in-r
   
   names(pDRT) <- c("pDRT")
   pDRT
-  # P-value is significant (<0.05) indicating a lack of fit.
+  # P-value <0.05 a indicates significant improvement in fit with addition of 
+  # variable
   
   
   # Note, Roback and Legler 2021 suggest evaluating overall model fit based on 
@@ -665,10 +669,7 @@ LOO_LRdiagnostics <- function(remove.EnhStocks=TRUE){
 # 
 # LRdiagOut <- LRdiagnostics(SMUlogisticData = input$SMUlogisticData,
 #                            nCU = input$nCU,
-#                            All_Ests = input$All_Ests,
-#                            #AggAbund = input$AggAbund,
-#                            #obsPpnAboveBM = input$obsPpnAboveBM,
-#                            p = input$p, #nLL = input$nLL,
+#                            All_Ests = input$All_Ests, p = input$p, 
 #                            Bern_logistic = input$Bern_logistic,
 #                            dir = input$dir, plotname = input$plotname)
 # 

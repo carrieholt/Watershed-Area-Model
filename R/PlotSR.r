@@ -821,6 +821,7 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=TRUE,
 
 
 
+
 plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEsc){
   
   Years <- rownames(WCVI_Esc)

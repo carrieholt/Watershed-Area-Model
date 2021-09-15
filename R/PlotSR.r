@@ -856,6 +856,9 @@ plotWCVI_SMUtimeseries <- function(SMU_Esc=SMU_Esc, out=out$LRP, WCVI_Esc=WCVIEs
 # plotWCVI_SMUtimeseries(SMU_Esc=xx$SMU_Esc, out=xx$out, WCVI_Esc=xx$WCVIEsc)
 # dev.off()
 
+# dfOut <- data.frame(SiteEsc=xx$SMU_Esc, Year=as.numeric(rownames(xx$WCVIEsc)))
+# write.csv(dfOut, "DataOut/SMU_Sum.csv")
+
 ## yy <- Get.LRP(remove.EnhStocks=FALSE)
 # png(paste("DataOut/WCVI_SMUtimeseries_wEnh.png", sep=""), width=9, height=4, units="in", res=500)
 # plotWCVI_SMUtimeseries(SMU_Esc=yy$SMU_Esc, out=yy$out, WCVI_Esc=yy$WCVIEsc)

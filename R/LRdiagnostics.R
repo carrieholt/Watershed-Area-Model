@@ -410,6 +410,21 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
                              quasibinomial))
   
   #pDRT <- signif( pchisq(q= - (- NullDev + Deviance), df=1), digits=2)
+  #pDRT <- signif( pchisq(q= - 2*(NullDev - Deviance), df=1), digits=2)
+  
+  # Am confused by this example, that doesnt show 1 - pchisq
+  # https://stats.stackexchange.com/questions/166585/pearson-vs-deviance-residuals-in-logistic-regression
+  # Deviance = - 2 * LL, and chisqr test statistic = 2 (LL-full-LL-null), p<0.05 sign diff in models presumably?
+  # pDRT <- signif(pchisq( q = 2* ( (NullDev/-2) - (Deviance/-2) ), df=1, lower.tail=F), digits=2)
+  # Aha! Set lower.tail = F (see here, https://api.rpubs.com/tomanderson_34/lrt)
+  
+  
+  # secr pacakge, LR.test function (type, LR.test to see underlying code)
+  # chisq test statistic = 2 * abs (LL1 - LL2), 1 - pchisq(statistic, df=1)
+  
+  # Now, make sure my use of deviances is correct, should I be using -NullDev/2, and then multplying q by 2? as below?
+  #pDRT <- signif(1-pchisq(q= 2*(NullDev/-2 - Deviance/-2), df=1), digits=2)
+  
   
   pDRT <- signif(1-pchisq(q= NullDev - Deviance, df=1), digits=2)
   #https://stats.stackexchange.com/questions/6505/likelihood-ratio-test-in-r
@@ -418,6 +433,10 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
   pDRT
   # P-value <0.05 a indicates significant improvement in fit with addition of 
   # variable
+  
+  ## However, some caveats with this approach, and further work required to 
+  # evaluate it and alternatives
+  # https://bmcmedresmethodol.biomedcentral.com/articles/10.1186/s12874-020-01055-2
   
   
   # Note, Roback and Legler 2021 suggest evaluating overall model fit based on 

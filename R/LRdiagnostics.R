@@ -125,7 +125,7 @@ source(here::here("R", "WCVILRPs.R")) # Needed for Step 10 (LOO), specific to
 #----------------------------------------------------------------------------
 # Input data
 
-caseStudy <- "WCVIchinook"#"SSChum"# 
+caseStudy <- "SCChum"#"WCVIchinook"#"SCChum"# 
 
 if(caseStudy=="WCVIchinook") {
   load(here::here("DataIn", "Input_LRdiagnostics.rda"))
@@ -140,17 +140,19 @@ if(caseStudy=="WCVIchinook") {
 }
 
 # ISC Chum
-if(caseStudy=="SSChum") {
-  load(here::here("DataIn", "Input_logisticFit_ISC2018.rda"))
+if(caseStudy=="SCChum") {
+  load(here::here("DataIn", "Input_logisticFit_ISC2018v2.rda"))
   
   SMUlogisticData <- LRP_Mod$Logistic_Data %>% rename(ppn=yy, SMU_Esc=xx, 
                                                       Years=yr)
   nCU <- 4
   All_Ests <- LRP_Mod$All_Ests
-  p <- input$p
-  Bern_logistic <- input$Bern_logistic
-  dir <- input$dir
-  plotname <- input$plotname  
+  p <- 0.5#input$p
+  Bern_logistic <- TRUE#input$Bern_logistic
+  dir <- ""#input$dir
+  plotname <- "SCChumTest"#input$plotname 
+  assumed_added_scalar <- 100 # Need to check this with Luke. I scaled by 10^5 for ISChum, but I think he scaled by 10^3, hence by additional scalar here
+  
 }
 
 #-------------------------------------------------------------------------------
@@ -225,7 +227,7 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
   pBoxTidwell
   
   #-----------------------------------------------------------------------------
-  # Step 2. Estimate Pearson resiudals and deviance residuals. 
+  # Step 2. Estimate Pearson residuals and deviance residuals. 
   #-----------------------------------------------------------------------------
   
   # Get predicted probability of all CUs being above their lower benchmark (or
@@ -233,6 +235,9 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
   B_0 <- All_Ests %>% filter(Param=="B_0") %>% pull(Estimate)
   B_1 <- All_Ests %>% filter(Param=="B_1") %>% pull(Estimate)
   predPpnAboveBM <- inv_logit(B_0 + B_1*data$LM_Agg_Abund)
+  if (caseStudy=="SCChum"){
+    predPpnAboveBM <- inv_logit(B_0 + B_1*data$LM_Agg_Abund*assumed_added_scalar)
+  }
   
   
   # Pearson residuals: Eq3.15 https://data.princeton.edu/wws509/notes/c3s8
@@ -409,9 +414,6 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
   NullDev <- deviance(glm( SMUlogisticData$ppn ~ 1 , family = 
                              quasibinomial))
   
-  #pDRT <- signif( pchisq(q= - (- NullDev + Deviance), df=1), digits=2)
-  #pDRT <- signif( pchisq(q= - 2*(NullDev - Deviance), df=1), digits=2)
-  
   # Am confused by this example, that doesnt show 1 - pchisq
   # https://stats.stackexchange.com/questions/166585/pearson-vs-deviance-residuals-in-logistic-regression
   # Deviance = - 2 * LL, and chisqr test statistic = 2 (LL-full-LL-null), p<0.05 sign diff in models presumably?
@@ -422,8 +424,9 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
   # secr pacakge, LR.test function (type, LR.test to see underlying code)
   # chisq test statistic = 2 * abs (LL1 - LL2), 1 - pchisq(statistic, df=1)
   
-  # Now, make sure my use of deviances is correct, should I be using -NullDev/2, and then multplying q by 2? as below?
-  #pDRT <- signif(1-pchisq(q= 2*(NullDev/-2 - Deviance/-2), df=1), digits=2)
+  # Now, make sure my use of deviances is correct, 
+  # Agresit et al. 2007 Ch4 describe chi2 test statistic = -2(LL0-LL1), 
+  # which is Dev0-Dev1 
   
   
   pDRT <- signif(1-pchisq(q= NullDev - Deviance, df=1), digits=2)
@@ -446,9 +449,10 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
   # See section 6.5.6: https://bookdown.org/roback/bookdown-bysh/ch-logreg.html
   
   
-  #### p.DevChiSq <- 1-pchisq(q=Deviance, df=length(DevResid)-2)
-  # Use this version: https://online.stat.psu.edu/stat501/lesson/15/15.4
-  # p.DevChiSq <- pchisq(q=Deviance, df=length(DevResid)-2)
+  # p.DevChiSq <- 1-pchisq(q=Deviance, df=length(DevResid)-2)
+  # https://stats.stackexchange.com/questions/108995/interpreting-residual-and-null-deviance-in-glm-r
+  # Maybe don't use this version: https://online.stat.psu.edu/stat501/lesson/15/15.4
+  # p.DevChiSq <- pchisq(q=Deviance, df=length(DevResid)-2)# unless I add this, lower.tail=FALSE) 
   # names(p.DevChiSq) <- c("p.DevChiSq")
   # p.DevChiSq
   
@@ -457,8 +461,8 @@ LRdiagnostics <- function(SMUlogisticData, nCU, All_Ests, p, Bern_logistic, dir,
   # Or equivalently, based on Pearson residuals, where sum of squared 
   # Pearson's residuals is,
   # Pearson <- sum(PearResid^2)
-  ##### p.PearChiSq <- 1 - pchisq(q=Pearson, df=length(PearResid)-2)
-  # p.PearChiSq <- pchisq(q=Pearson, df=length(PearResid)-2)
+  # p.PearChiSq <- 1 - pchisq(q=Pearson, df=length(PearResid)-2)
+  ## p.PearChiSq <- pchisq(q=Pearson, df=length(PearResid)-2)# unless I add this, lower.tail=FALSE) 
   # names(p.PearChiSq) <- c("PearChiSq")
   # p.PearChiSq
   # Section 1.4 of https://www.flutterbys.com.au/stats/tut/tut10.5a.html
@@ -697,4 +701,18 @@ LOO_LRdiagnostics <- function(remove.EnhStocks=TRUE){
 
 #-------------------------------------------------------------------------------
 
+# 
+# #----------------------------------------------------------------------------
+# # Run code using ISC chum input data from above
+
+# 
+# LRdiagOut <- LRdiagnostics(SMUlogisticData = SMUlogisticData,
+#                            nCU = nCU,
+#                            All_Ests = All_Ests, p = p,
+#                            Bern_logistic = Bern_logistic,
+#                            dir = dir, plotname = plotname)
+# 
+# save(LRdiagOut, file="DataOut/logisticFitSSC_2018Outputv2.rda")
+
+#-------------------------------------------------------------------------------
 

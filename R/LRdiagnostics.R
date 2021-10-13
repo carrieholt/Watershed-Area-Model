@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 # Functions to run diagnostics on logistic regression to estimate LRPs for 
 # Pacific salmon
-# Date last revised: 2 Sept 2021
+# Date last revised: 13 Oct 2021
 # Created by: Carrie Holt
 #-------------------------------------------------------------------------------
 

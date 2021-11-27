@@ -73,7 +73,8 @@ Get.LRP(remove.EnhStocks = FALSE, Bern_logistic=FALSE,
 # where all inlets are > lower benchmarks
 # See RmdReports/WCVI_LRPs_Binomial.Rmd and WCVI_LRPs_Bernoulli.Rmd
 
-nBS <- 200 # number trials for bootstrapping
+# INSTEAD LOOK AT WCVI_bootstrap.R code, bottom
+nBS <- 200 # number trials for bootstrapping 
 outBench <- list() 
 
 for (k in 1:nBS) {

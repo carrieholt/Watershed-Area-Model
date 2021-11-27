@@ -50,7 +50,7 @@ source("R/helperFunctions.r")
 
 
 Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE, 
-                        prod="LifeStageModel", LOO = NA){
+                        prod="LifeStageModel", LOO = NA, run_logReg=TRUE){
 
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
@@ -123,13 +123,15 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
     # (assuming range 0-2.0, mean=1). 0.510*1.96 = 1.0
     
     Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
-    if(min(Ric.A)<0) Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
+    if(min(Ric.A)<=0) Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
+    if(min(Ric.A)<=0) Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
     
     sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP), SREP_logSE$SE))
-    if(min(sREP)<0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, 
+    if(min(sREP)<=0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, 
                                         SREP_SE$SE))
+    if(min(sREP)<=0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, 
+                                         SREP_SE$SE))
     
-
     SGENcalcs <- purrr::map2_dfr (Ric.A, sREP/Scale, Sgen.fn2)
    
      wcviRPs <- wcviRPs %>% mutate (SGEN = SGENcalcs$SGEN) %>% 
@@ -259,299 +261,303 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
   #   mutate( SREPha.cSMAX = round( SREPha.cSMAX*Scale, 0 ) )
 
   
-  
+  if(run_logReg==FALSE){
+    return(list(bench= select(SGENcalcs,-apar, -bpar)*Scale))
+    
+  }
   #----------------------------------------------------------------------------
   # Sum escapements across indicators within inlets
   #----------------------------------------------------------------------------
-  
-  WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% 
-    dplyr::select (-"Little.Zeballos")
-  
-  # Take "." out of name as in escapement data
-  WCVIEsc_names <- sapply(colnames(WCVIEsc), 
-                          function(x) (gsub(".", " ", x, fixed=TRUE) ) )
-  WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
-    (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
-  WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
-    (gsub("Nootka Esperanza", "Nootka/Esperanza", x, fixed=TRUE) ) )
-  colnames(WCVIEsc) <- WCVIEsc_names 
-  
-  EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% filter (Enh==1) %>%
-    pull(Stock)
-  EnhStocks <- as.character(EnhStocks)
-
-  #EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  
-  #               "Somass",  "Zeballos", "San Juan", "Tranquil")
-  # Artlish removed from Enhanced stocks 23 Dec. 2020
-  # Tranquil added 18 Jan 2021
-  
-  
-  if (remove.EnhStocks) {WCVIEsc <- WCVIEsc %>% dplyr::select(-EnhStocks) }
-  
-  Years <- rownames(WCVIEsc)
-  
-  # Get stock information for WCVI Chinook & Remove Cypre as it's not an 
-  # indicator stocks
-  WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
-    filter (Stock != "Cypre")
-  if (remove.EnhStocks) WCVIStocks <- WCVIStocks %>% 
-    filter(Stock %not in% EnhStocks)
-  
-  Inlet_Names <- unique(WCVIStocks$Inlet)
-  Inlet_Sum <- matrix(NA, nrow=length(Years), ncol=length(Inlet_Names))
-  colnames(Inlet_Sum) <- Inlet_Names
-  CU_Names <- unique(WCVIStocks$CU)
-  
-  
-  # Sum escapements across stocks within inlets
-  for (i in 1:length(Inlet_Names)) {
-    # For each inlet, which are the component indicator stocks
-    Ins <- WCVIStocks %>% filter(Inlet==Inlet_Names[i]) %>% pull(Stock)
-    WCVIEsc_Inlets <- matrix(NA, nrow= length(Years), ncol= length(Ins))
+  if(run_logReg==TRUE){
+    WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% 
+      dplyr::select (-"Little.Zeballos")
     
-    #  Make a matrix of escapements of component indicators
-    for (j in 1:length(Ins)){
-      WCVIEsc_Inlets[,j] <- WCVIEsc %>% 
-        dplyr::select(as.character(Ins[j])) %>% pull()
+    # Take "." out of name as in escapement data
+    WCVIEsc_names <- sapply(colnames(WCVIEsc), 
+                            function(x) (gsub(".", " ", x, fixed=TRUE) ) )
+    WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
+      (gsub("Bedwell Ursus", "Bedwell/Ursus", x, fixed=TRUE) ) )
+    WCVIEsc_names <- sapply(WCVIEsc_names, function(x) 
+      (gsub("Nootka Esperanza", "Nootka/Esperanza", x, fixed=TRUE) ) )
+    colnames(WCVIEsc) <- WCVIEsc_names 
+    
+    EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% filter (Enh==1) %>%
+      pull(Stock)
+    EnhStocks <- as.character(EnhStocks)
+    
+    #EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  
+    #               "Somass",  "Zeballos", "San Juan", "Tranquil")
+    # Artlish removed from Enhanced stocks 23 Dec. 2020
+    # Tranquil added 18 Jan 2021
+    
+    
+    if (remove.EnhStocks) {WCVIEsc <- WCVIEsc %>% dplyr::select(-EnhStocks) }
+    
+    Years <- rownames(WCVIEsc)
+    
+    # Get stock information for WCVI Chinook & Remove Cypre as it's not an 
+    # indicator stocks
+    WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
+      filter (Stock != "Cypre")
+    if (remove.EnhStocks) WCVIStocks <- WCVIStocks %>% 
+      filter(Stock %not in% EnhStocks)
+    
+    Inlet_Names <- unique(WCVIStocks$Inlet)
+    Inlet_Sum <- matrix(NA, nrow=length(Years), ncol=length(Inlet_Names))
+    colnames(Inlet_Sum) <- Inlet_Names
+    CU_Names <- unique(WCVIStocks$CU)
+    
+    
+    # Sum escapements across stocks within inlets
+    for (i in 1:length(Inlet_Names)) {
+      # For each inlet, which are the component indicator stocks
+      Ins <- WCVIStocks %>% filter(Inlet==Inlet_Names[i]) %>% pull(Stock)
+      WCVIEsc_Inlets <- matrix(NA, nrow= length(Years), ncol= length(Ins))
       
-    }
-    
-    # Sum the escapement of component indicators, setting sum=NA for years 
-    # where there are any NAs
-    Inlet_Sum[,i] <- apply(WCVIEsc_Inlets, 1, sum, na.rm=F)
-  }
-  
-  
-  #----------------------------------------------------------------------------
-  # Sum escapements across indicators within CUs
-  #----------------------------------------------------------------------------
-  
-  nCU <- length(unique(WCVIStocks$CU))
-  CU_Sum <- matrix(NA, nrow=length(Years), ncol=nCU)
-  colnames(CU_Sum) <- CU_Names
-  
-  for (k in 1:length(CU_Names)) {
-    # For each CU, which are the component indicators
-    CUss <- WCVIStocks %>% filter(CU==CU_Names[k]) %>% pull(Stock)
-    WCVIEsc_CUs <- matrix(NA, nrow= length(Years), ncol= length(CUss))
-    
-    #  Make a matrix of escapements of component indicators
-    for (j in 1:length(CUss)){
-      WCVIEsc_CUs[,j] <- WCVIEsc %>% dplyr::select(as.character(CUss[j])) %>% 
-        pull()
-    }
-    
-    # Sum the escapement of component indicators, setting sum=NA for years 
-    # where there are any NAs
-    CU_Sum[,k] <- apply(WCVIEsc_CUs, 1, sum, na.rm=F)
-  }
-  # Remove double incidence of Nitinat and San Juan (= stock and an inlet) 
-  # when enhancement is included
-  if(!remove.EnhStocks) WCVIEsc <- WCVIEsc %>% 
-    dplyr::select(-Nitinat, -'San Juan')
-  
-  WCVIEsc <- cbind(WCVIEsc, Inlet_Sum, CU_Sum) 
-  
-  #----------------------------------------------------------------------------
-  # Assess status for each inlet relative to inlet-level SGEN for each year
-  #   Is Inlet level escapement above inlet-level Sgen: T/F?
-  #   Inlet_Status = FALSE if summed escapement is below Sgen
-  #   Inlet_Status = TRUE if summed escapement is below Sgen
-  #----------------------------------------------------------------------------
-  
-  Inlet_Status <- matrix(NA, nrow=length(Years), ncol=length(Inlet_Names) )
-  colnames(Inlet_Status) <- Inlet_Names
-  
-  for (i in 1:length(Inlet_Names)) {
-    Inlet_Status[,i] <- (Inlet_Sum[,i] > 
-                           (wcviRPs %>% 
-                              filter(Stock == as.character(Inlet_Names[i])) %>% 
-                               pull(SGEN)) )
-  }
-  
-  Inlet_Status <- as.data.frame(Inlet_Status)
-  
-  #----------------------------------------------------------------------------
-  # Assess status for each CU for each year of the time-series 
-  #   (floor of summed CU-level numeric statuses)
-  #   CU_Status = below LB if any inlet within the CU below their Sgen = 0 
-  #   CU_Status = above LB if all inlets within the CU above their Sgen = 1
-  #----------------------------------------------------------------------------
-  
-  CU_Status <- matrix(NA, nrow=length(Years), ncol=length(CU_Names))
-  colnames(CU_Status) <- CU_Names
-  
-  stock.LRP <- TRUE
-  if(stock.LRP){
-    for (k in 1:length(CU_Names)) {
-      # For each CU, which are the component indicators
-      CU_ins <- unique( WCVIStocks %>% filter(CU==CU_Names[k]) %>% pull(Inlet))
-      
-      isAbove <- matrix(NA, nrow= length(Years), ncol= length(CU_ins))
-      
-      # Make a matrix of status of component inlets. Is each inlet > 
-      # Sgen values, T/F?
-      for (i in 1:length(CU_ins)){
-        isAbove[,i] <- Inlet_Status %>% 
-          dplyr::select(as.character(CU_ins[i])) %>% pull()
+      #  Make a matrix of escapements of component indicators
+      for (j in 1:length(Ins)){
+        WCVIEsc_Inlets[,j] <- WCVIEsc %>% 
+          dplyr::select(as.character(Ins[j])) %>% pull()
+        
       }
       
-      # CU-level status: are ALL inlets above their Sgen values?
-      # Sum the "true"
-      isAboveFun <- function(x){ 
-        floor(sum( as.numeric(x), na.rm=F) / length(x) ) }
-      CU_Status[,k] <- apply(X= isAbove, MARGIN = 1, FUN=isAboveFun)
+      # Sum the escapement of component indicators, setting sum=NA for years 
+      # where there are any NAs
+      Inlet_Sum[,i] <- apply(WCVIEsc_Inlets, 1, sum, na.rm=F)
     }
-    CU_Status <- as.data.frame(CU_Status)
-  }
-  
-  # Alternatively, are there CU-level Sgen values to derive CU-level status?
-  CU.LRP <- FALSE
-  if(CU.LRP){
-    for (k in 1:length(CU_Names)){
-      CU_Status[,k] <- (CU_Sum[,k] > 
-                         (wcviRPs %>% filter(Stock == 
-                                               as.character(CU_Names[k])) %>% 
-                                       pull(SGEN)) )
+    
+    
+    #----------------------------------------------------------------------------
+    # Sum escapements across indicators within CUs
+    #----------------------------------------------------------------------------
+    
+    nCU <- length(unique(WCVIStocks$CU))
+    CU_Sum <- matrix(NA, nrow=length(Years), ncol=nCU)
+    colnames(CU_Sum) <- CU_Names
+    
+    for (k in 1:length(CU_Names)) {
+      # For each CU, which are the component indicators
+      CUss <- WCVIStocks %>% filter(CU==CU_Names[k]) %>% pull(Stock)
+      WCVIEsc_CUs <- matrix(NA, nrow= length(Years), ncol= length(CUss))
+      
+      #  Make a matrix of escapements of component indicators
+      for (j in 1:length(CUss)){
+        WCVIEsc_CUs[,j] <- WCVIEsc %>% dplyr::select(as.character(CUss[j])) %>% 
+          pull()
+      }
+      
+      # Sum the escapement of component indicators, setting sum=NA for years 
+      # where there are any NAs
+      CU_Sum[,k] <- apply(WCVIEsc_CUs, 1, sum, na.rm=F)
     }
-    CU_Status <- as.data.frame(CU_Status)
+    # Remove double incidence of Nitinat and San Juan (= stock and an inlet) 
+    # when enhancement is included
+    if(!remove.EnhStocks) WCVIEsc <- WCVIEsc %>% 
+      dplyr::select(-Nitinat, -'San Juan')
+    
+    WCVIEsc <- cbind(WCVIEsc, Inlet_Sum, CU_Sum) 
+    
+    #----------------------------------------------------------------------------
+    # Assess status for each inlet relative to inlet-level SGEN for each year
+    #   Is Inlet level escapement above inlet-level Sgen: T/F?
+    #   Inlet_Status = FALSE if summed escapement is below Sgen
+    #   Inlet_Status = TRUE if summed escapement is below Sgen
+    #----------------------------------------------------------------------------
+    
+    Inlet_Status <- matrix(NA, nrow=length(Years), ncol=length(Inlet_Names) )
+    colnames(Inlet_Status) <- Inlet_Names
+    
+    for (i in 1:length(Inlet_Names)) {
+      Inlet_Status[,i] <- (Inlet_Sum[,i] > 
+                             (wcviRPs %>% 
+                                filter(Stock == as.character(Inlet_Names[i])) %>% 
+                                pull(SGEN)) )
+    }
+    
+    Inlet_Status <- as.data.frame(Inlet_Status)
+    
+    #----------------------------------------------------------------------------
+    # Assess status for each CU for each year of the time-series 
+    #   (floor of summed CU-level numeric statuses)
+    #   CU_Status = below LB if any inlet within the CU below their Sgen = 0 
+    #   CU_Status = above LB if all inlets within the CU above their Sgen = 1
+    #----------------------------------------------------------------------------
+    
+    CU_Status <- matrix(NA, nrow=length(Years), ncol=length(CU_Names))
+    colnames(CU_Status) <- CU_Names
+    
+    stock.LRP <- TRUE
+    if(stock.LRP){
+      for (k in 1:length(CU_Names)) {
+        # For each CU, which are the component indicators
+        CU_ins <- unique( WCVIStocks %>% filter(CU==CU_Names[k]) %>% pull(Inlet))
+        
+        isAbove <- matrix(NA, nrow= length(Years), ncol= length(CU_ins))
+        
+        # Make a matrix of status of component inlets. Is each inlet > 
+        # Sgen values, T/F?
+        for (i in 1:length(CU_ins)){
+          isAbove[,i] <- Inlet_Status %>% 
+            dplyr::select(as.character(CU_ins[i])) %>% pull()
+        }
+        
+        # CU-level status: are ALL inlets above their Sgen values?
+        # Sum the "true"
+        isAboveFun <- function(x){ 
+          floor(sum( as.numeric(x), na.rm=F) / length(x) ) }
+        CU_Status[,k] <- apply(X= isAbove, MARGIN = 1, FUN=isAboveFun)
+      }
+      CU_Status <- as.data.frame(CU_Status)
+    }
+    
+    # Alternatively, are there CU-level Sgen values to derive CU-level status?
+    CU.LRP <- FALSE
+    if(CU.LRP){
+      for (k in 1:length(CU_Names)){
+        CU_Status[,k] <- (CU_Sum[,k] > 
+                            (wcviRPs %>% filter(Stock == 
+                                                  as.character(CU_Names[k])) %>% 
+                               pull(SGEN)) )
+      }
+      CU_Status <- as.data.frame(CU_Status)
+      
+    }
+    
+    #----------------------------------------------------------------------------
+    # Proportion of CUs that are not in the red zone
+    #----------------------------------------------------------------------------
+    
+    ppnAboveFun <- function(x) {sum( as.numeric(x), na.rm=F) / length(x) }
+    SMU_ppn <- apply(X=CU_Status, MARGIN=1, FUN=ppnAboveFun)
+    
+    #----------------------------------------------------------------------------
+    # Logistic regression
+    #----------------------------------------------------------------------------
+    # Get SMU-level escapement time-series
+    SMU_Esc <- apply(Inlet_Sum, 1, sum, na.rm=F)
+    
+    SMUlogisticData <- data.frame(SMU_Esc) %>% 
+      add_column(ppn=SMU_ppn, Years=as.numeric(Years)) %>% 
+      filter(SMU_Esc != "NA")
+    
+    data <- list()
+    data$N_Stks <- length(CU_Names)
+    digits <- count.dig(SMU_Esc)
+    ScaleSMU <- min(10^(digits -1 ), na.rm=T)
+    
+    data$LM_Agg_Abund <- SMUlogisticData$SMU_Esc/ScaleSMU
+    data$N_Above_BM <- SMUlogisticData$ppn * data$N_Stks
+    
+    if(!is.na(LOO)) { #If applying leave-one-out cross validation, remove that
+      #year
+      data$LM_Agg_Abund <- data$LM_Agg_Abund[-LOO]
+      data$N_Above_BM <- data$N_Above_BM[-LOO]
+    }
+    data$Pred_Abund <- seq(0, max(data$LM_Agg_Abund)*1.1, 0.1)
+    if(remove.EnhStocks) data$Pred_Abund <- 
+      seq(0, max(data$LM_Agg_Abund)*1.5, 0.1)
+    data$p <- 0.95#0.67
+    
+    if(Bern_logistic==FALSE) data$Penalty <- as.numeric(TRUE)
+    if(Bern_logistic==TRUE) data$Penalty <- as.numeric(FALSE)
+    data$Bern_logistic <- as.numeric(Bern_logistic)
+    
+    # Add a normally distributed penalty on aggregate abundances 
+    # when p is very small (0.01) 
+    # Lower 95% CL = abundance of the smallest CU in its lowest abundance 
+    # year (most CUs lost, only 1 remains below LB)
+    # Upper 95% CL = abundance of the ave annual abundance of the sum of 
+    # across CUs. 
+    # If CU-level benchmarks exist can sum those benchmarks for Upper 95%CL
+    min <- min(apply(CU_Sum, 2, min, na.rm=T), na.rm=T)
+    max <- mean(apply(CU_Sum, 1, sum, na.rm=F), na.rm=T)
+    # Parameters for normal penalty (mu, sig):
+    # mu  = ave of min and max values. 
+    # sig = SD which allows the density = 0.05 at min and max values
+    # sum(dnorm(seq(min,max,1), mean=mean(c(min,max)), sd=22400))# Should 
+    # give 95% density
+    # plot(x=seq(min,max,100), y=dnorm(seq(min,max,100), 
+    # mean=mean(c(min,max)), sd=22400),type="l")
+    data$B_penalty_mu <- mean(c(min,max))/ScaleSMU
+    if (!remove.EnhStocks) data$B_penalty_sig <- 22400/ScaleSMU
+    # Should give 95% density:
+    # sum(dnorm(seq(min,max,1), mean=mean(c(min,max)), sd=2700))
+    if (remove.EnhStocks) data$B_penalty_sig <- 2700/ScaleSMU
+    
+    param <- list()
+    param$B_0 <- -2
+    param$B_1 <- 0.1
+    
+    
+    #dyn.unload(dynlib(paste("TMB_Files/Logistic_LRPs", sep="")))
+    #compile(paste("TMB_Files/Logistic_LRPs.cpp", sep=""))
+    
+    dyn.load(dynlib(paste("TMB_Files/Logistic_LRPs", sep=""))) 
+    
+    obj <- MakeADFun(data, param, DLL="Logistic_LRPs", silent=TRUE) 
+    
+    opt <- nlminb(obj$par, obj$fn, obj$gr, control = 
+                    list(eval.max = 1e5, iter.max = 1e5)) 
+    pl <- obj$env$parList(opt$par) 
+    #summary(sdreport(obj), p.value=TRUE)
+    
+    # Get parameter estimates and logit predicted values for CIs
+    All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE))
+    All_Ests$Param <- row.names(All_Ests)
+    All_Ests$Param <- sapply(All_Ests$Param, function(x) 
+      (unlist(strsplit(x, "[.]"))[[1]]))
+    Preds <- All_Ests %>% filter(Param == "Logit_Preds")
+    All_Ests <- All_Ests %>% filter(!(Param %in% c( "Logit_Preds"))) 
+    
+    
+    
+    
+    out <- list()
+    out$All_Ests <- All_Ests
+    
+    
+    Logistic_Data <- data.frame(yr = SMUlogisticData$Years, 
+                                yy = SMUlogisticData$ppn, 
+                                xx = SMUlogisticData$SMU_Esc)
+    
+    out$Logistic_Data <- Logistic_Data
+    
+    Logistic_Fits <- data.frame(xx = data$Pred_Abund*ScaleSMU, 
+                                fit = inv_logit(Preds$Estimate),
+                                lwr = inv_logit(Preds$Estimate - 
+                                                  1.96*Preds$Std..Error),
+                                upr = inv_logit(Preds$Estimate + 
+                                                  1.96*Preds$Std..Error))
+    
+    out$Preds <- Logistic_Fits
+    
+    out$LRP <- data.frame(fit = (All_Ests %>% filter(Param == "Agg_LRP") %>% 
+                                   pull(Estimate))*ScaleSMU, 
+                          lwr = (All_Ests %>% filter(Param == "Agg_LRP") %>% 
+                                   mutate(xx =Estimate - 1.96*Std..Error) %>% 
+                                   pull(xx) ) * ScaleSMU,
+                          upr = (All_Ests %>% filter(Param == "Agg_LRP") %>% 
+                                   mutate(xx =Estimate + 1.96*Std..Error) %>% 
+                                   pull(xx) ) * ScaleSMU)
+    
+    return(list(out=out, WCVIEsc=WCVIEsc, SMU_Esc=SMU_Esc, 
+                CU_Status=CU_Status, SMU_ppn=SMU_ppn, 
+                LRPppn= data$p, nLL=obj$report()$ans, LOO=LOO, 
+                bench= select(SGENcalcs,-apar, -bpar)*Scale))
+    
     
   }
-  
-  #----------------------------------------------------------------------------
-  # Proportion of CUs that are not in the red zone
-  #----------------------------------------------------------------------------
-  
-  ppnAboveFun <- function(x) {sum( as.numeric(x), na.rm=F) / length(x) }
-  SMU_ppn <- apply(X=CU_Status, MARGIN=1, FUN=ppnAboveFun)
-  
-  #----------------------------------------------------------------------------
-  # Logistic regression
-  #----------------------------------------------------------------------------
-  # Get SMU-level escapement time-series
-  SMU_Esc <- apply(Inlet_Sum, 1, sum, na.rm=F)
-  
-  SMUlogisticData <- data.frame(SMU_Esc) %>% 
-    add_column(ppn=SMU_ppn, Years=as.numeric(Years)) %>% 
-    filter(SMU_Esc != "NA")
-  
-  data <- list()
-  data$N_Stks <- length(CU_Names)
-  digits <- count.dig(SMU_Esc)
-  ScaleSMU <- min(10^(digits -1 ), na.rm=T)
-  
-  data$LM_Agg_Abund <- SMUlogisticData$SMU_Esc/ScaleSMU
-  data$N_Above_BM <- SMUlogisticData$ppn * data$N_Stks
-  
-  if(!is.na(LOO)) { #If applying leave-one-out cross validation, remove that
-    #year
-    data$LM_Agg_Abund <- data$LM_Agg_Abund[-LOO]
-    data$N_Above_BM <- data$N_Above_BM[-LOO]
-  }
-  data$Pred_Abund <- seq(0, max(data$LM_Agg_Abund)*1.1, 0.1)
-  if(remove.EnhStocks) data$Pred_Abund <- 
-    seq(0, max(data$LM_Agg_Abund)*1.5, 0.1)
-  data$p <- 0.95#0.67
-  
-  if(Bern_logistic==FALSE) data$Penalty <- as.numeric(TRUE)
-  if(Bern_logistic==TRUE) data$Penalty <- as.numeric(FALSE)
-  data$Bern_logistic <- as.numeric(Bern_logistic)
-  
-  # Add a normally distributed penalty on aggregate abundances 
-  # when p is very small (0.01) 
-  # Lower 95% CL = abundance of the smallest CU in its lowest abundance 
-  # year (most CUs lost, only 1 remains below LB)
-  # Upper 95% CL = abundance of the ave annual abundance of the sum of 
-  # across CUs. 
-  # If CU-level benchmarks exist can sum those benchmarks for Upper 95%CL
-  min <- min(apply(CU_Sum, 2, min, na.rm=T), na.rm=T)
-  max <- mean(apply(CU_Sum, 1, sum, na.rm=F), na.rm=T)
-  # Parameters for normal penalty (mu, sig):
-  # mu  = ave of min and max values. 
-  # sig = SD which allows the density = 0.05 at min and max values
-  # sum(dnorm(seq(min,max,1), mean=mean(c(min,max)), sd=22400))# Should 
-  # give 95% density
-  # plot(x=seq(min,max,100), y=dnorm(seq(min,max,100), 
-  # mean=mean(c(min,max)), sd=22400),type="l")
-  data$B_penalty_mu <- mean(c(min,max))/ScaleSMU
-  if (!remove.EnhStocks) data$B_penalty_sig <- 22400/ScaleSMU
-  # Should give 95% density:
-  # sum(dnorm(seq(min,max,1), mean=mean(c(min,max)), sd=2700))
-  if (remove.EnhStocks) data$B_penalty_sig <- 2700/ScaleSMU
-  
-  param <- list()
-  param$B_0 <- -2
-  param$B_1 <- 0.1
-  
-  
-  #dyn.unload(dynlib(paste("TMB_Files/Logistic_LRPs", sep="")))
-  #compile(paste("TMB_Files/Logistic_LRPs.cpp", sep=""))
-  
-  dyn.load(dynlib(paste("TMB_Files/Logistic_LRPs", sep=""))) 
-
-  obj <- MakeADFun(data, param, DLL="Logistic_LRPs", silent=TRUE) 
-  
-  opt <- nlminb(obj$par, obj$fn, obj$gr, control = 
-                  list(eval.max = 1e5, iter.max = 1e5)) 
-  pl <- obj$env$parList(opt$par) 
-  #summary(sdreport(obj), p.value=TRUE)
-  
-  # Get parameter estimates and logit predicted values for CIs
-  All_Ests <- data.frame(summary(sdreport(obj), p.value=TRUE))
-  All_Ests$Param <- row.names(All_Ests)
-  All_Ests$Param <- sapply(All_Ests$Param, function(x) 
-    (unlist(strsplit(x, "[.]"))[[1]]))
-  Preds <- All_Ests %>% filter(Param == "Logit_Preds")
-  All_Ests <- All_Ests %>% filter(!(Param %in% c( "Logit_Preds"))) 
-  
-  
-  
-  
-  out <- list()
-  out$All_Ests <- All_Ests
-  
-  
-  Logistic_Data <- data.frame(yr = SMUlogisticData$Years, 
-                              yy = SMUlogisticData$ppn, 
-                              xx = SMUlogisticData$SMU_Esc)
-  
-  out$Logistic_Data <- Logistic_Data
-  
-  Logistic_Fits <- data.frame(xx = data$Pred_Abund*ScaleSMU, 
-                              fit = inv_logit(Preds$Estimate),
-                              lwr = inv_logit(Preds$Estimate - 
-                                                1.96*Preds$Std..Error),
-                              upr = inv_logit(Preds$Estimate + 
-                                                1.96*Preds$Std..Error))
-  
-  out$Preds <- Logistic_Fits
-  
-  out$LRP <- data.frame(fit = (All_Ests %>% filter(Param == "Agg_LRP") %>% 
-                                 pull(Estimate))*ScaleSMU, 
-                        lwr = (All_Ests %>% filter(Param == "Agg_LRP") %>% 
-                                 mutate(xx =Estimate - 1.96*Std..Error) %>% 
-                                 pull(xx) ) * ScaleSMU,
-                        upr = (All_Ests %>% filter(Param == "Agg_LRP") %>% 
-                                 mutate(xx =Estimate + 1.96*Std..Error) %>% 
-                                 pull(xx) ) * ScaleSMU)
-  
-  return(list(out=out, WCVIEsc=WCVIEsc, SMU_Esc=SMU_Esc, 
-              CU_Status=CU_Status, SMU_ppn=SMU_ppn, 
-              LRPppn= data$p, nLL=obj$report()$ans, LOO=LOO, 
-              bench= select(SGENcalcs,-apar, -bpar)*Scale))
-  
    
 } # Eng of Get.LRP.bs() function
 
 
 #-------------------------------------------------------------------------------
-# Now run bootstraps to derive LRPs with uncertainty in benchmarks
-# See implementation of this in WCVI_LRPs.Rmd
-
+# Now run bootstraps to derive benchmarks with uncertainty (see LRP code)
 run.bootstraps <- FALSE
 
 if (run.bootstraps){
-  nBS <- 500 # number trials for bootstrapping
+  set.seed(100)#10#12#13(work for 1000)
+  nBS <- 5000 # number trials for bootstrapping
   outBench <- list() 
   
   for (k in 1:nBS) {
@@ -562,7 +568,7 @@ if (run.bootstraps){
     
     outBench[[k]] <- out$bench
   }
-
+  
   # # Is 200 enough trials? Yes
   # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
   # plot(running.mean)
@@ -580,7 +586,7 @@ if (run.bootstraps){
   stockNames <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
     filter(Stock != "Cypre") %>% pull(Stock)
   stockNames <- unique(stockNames)
-
+  
   rownames(SGEN.bs) <- stockNames
   SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.5), 
                           lwr=apply(SGEN.bs, 1, quantile, 0.025),
@@ -605,11 +611,102 @@ if (run.bootstraps){
   df1 <- df1 %>% rename(Value=SGEN)
   df2 <- data.frame(boot[["SREP.boot"]], Stock=rownames(boot[["SREP.boot"]]), RP="SREP")
   df2 <- df2 %>% rename(Value=SREP)
-  dfout <- add_row(df1,df2)
+  df3 <- data.frame(boot[["SMSY.boot"]], Stock=rownames(boot[["SMSY.boot"]]), RP="SMSY")
+  df3 <- df3 %>% rename(Value=SMSY)  
+  dfout <- add_row(df1, df2)
+  dfout <- add_row(dfout, df3)
   rownames(dfout) <- NULL
-  write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs.csv") 
+  write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs1000v3.csv") 
 }
 
+#-------------------------------------------------------------------------------
+# Now run bootstraps to derive LRPs with uncertainty in benchmarks
+# See implementation of this in WCVI_LRPs.Rmd
+
+run.bootstraps <- FALSE
+
+if (run.bootstraps){
+  set.seed(1)#10#12#13(work for 1000), for 100, 200, 300, (for 5000trials), 1, 2, 3 (for 20000trials)
+  nBS <- 20000 # number trials for bootstrapping
+  outBench <- list() 
+  
+  for (k in 1:nBS) {
+    out <- Get.LRP.bs(run_logReg=FALSE)
+    outBench[[k]] <- out$bench
+  }
+
+  # # Is 200 enough trials? Yes
+  # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
+  # plot(running.mean)
+  
+
+  # Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th and 
+  # 95th percentiles
+  SGEN.bs <- select(as.data.frame(outBench), starts_with("SGEN"))
+  stockNames <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
+    filter(Stock != "Cypre") %>% pull(Stock)
+  stockNames <- unique(stockNames)
+
+  rownames(SGEN.bs) <- stockNames
+  SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.5), 
+                          lwr=apply(SGEN.bs, 1, quantile, 0.025),
+                          upr=apply(SGEN.bs, 1, quantile, 0.975) )
+  
+  SMSY.bs <- select(as.data.frame(outBench), starts_with("SMSY"))
+  rownames(SMSY.bs) <- stockNames
+  SMSY.boot <- data.frame(SMSY= apply(SMSY.bs, 1, quantile, 0.5), 
+                          lwr=apply(SMSY.bs, 1, quantile, 0.025),
+                          upr=apply(SMSY.bs, 1, quantile, 0.975) )
+  
+  SREP.bs <- select(as.data.frame(outBench), starts_with("SREP"))
+  rownames(SREP.bs) <- stockNames
+  SREP.boot <- data.frame(SREP= apply(SREP.bs, 1, quantile, 0.5), 
+                          lwr=apply(SREP.bs, 1, quantile, 0.025),
+                          upr=apply(SREP.bs, 1, quantile, 0.975) )
+  
+  boot <- list(SGEN.boot=SGEN.boot, SMSY.boot=SMSY.boot, 
+               SREP.boot=SREP.boot)
+  
+  df1 <- data.frame(boot[["SGEN.boot"]], Stock=rownames(boot[["SGEN.boot"]]), RP="SGEN") 
+  df1 <- df1 %>% rename(Value=SGEN)
+  df2 <- data.frame(boot[["SREP.boot"]], Stock=rownames(boot[["SREP.boot"]]), RP="SREP")
+  df2 <- df2 %>% rename(Value=SREP)
+  df3 <- data.frame(boot[["SMSY.boot"]], Stock=rownames(boot[["SMSY.boot"]]), RP="SMSY")
+  df3 <- df3 %>% rename(Value=SMSY)  
+  dfout <- add_row(df1, df2)
+  dfout <- add_row(dfout, df3)
+  rownames(dfout) <- NULL
+  # now round to 2 signif digits
+  dfout <- dfout %>% mutate(Value=signif(Value, 2)) %>% 
+    mutate(lwr=signif(lwr,2)) %>% 
+    mutate (upr=signif(upr,2))
+  
+  write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs.csv") 
+  
+}
+#Found with 20000 the results have stabilized to two significant digits. Use 20000v1, and recommend 2 signifcant digits to users
+# To check the SE is within 2% with 5 trials of 20,000
+
+d1 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v1.csv")
+d2 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v2.csv")
+d3 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v3.csv")
+d4 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v4.csv")
+d5 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v5.csv")
+n<-length(d1$Value)
+sd.Value <- NA; sd.lwr <- NA; sd.upr <- NA
+mean.Value <- NA; mean.lwr <- NA; mean.upr <- NA
+se.Value <- NA; se.lwr <- NA; se.upr <- NA
+for (i in 1:n){
+ sd.Value[i] <- sd(c(d1$Value[i], d2$Value[i], d3$Value[i], d4$Value[i], d5$Value[i])) 
+ mean.Value[i] <- mean(c(d1$Value[i], d2$Value[i], d3$Value[i], d4$Value[i], d5$Value[i]))
+ se.Value[i] <- sd.Value[i]/mean.Value[i]
+ sd.lwr[i] <- sd(c(d1$lwr[i], d2$lwr[i], d3$lwr[i], d4$lwr[i], d5$lwr[i])) 
+ mean.lwr[i] <- mean(c(d1$lwr[i], d2$lwr[i], d3$lwr[i], d4$lwr[i], d5$lwr[i]))
+ se.lwr[i] <- sd.lwr[i]/mean.lwr[i]
+ sd.upr[i] <- sd(c(d1$upr[i], d2$upr[i], d3$upr[i], d4$upr[i], d5$upr[i])) 
+ mean.upr[i] <- mean(c(d1$upr[i], d2$upr[i], d3$upr[i], d4$upr[i], d5$upr[i]))
+ se.upr[i] <- sd.upr[i]/mean.upr[i]
+}
 
 #----------------------------------------------------------------------------
 # R version of logistic regression

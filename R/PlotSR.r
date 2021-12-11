@@ -1050,6 +1050,7 @@ if(PlotAnnualIndicator){
   Enh_ <- WCVIStocks %>% select(c(Stock, Enh))
   WCVIEsc_long <- left_join(WCVIEsc_long, Enh_)
   
+  WCVIEsc_long <- WCVIEsc_long %>% mutate(Spawners=Spawners/1000)
   IndicatorTimeSeries <- ggplot (WCVIEsc_long, aes (x=Year, y=Spawners, group=Enh)) + 
     geom_line( aes(colour = Enh)) + 
     facet_wrap(~Stock, scales="free_y") + 

@@ -1052,9 +1052,10 @@ if(PlotAnnualIndicator){
   
   IndicatorTimeSeries <- ggplot (WCVIEsc_long, aes (x=Year, y=Spawners, group=Enh)) + 
     geom_line( aes(colour = Enh)) + 
-    facet_wrap(~Stock, scales="free") + 
+    facet_wrap(~Stock, scales="free_y") + 
     theme(legend.position = "none")
-  
+
+
   ggsave("DataOut/IndicatorTimeSeries.png", plot = IndicatorTimeSeries, 
          height = 5, width = 8, units = "in") 
   

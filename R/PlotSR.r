@@ -1019,6 +1019,7 @@ if(PlotAnnualIndicator){
     (gsub("Nootka Esperanza", "Nootka/Esperanza", x, fixed=TRUE) ) )
   colnames(WCVIEsc) <- WCVIEsc_names 
   
+  
   EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% filter (Enh==1) %>%
     pull(Stock)
   EnhStocks <- as.character(EnhStocks)
@@ -1051,12 +1052,31 @@ if(PlotAnnualIndicator){
   WCVIEsc_long <- left_join(WCVIEsc_long, Enh_)
   
   WCVIEsc_long <- WCVIEsc_long %>% mutate(Spawners=Spawners/1000)
+  
+  
+  PNI <- as.data.frame(read.csv("DataIn/PNI_indStocks.csv"))
+  PNI <- PNI %>% select(c(-Stock.noHyphens,-startYr, -endYr))
+  #WCVIEsc_long %>% left_join(PNI, by="Stock")
+  
+  #Add PNI to facets
+  # e.g., for code to do this see 3rd and 4th plots here: https://stackoverflow.com/questions/11889625/annotating-text-on-individual-facet-in-ggplot2
+  # 
+  dat.text <- data.frame(label=PNI$PNI, Stock=PNI$Stock, Enh=PNI$Enh)
+  
   IndicatorTimeSeries <- ggplot (WCVIEsc_long, aes (x=Year, y=Spawners, group=Enh)) + 
     geom_line( aes(colour = Enh)) + 
     facet_wrap(~Stock, scales="free_y") + 
-    theme(legend.position = "none")
+    theme(legend.position = "none") + 
+    geom_text(data=dat.text,
+    mapping = aes(x = -Inf, y = -Inf, label = label),
+    hjust   = -6.5,#0.1,
+    vjust   = -9.5,
+    size    =2,
+    colour = grey(0.5)
+  )
 
-
+   
+  
   ggsave("DataOut/IndicatorTimeSeries.png", plot = IndicatorTimeSeries, 
          height = 5, width = 8, units = "in") 
   

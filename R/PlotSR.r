@@ -1069,8 +1069,8 @@ if(PlotAnnualIndicator){
     theme(legend.position = "none") + 
     geom_text(data=dat.text,
     mapping = aes(x = -Inf, y = -Inf, label = label),
-    hjust   = -6.5,#0.1,
-    vjust   = -10.5,
+    hjust   = -5.8,#0.1,
+    vjust   = -11.5,
     size    =2,
     colour = grey(0.5)
   )

@@ -1070,7 +1070,7 @@ if(PlotAnnualIndicator){
     geom_text(data=dat.text,
     mapping = aes(x = -Inf, y = -Inf, label = label),
     hjust   = -6.5,#0.1,
-    vjust   = -9.5,
+    vjust   = -10.5,
     size    =2,
     colour = grey(0.5)
   )

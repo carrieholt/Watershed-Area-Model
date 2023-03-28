@@ -78,7 +78,7 @@ nBS <- 200 # number trials for bootstrapping
 outBench <- list() 
 
 for (k in 1:nBS) {
-  out <- Get.LRP.bs(remove.EnhStocks=TRUE, Bern_logistic=FALSE)
+  out <- Get.LRP.bs(remove.EnhStocks=TRUE, Bern_logistic=TRUE)#FALSE)
   
   # Save LRPs for each bootstrap
   outLRP <- as.data.frame(out$out$LRP) 

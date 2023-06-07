@@ -1066,7 +1066,9 @@ if(PlotAnnualIndicator){
   IndicatorTimeSeries <- ggplot (WCVIEsc_long, aes (x=Year, y=Spawners, group=Enh)) + 
     geom_line( aes(colour = Enh)) + 
     facet_wrap(~Stock, scales="free_y") + 
-    theme(legend.position = "none") + 
+    theme(legend.position = "none") +
+    # xlab("Année") + 
+    # ylab("Géniteurs") +
     geom_text(data=dat.text,
     mapping = aes(x = -Inf, y = -Inf, label = label),
     hjust   = -5.8,#0.1,
@@ -1077,8 +1079,10 @@ if(PlotAnnualIndicator){
 
    
   
-  ggsave("DataOut/IndicatorTimeSeries.png", plot = IndicatorTimeSeries, 
-         height = 5, width = 8, units = "in") 
+  ggsave("DataOut/IndicatorTimeSeriesFR.png", plot = IndicatorTimeSeries,
+         height = 5, width = 8, units = "in")
+  # ggsave("DataOut/IndicatorTimeSeriesFR.png", plot = IndicatorTimeSeries, 
+  #        height = 5, width = 8, units = "in") 
   
   
 }

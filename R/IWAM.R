@@ -96,11 +96,16 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     }
   }
   test <- SRDat %>% filter(Stocknumber == stockwNA[1]| Stocknumber == stockwNA[2])
+    # Removed years - wanted to have the time series consistent - re-indexing the stocks - so that there are 
+    # no gaps in the. E.g. 0, 1, 2, 3, remove 2 - 0, 1, 3 (now has a break-point)
+    # mask?
+    # simulate NAN's in future - COSEWIC example
   
   
   # Calculate scale for each stock
   digits <- SRDat %>% group_by(Stocknumber) %>% 
     summarize(maxDigits = count.dig(max(Sp)))
+    # requires source loads per run - stored in environment **TOR**
   SRDat <- left_join(SRDat, digits)
   SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1))
   
@@ -539,6 +544,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
       lower[names(lower) == "logNuSigma"] <- log(0.29) # See KFrun.R, "medSDlogSrep"
     }
   }
+  # Don't need this any more - setting limits on the parameters
   
   # ## For uniform priors on Ricker var (set all Ricker Sig priors above to F)
   # upper[names(upper) == "logSigma_std"] <- log(2) 
@@ -546,10 +552,13 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   # upper[names(upper) == "logSigmaA"] <- log(2) 
   # lower[names(lower) == "logSigmaA"] <- log(0) #Inf!
   
+  
+  #### RUNNING THE MODEL ####
   opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5), 
                 lower=lower, upper=upper)
-  pl <- obj$env$parList(opt$par) 
+  pl <- obj$env$parList(opt$par) # Gives the parameter estimates from the model
   #summary(sdreport(obj), p.value=TRUE)
+
   
   #library(tmbstan)
   # fitmcmc <- tmbstan(obj, chains=3, iter=1000, init=list(opt$par), 

@@ -39,7 +39,7 @@ px[0] = DW * py[0];                 // Reverse mode chain rule
     return LambertW(tx)[0];
   }
   
-  
+// REAL CODE STARTS  
 template<class Type>
 Type objective_function<Type>:: operator() ()
 {
@@ -100,8 +100,8 @@ Type objective_function<Type>:: operator() ()
   
 
   
-  Type ans=0.0;
-  int N_Obs = S_std.size(); 
+  Type ans=0.0; // ans is the log-likelihood - is then additive for each of the distributions
+  int N_Obs = S_std.size(); //size() gives the size of the vector - TMB function
   int N_stks_std = Scale.size();
   
   
@@ -109,16 +109,17 @@ Type objective_function<Type>:: operator() ()
   vector <Type> LogRS_Pred_std(N_Obs);
   vector <Type> sigma_std = exp(logSigma_std);
   Type sigmaA = exp(logSigmaA);
-  vector <Type> nLL_std(N_Obs);
+  vector <Type> nLL_std(N_Obs); // negative log-likelihood to calculate AIC - not need for est.
 
   // Standard Ricker model: 
   for (int i = 0; i<N_Obs; i++){
     if(biasCor == 0) {
       LogRS_Pred_std(i) = logA_std(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i);
       }
-    if(biasCor == 1) {
+    if(biasCor == 1) { // correcting for the back-calculation bias - from log transform to raw
       LogRS_Pred_std(i) = logA_std(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i) - pow(sigma_std(stk_std(i)),2) / Type(2);
-    }
+    } // power function - squared sigma / 2
+    // look up TMB pow
     ans += -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);    
     nLL_std(i) = -dnorm(LogRS_Pred_std(i), logRS_std(i),  sigma_std(stk_std(i)), true);
   }
@@ -181,12 +182,15 @@ Type objective_function<Type>:: operator() ()
   Type sigma_delta = exp(logDeltaSigma);
   Type sigma_nu = exp(logNuSigma);
   
-  for (int i=0; i<N_stks_std; i++){
+  for (int i=0; i<N_stks_std; i++){ // THE ACTUAL WATERSHED MODEL
     PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + ( exp(logDelta2) + Delta2ocean * Stream(i) ) * log(WA(i)) ;
+      // Confusion about log-space vs non log-space
+      // From Parken model (allometric equation)
     ans += -dnorm( PredlnSMSY(i), log(SMSY_std(i) * Scale(i) ),  sigma_delta, true);
     PredlnSREP(i) = logNu1 + logNu1ocean * Stream(i) + ( exp(logNu2) + Nu2ocean * Stream(i) ) * log(WA(i)) ;
     ans += -dnorm( PredlnSREP(i), log(SREP_std(i) * Scale(i) ),  sigma_nu, true);
   }
+  // Stream-type is the base and deviation for the ocean
   
   // Normal prior on sigma_delta and sigma_nu
   if (SigDeltaPriorNorm == 1) {

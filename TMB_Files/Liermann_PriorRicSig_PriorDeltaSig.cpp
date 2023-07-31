@@ -45,7 +45,7 @@ Type objective_function<Type>:: operator() ()
 {
   DATA_VECTOR(S_std);
   DATA_VECTOR(logRS_std);
-  DATA_IVECTOR(stk_std);
+  DATA_IVECTOR(stk_std); // stock number
   DATA_IVECTOR(yr_std);
   DATA_SCALAR(logMuAs_mean);
   DATA_SCALAR(logMuAs_sig);
@@ -114,8 +114,8 @@ Type objective_function<Type>:: operator() ()
   // Standard Ricker model: 
   for (int i = 0; i<N_Obs; i++){
     if(biasCor == 0) {
-      LogRS_Pred_std(i) = logA_std(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i);
-      }
+      LogRS_Pred_std(i) = logA_std(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i); // S_std is: Sp/Scale
+    }
     if(biasCor == 1) { // correcting for the back-calculation bias - from log transform to raw
       LogRS_Pred_std(i) = logA_std(stk_std(i)) - exp(logB_std(stk_std(i))) * S_std(i) - pow(sigma_std(stk_std(i)),2) / Type(2);
     } // power function - squared sigma / 2

@@ -42,7 +42,12 @@ library(hrbrthemes)
 # Both helperFunctions and PlotSR are required to be run upon init.
 # Make sure your wd is set prior.
 source ("R/helperFunctions.R")
+  # rename to AccessoryFunctions.R
 source ("R/PlotSR.r")
+  # rename to PlottingFunctions.R
+
+# Consider renaming all model.R scripts to include "mod" or some
+# other suffix/prefix
 
 
 #### Call mods -----------------------------------------------------------------
@@ -52,6 +57,7 @@ mod <- "Liermann_PriorRicSig_PriorDeltaSig"
 removeSkagit <- FALSE 
 remove.EnhStocks <- TRUE
 
+# This is where the original runIWAM function begins
 
 #### 1. Read in data -------------------------------------------------
 
@@ -60,8 +66,9 @@ SRDatwNA <- read.csv("DataIn/SRinputfile.csv")
   # year num.
 
 # * Data Removals and Cleaning ----
+# Remove any unused stocks
 
-# Remove two stocks not used in Parken et al, and not documented in Liermann
+# For e.g., two stocks not used in Parken et al, and not documented in Liermann
 SRDatwNA <- SRDatwNA %>% filter(Name != "Hoko" & Name != "Hoh") 
 
 # Remove Skagit and re-align the stock numbers to be continuous post removal
@@ -73,12 +80,10 @@ if (removeSkagit==TRUE) {
   SRDatwNA [which(SRDatwNA$Stocknumber==24),2] = 23
 }
 
-# Which stocks have NAs? Returns only stock number.
+# Determine Which stocks have NAs? Below filter returns only stock numbers.
 stockwNA <- SRDatwNA %>% filter (is.na(Rec) == TRUE) %>% 
   dplyr::select (Stocknumber) %>%  unique() %>% unlist() 
-#Do not use AR(1) model on  stocks with NAs, Humptulips and Queets (20 & 21)
-# Not using AR(1) model - can the NA's remain?
-# Worth testing to see if above is true
+# Do not use AR(1) model on  stocks with NAs, Humptulips and Queets (20 & 21)
 
 # Remove years with NAs
 SRDat <- SRDatwNA %>% filter(Rec != "NA") 
@@ -87,9 +92,10 @@ SRDat <- SRDatwNA %>% filter(Rec != "NA")
   # yr_num is used as a method for indexing within [**INSERT**]
 # Create a test df to check the order of stock numbers by yr_num
   # Within the subset of stocks with NA's identified earlier as stocks 20 and 21
+  # test_1 is not a required object for the model. It is only for checking
 test_1 <- SRDat %>% filter(Stocknumber == stockwNA[1]|Stocknumber == stockwNA[2])
 
-# Main if loop to adjust main df (SRDat) to have a continuous year list
+# if/for loop to adjust main df (SRDat) to have a continuous year list
 if( max(SRDat$Stocknumber) >= stockwNA[1]) { # if the max stock number (24)
     # is greater or equal then the stock's identifed (20), then
   for (i in 1:length(stockwNA)) { # for the number of stocks identifed with NAs (2)
@@ -102,15 +108,18 @@ if( max(SRDat$Stocknumber) >= stockwNA[1]) { # if the max stock number (24)
   }
 }
 
-test_2 <- SRDat %>% filter(Stocknumber == stockwNA[1]| Stocknumber == stockwNA[2])
 # Check for the correction to yr_num - wanted to have the time series - 
-  # consistent = re-indexing the stocks - so that there are 
-  # no gaps in the. E.g. 0, 1, 2, 3, remove 2 - 0, 1, 3 (now has a break-point)
+# consistent = re-indexing the stocks - so that there are 
+# no gaps in the. E.g. 0, 1, 2, 3, remove 2 - 0, 1, 3 (now has a break-point)
+# test_2 is not a required object for the model. It is only for checking
+test_2 <- SRDat %>% filter(Stocknumber == stockwNA[1]| Stocknumber == stockwNA[2])
+
 # Future update: mask or simulate NAN's in future - COSEWIC example
 
 
 # * Scale Calculation ----------------------------------------------------------
-  # Tor's comments:
+
+# Tor's comments:
   # Scaling in this manner has the following problems:
     # 1. It is skewed in the presence of outliers.
     # 2. It is not a form of standarization. Different stocks with the same -
@@ -144,6 +153,7 @@ digits <- SRDat %>% group_by(Stocknumber) %>%
   summarize(maxDigits = count.dig(max(Sp)))
   # count.dig() Creates a count of the max number of digits of spawners as 
     # digits per stock
+  # the function count.dig() can be found in the script: helperFunctions.R
 
 SRDat <- left_join(SRDat, digits)
   # join SRDat with digits by Stocknumber and re-write over SRDat
@@ -282,9 +292,11 @@ TMB_Inputs <- list(rho_Start = 0.0, logDelta1_start=3.00, logDelta2_start =log(0
 # Data 
 data <- list()
 Scale_std <- SRDat_std$Scale # Scale enters the TMB data
-data$S_std <- SRDat_std$Sp/Scale_std # Spawners / scale (log 10 base)
+data$S_std <- SRDat_std$Sp/Scale_std # Spawners / scale - check Scale calculation
+  # This S_std is not used again in this code
 data$logRS_std <- log( (SRDat_std$Rec/Scale_std) / (SRDat_std$Sp/Scale_std) )
-data$stk_std <- as.numeric(SRDat_std$ind_std)
+  # logged: scaled recruits / scaled spawners
+data$stk_std <- as.numeric(SRDat_std$ind_std) # 
 N_Stocks_std <- length(unique(SRDat_std$Name))
 data$yr_std <- SRDat_std$yr_num
 
@@ -358,15 +370,27 @@ if (mod!="Ricker_AllMod") data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)),
 
 # Parameters
 param <- list()
+
+# Below is over-written by the loop ~ line 384
 Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% 
                       filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) %>% 
                       summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
-Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>% 
-                     filter(Stocknumber %in% stksNum_ar) %>% 
+  # SRDat - main data
+  # Groupby Stock Number
+  # Filter for specific Stocks
+  # summarize into new df the max Scale
+    # Scale has always been max per Stock
+
+# *Tor* Commented out stock_ar and stock_surv Scale as I don't believe they are 
+  # necessary
+Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>%
+                     filter(Stocknumber %in% stksNum_ar) %>%
                      summarize(Scale.stock_ar = max(Scale)))$Scale.stock_ar
-Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>% 
-                       filter(Stocknumber %in% stksNum_surv) %>% 
+
+Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>%
+                       filter(Stocknumber %in% stksNum_surv) %>%
                        summarize(Scale.stock_surv = max(Scale)))$Scale.stock_surv
+
 
 if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
    mod=="Liermann_HalfNormRicVar_FixedDelta"){
@@ -374,12 +398,21 @@ if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorD
                         summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
 }
 
+
 # Parameters for stocks without AR1
 param$logA_std <- ( SRDat_std %>% group_by (Stocknumber) %>% 
                       summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
+  # SRDat_std: Rec and Sp are not scaled
+
 B_std <- SRDat_std %>% group_by(Stocknumber) %>% 
   summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
-param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std ))#log(B_std$m/Scale.stock)
+  # *Tor* why the negative here?
+
+param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std )) # log(B_std$m/Scale.stock)
+  # *Carrie* Need to apply the scale to the inverse of Beta, and then re-invert and log it.
+    # This way the initial parameter is log(Scaled beta)
+  # logB is scaled
+  # in the TMB Ricker model - S is scaled
 param$logSigma_std <- rep(-2, N_Stocks_std)
 
 
@@ -440,11 +473,10 @@ if (mod=="Liermann"| mod=="Liermann_PriorRicSig_PriorDeltaSig"){
 #dyn.unload(dynlib(paste("TMB_Files/", mod, sep="")))
 #compile(paste("TMB_Files/", mod, ".cpp", sep=""))
 dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
-if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|
-   mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_RicStd"|mod=="Ricker_AllMod"){
-  obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)#random = c( "logDelta2"), 
-}
-
+# if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|
+#    mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_RicStd"|mod=="Ricker_AllMod"){
+#   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)#random = c( "logDelta2"), 
+# }
 if(mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
    mod=="Liermann_HalfNormRicVar_FixedDelta"){
   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
@@ -455,7 +487,6 @@ if(mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
 # For phasing, (not needed)
 # map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
 # obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
-
 
 upper<-unlist(obj$par)
 upper[1:length(upper)]<- Inf
@@ -688,7 +719,7 @@ if(plot==TRUE){
 #### 6. Calculate prediction intervals for SMSY and SREP for additional stocks ----
 
 # Get predicted values to estimate prediction intervals
-  # These values are NOT RE-SCALED
+  # These values are RE-SCALED to raw estimates during outputting in the TMB code
 PredlnSMSY_PI <- data.frame()
 PredlnSMSY_PI <- All_Ests %>% filter (Param %in% c("PredlnSMSY", "lnSMSY"))
 PredlnSREP_PI <- data.frame()
@@ -758,14 +789,18 @@ TestSREPpull <- TestSREP %>% pull(Estimate)
 TestSMSY_PI <- PredInt(x=log(WAo), y=Olsmsyo, Predy=TestSMSYpull, Newx= data$TestlnWAo)
 TestSREP_PI <- PredInt(x=log(WAo), y=Olsrepo, Predy=TestSREPpull, Newx= data$TestlnWAo)
 
+# exp() bounds
 TestSMSY <- TestSMSY %>% add_column(LL=exp(TestSMSY_PI$lwr), UL=exp(TestSMSY_PI$upr))
 TestSREP <- TestSREP %>% add_column(LL=exp(TestSREP_PI$lwr), UL=exp(TestSREP_PI$upr))
+
 TestSMSY <- TestSMSY %>% mutate (Estimate = exp(Estimate)) %>% dplyr::select(-Std..Error, - Param) %>% 
   add_column(Param = "SMSY")
 TestSREP <- TestSREP %>% mutate (Estimate = exp(Estimate)) %>% dplyr::select(-Std..Error, - Param) %>% 
   add_column(Param = "SREP")
+
 WCVISMSY <- TestSMSY %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0))
 WCVISREP <- TestSREP %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0))
+
 WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
 
 # Write SMSY and SREP with PIs to file

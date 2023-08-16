@@ -46,7 +46,7 @@ source ("R/helperFunctions.R")
   # rename to AccessoryFunctions.R
 #source ("R/PlotSR.r")
 source ("R/PlotFunction.r")
-  # rename to PlottingFunctions.R
+  # rename to PlotFunction.R
 
 # Consider renaming all model.R scripts to include "mod" or some
 # other suffix/prefix
@@ -55,6 +55,9 @@ source ("R/PlotFunction.r")
 #### Call mods -----------------------------------------------------------------
 
 mod <- "Liermann_PriorRicSig_PriorDeltaSig" 
+# Can assume that this model is being used - can take out all loops
+  # Priors on Ricker's parameters - can be stated
+  # Can take out all of the if mod loops
 # Otherwise part of the main wrapper function, best to outright state these early
 removeSkagit <- FALSE 
 remove.EnhStocks <- TRUE
@@ -64,13 +67,16 @@ remove.EnhStocks <- TRUE
 
 #### 1. Read in data -------------------------------------------------
 
+# Our test data includes: Stock name, stock number, year, spawners, recruits, 
+  # stream num., and year num.
+# NA's are present in this sample data set and will be removed in the 
+  # following sections.
 SRDatwNA <- read.csv("DataIn/SRinputfile.csv")
-# Includes: Stock name, stock number, year, spawners, recruits, stream num.,
-  # year num.
+  # Change to include here::here
 
 
 # * Data Removals and Cleaning ----
-# Remove any unused stocks
+# First, remove any unused stocks using filter()
 
 # For e.g., two stocks not used in Parken et al, and not documented in Liermann
 SRDatwNA <- SRDatwNA %>% filter(Name != "Hoko" & Name != "Hoh") 

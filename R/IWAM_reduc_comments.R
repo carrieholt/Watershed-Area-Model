@@ -24,8 +24,8 @@
 #### Set Working Directory -----------------------------------------------------
 
 # Tor's Home Computer
-setwd("~/GitHub/Watershed-Area-Model")
-
+# setwd("~/GitHub/Watershed-Area-Model")
+# No longer used under here::here conventions
 
 #### Libraries -----------------------------------------------------------------
 
@@ -42,11 +42,13 @@ library(hrbrthemes)
 
 # Both helperFunctions and PlotSR are required to be run upon init.
 # Make sure your wd is set prior.
-source ("R/helperFunctions.R")
+# source ("R/helperFunctions.R")
+source (here::here("R/helperFunctions.R"))
   # rename to AccessoryFunctions.R
 #source ("R/PlotSR.r")
-source ("R/PlotFunction.r")
-  # rename to PlotFunction.R
+# source ("R/PlotFunction.r")
+source(here::here("R/PlotFunction.R"))
+  # rename to PlotFunction.R - DONE
 
 # Consider renaming all model.R scripts to include "mod" or some
 # other suffix/prefix
@@ -54,7 +56,7 @@ source ("R/PlotFunction.r")
 
 #### Call mods -----------------------------------------------------------------
 
-mod <- "Liermann_PriorRicSig_PriorDeltaSig" 
+# mod <- "Liermann_PriorRicSig_PriorDeltaSig" 
 # Can assume that this model is being used - can take out all loops
   # Priors on Ricker's parameters - can be stated
   # Can take out all of the if mod loops
@@ -252,9 +254,10 @@ SRDat_Scale <- SRDat_Scale$Scale
 # If using any of the below mods:
   # overwrite SRDat_std with the main df SRDat
   # Othewise, use standard Ricker model
-if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|
-   mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-   mod=="Liermann_HalfNormRicVar_FixedDelta") SRDat_std <- SRDat
+# if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|
+#    mod=="Liermann_PriorRicSig_PriorDeltaSig"|
+#    mod=="Liermann_HalfNormRicVar_FixedDelta") 
+SRDat_std <- SRDat
 
 # Assign new stock numbers to each stock so that they are sequential within each 
   # model form. These are used in TMB When only one model form is use (std Ricker)
@@ -265,15 +268,15 @@ SRDat_std <- SRDat_std %>% left_join(ind_std)
 
 # Remove years 1981-1984, 1986-1987  from Cowichan (Stocknumber 23) as per 
   # Tompkins et al. 2005
-if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-   mod=="Liermann_HalfNormRicVar_FixedDelta") {
-  SRDat_Cow <- SRDat_std %>% filter(Name == "Cowichan" & Yr >= 1985 & Yr !=1986 & Yr != 1987) # length = 10
-  n_Cow <- length(SRDat_Cow$Yr)
+# if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
+#    mod=="Liermann_HalfNormRicVar_FixedDelta") {
+SRDat_Cow <- SRDat_std %>% filter(Name == "Cowichan" & Yr >= 1985 & Yr !=1986 & Yr != 1987) # length = 10
+n_Cow <- length(SRDat_Cow$Yr)
   #SRDat_Cow$yr_num <- 0:(n_surv_Cow-1) #n_surv_Cow can most likely be exchanged for n_Cow
-  SRDat_Cow$yr_num <- 0:(n_Cow-1)
-  SRDat_std <- SRDat_std %>%  filter(Name != "Cowichan") %>% bind_rows(SRDat_Cow) %>%
+SRDat_Cow$yr_num <- 0:(n_Cow-1)
+SRDat_std <- SRDat_std %>%  filter(Name != "Cowichan") %>% bind_rows(SRDat_Cow) %>%
     arrange(ind_std) 
-}
+# }
 
 
 # * Read in watershed area data and life-history type --------------------------
@@ -284,11 +287,11 @@ WA <- read.csv("DataIn/WatershedArea.csv")
 names <- SRDat %>% dplyr::select (Stocknumber, Name) %>% distinct() 
 
 # 
-if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-   mod=="Liermann_HalfNormRicVar_FixedDelta") {
-  WA <- WA %>% full_join(names, by="Name") %>% full_join (stksOrder, by="Stocknumber") %>% 
+# if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
+#    mod=="Liermann_HalfNormRicVar_FixedDelta") {
+WA <- WA %>% full_join(names, by="Name") %>% full_join (stksOrder, by="Stocknumber") %>% 
     arrange(Stocknumber)
-}
+# }
 
 # 
 if (removeSkagit==TRUE) {WA <- WA %>% filter(Name !="Skagit")}
@@ -298,8 +301,9 @@ Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>% group_by(Stockn
 #
 Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
 #
-if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-   mod=="Liermann_HalfNormRicVar_FixedDelta") Stream <- Stream  %>% arrange(Stocknumber)
+# if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
+#    mod=="Liermann_HalfNormRicVar_FixedDelta") 
+Stream <- Stream  %>% arrange(Stocknumber)
 
 
 #### 2. Create data and parameter lists for TMB --------------------------------
@@ -321,50 +325,52 @@ data$stk_std <- as.numeric(SRDat_std$ind_std) #
 N_Stocks_std <- length(unique(SRDat_std$Name))
 data$yr_std <- SRDat_std$yr_num
 
-if (mod=="Liermann_PriorRicSig_PriorDeltaSig"){
-  data$logMuAs_mean <- 1.5
-  data$logMuAs_sig <- 2
-  data$logMuAo_mean <- 0#1.5
-  data$logMuAo_sig <- 2
-  data$HalfNormMean <- 0#TMB_Inputs$Tau_sigma
-  data$HalfNormSig <- 1#TMB_Inputs$Tau_sigma
-  data$HalfNormMeanA <- 0#0.44#TMB_Inputs$Tau_sigma
-  data$HalfNormSigA <- 1#0.5#TMB_Inputs$Tau_sigma
-  data$SigRicPriorNorm <- as.numeric(F)
-  data$SigRicPriorGamma <- as.numeric(T)
-  data$SigRicPriorCauchy <- as.numeric(F)
-  data$biasCor <- as.numeric(TRUE)
-  data$Tau_dist <- 0.1
+# Final remaining if statement for mods
+# if (mod=="Liermann_PriorRicSig_PriorDeltaSig"){
+data$logMuAs_mean <- 1.5
+data$logMuAs_sig <- 2
+data$logMuAo_mean <- 0#1.5
+data$logMuAo_sig <- 2
+data$HalfNormMean <- 0#TMB_Inputs$Tau_sigma
+data$HalfNormSig <- 1#TMB_Inputs$Tau_sigma
+data$HalfNormMeanA <- 0#0.44#TMB_Inputs$Tau_sigma
+data$HalfNormSigA <- 1#0.5#TMB_Inputs$Tau_sigma
+data$SigRicPriorNorm <- as.numeric(F)
+data$SigRicPriorGamma <- as.numeric(T)
+data$SigRicPriorCauchy <- as.numeric(F)
+data$biasCor <- as.numeric(TRUE)
+data$Tau_dist <- 0.1
   
-  data$sigDelta_mean <- 0.80# See KFrun.R, #For half-normal use N(0,1)
-  data$sigDelta_sig <- 0.28# See KFrun.R,
-  data$sigNu_mean <- 0.84# See KFrun.R,
-  data$sigNu_sig <- 0.275# See KFrun.R,
-  data$SigDeltaPriorNorm <- as.numeric(F)
-  data$SigDeltaPriorGamma <- as.numeric(T)
-  data$SigDeltaPriorCauchy <- as.numeric(F)
-  data$Tau_D_dist <- 1
-  data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>%
-    filter(lh==1) %>% pull(lnWA)
+data$sigDelta_mean <- 0.80# See KFrun.R, #For half-normal use N(0,1)
+data$sigDelta_sig <- 0.28# See KFrun.R,
+data$sigNu_mean <- 0.84# See KFrun.R,
+data$sigNu_sig <- 0.275# See KFrun.R,
+data$SigDeltaPriorNorm <- as.numeric(F)
+data$SigDeltaPriorGamma <- as.numeric(T)
+data$SigDeltaPriorCauchy <- as.numeric(F)
+data$Tau_D_dist <- 1
+data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>%
+  filter(lh==1) %>% pull(lnWA)
   # Add aggregated WAs at inlet level
-  InletlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
-    filter(Stock != "Cypre") %>% group_by(Inlet) %>%
-    summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>%
-    filter(Inlet !="Nitinat")
-  InletlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
-    filter(Stock != "Cypre") %>% filter(Enh==0) %>%
-    group_by(Inlet) %>% summarize(InletlnWA = log(sum(WA))) %>% 
-    filter(Inlet != "San Juan") %>%
-    filter(Inlet !="Nitinat")
-  CUlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
-    filter(Stock != "Cypre") %>% group_by(CU) %>%
-    summarize(CUlnWA = log(sum(WA)))
-  CUlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
-    filter(Stock != "Cypre") %>% filter(Enh==0) %>%
-    group_by(CU) %>% summarize(CUlnWA = log(sum(WA)))
-  if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA,
+InletlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+  filter(Stock != "Cypre") %>% group_by(Inlet) %>%
+  summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>%
+  filter(Inlet !="Nitinat")
+InletlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+  filter(Stock != "Cypre") %>% filter(Enh==0) %>%
+  group_by(Inlet) %>% summarize(InletlnWA = log(sum(WA))) %>% 
+  filter(Inlet != "San Juan") %>%
+  filter(Inlet !="Nitinat")
+CUlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+  filter(Stock != "Cypre") %>% group_by(CU) %>%
+  summarize(CUlnWA = log(sum(WA)))
+CUlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+  filter(Stock != "Cypre") %>% filter(Enh==0) %>%
+  group_by(CU) %>% summarize(CUlnWA = log(sum(WA)))
+
+if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA,
                                            CUlnWAnoEnh$CUlnWA)
-  if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
+if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
                                             CUlnWA$CUlnWA )
   
   ## Code for using Parken et al. test stocks:
@@ -377,8 +383,10 @@ if (mod=="Liermann_PriorRicSig_PriorDeltaSig"){
 }
 
 # Read in wateshed area data and life-history type and scale
-if (mod!="Ricker_AllMod") data$WA <- WA$WA
-if (mod!="Ricker_AllMod") data$Stream <- Stream$lh
+# if (mod!="Ricker_AllMod") 
+data$WA <- WA$WA
+# if (mod!="Ricker_AllMod") 
+data$Stream <- Stream$lh
 data$Scale <- SRDat_Scale #ordered by std, AR1, surv, if all 3 Ricker models uses. 
 # Otherwise ordered by Stocknumber
 # if (mod=="IWAM_FixedSep") data$order_noChick <- c(0:23)##c(0:15,19)#, 17:23)
@@ -386,7 +394,8 @@ data$Scale <- SRDat_Scale #ordered by std, AR1, surv, if all 3 Ricker models use
 
 # Read in log(watershed area) for additional stocks
 # Predicated lnWA for plottig CIs:
-if (mod!="Ricker_AllMod") data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1)
+# if (mod!="Ricker_AllMod") 
+data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1)
   # **** BRICK LINE - this will cause issues with main model if absent *****
 
 # Parameters
@@ -413,11 +422,11 @@ Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>%
                        summarize(Scale.stock_surv = max(Scale)))$Scale.stock_surv
 
 
-if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-   mod=="Liermann_HalfNormRicVar_FixedDelta"){
-  Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% 
-                        summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
-}
+# if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
+#    mod=="Liermann_HalfNormRicVar_FixedDelta"){
+Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% 
+  summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
+# }
 
 
 # Parameters for stocks without AR1
@@ -442,14 +451,14 @@ param$logSigma_std <- rep(-2, N_Stocks_std)
 #   param$logSigmaA <- 5#1.5#1
 # }
 
-if(mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta"){
-  param$logMuAs <- 1.5
+# if(mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta"){
+param$logMuAs <- 1.5
   #param$logSigmaAs <- 1
-  param$logMuAo <- 0#1.5
-  param$logSigmaA <- -2#5
+param$logMuAo <- 0#1.5
+param$logSigmaA <- -2#5
   #param$logSigmaAo <- 1
   
-}
+# }
 
 ## Separate Stream and Ocean type models
 #param$slogDelta1 <- 2.744 #best estimates from run of stream-specific WAreg TMB
@@ -460,22 +469,22 @@ if(mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_Fixed
 #param$ologDelta2 <- log(0.94)#0#21.2 
 #param$ologDeltaSigma <-  -0.412#-0.94 
 
-if (mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|
-    mod=="Liermann_PriorRicSig_PriorDeltaSig"){
-  ## Lierman model
-  param$logDelta1 <- 3#10# with skagit 2.881
-  param$logDelta1ocean <- 0# with skagit 2.881
-  param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) 
-  param$Delta2ocean <- 0#log(0.72/(1-0.72)) 
-  param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
-}
-if (mod=="Liermann"| mod=="Liermann_PriorRicSig_PriorDeltaSig"){ 
-  param$logNu1 <- 3#10# with skagit 2.881
-  param$logNu1ocean <- 0# with skagit 2.881
-  param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) 
-  param$Nu2ocean <- 0#log(0.72/(1-0.72)) 
-  param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.66
-}
+# if (mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|
+#     mod=="Liermann_PriorRicSig_PriorDeltaSig"){
+## Lierman model
+param$logDelta1 <- 3#10# with skagit 2.881
+param$logDelta1ocean <- 0# with skagit 2.881
+param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) 
+param$Delta2ocean <- 0#log(0.72/(1-0.72)) 
+param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
+# }
+# if (mod=="Liermann"| mod=="Liermann_PriorRicSig_PriorDeltaSig"){ 
+param$logNu1 <- 3#10# with skagit 2.881
+param$logNu1ocean <- 0# with skagit 2.881
+param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) 
+param$Nu2ocean <- 0#log(0.72/(1-0.72)) 
+param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.66
+# }
 
 ## Hierarchcial model
 
@@ -498,11 +507,11 @@ dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
 #    mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_RicStd"|mod=="Ricker_AllMod"){
 #   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)#random = c( "logDelta2"), 
 # }
-if(mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-   mod=="Liermann_HalfNormRicVar_FixedDelta"){
-  obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
+# if(mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
+#    mod=="Liermann_HalfNormRicVar_FixedDelta"){
+obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
   
-}
+# }
 #
 
 # For phasing, (not needed)
@@ -657,10 +666,10 @@ PredlnSREP <- All_Ests %>% filter (Param %in% c("PredlnSREP_S", "PredlnSREP_O", 
 
 # Calculate standardized residuals
   # These are RE-SCALED values
-if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-    mod=="Liermann_HalfNormRicVar_FixedDelta"){
-  SRes <- Preds_std %>% arrange (Stocknumber)
-}
+# if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
+#     mod=="Liermann_HalfNormRicVar_FixedDelta"){
+SRes <- Preds_std %>% arrange (Stocknumber)
+# }
 
 SRes <- SRes %>% mutate ( Res = ObsLogRS- Pred) #%>% mutate (StdRes = Res/??)
 sigma <- All_Est %>% filter(Param=="logSigma") %>% dplyr::select(Stocknumber, Estimate, Name)

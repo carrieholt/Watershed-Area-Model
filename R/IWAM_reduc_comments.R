@@ -213,19 +213,21 @@ SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1)) # Original Scale
   # with a survival covariate
 # Create a vector that will be used to identify stocks per model type going forward
   # Required for distinguishing stocks when plotting SR curves
-stksNum_ar <- c(4,5,6,10,11,16) # Ricker with a surival co-variate. 
-stksNum_surv <- c(0,23)
-stks_surv <- c("Harrison", "Cowichan") # Stock name
+# stksNum_ar <- c(4,5,6,10,11,16) # Ricker with a surival co-variate. 
+# stksNum_surv <- c(0,23)
+# stks_surv <- c("Harrison", "Cowichan") # Stock name
 
 # Remove Skagit
-if (removeSkagit==TRUE) {stksNum_surv <- c(0,22)}
+# if (removeSkagit==TRUE) {stksNum_surv <- c(0,22)}
   # only works if removeSkagit is found
+  # Changes stksNum_surv - which is no longer used anyways
+  # Once _surv is fully removed this line can be removed
 
 # Creates an object with the length of the number of stocks
-len_stk <- length(unique(SRDat$Stocknumber))
+# len_stk <- length(unique(SRDat$Stocknumber))
 # Creates a vector of the stock ID's of those not included in the AR or Survival
   # model (_ar, and _surv)
-stksNum_std <- which(0:(len_stk-1) %not in%c(stksNum_ar, stksNum_surv)==TRUE)-1 
+# stksNum_std <- which(0:(len_stk-1) %not in%c(stksNum_ar, stksNum_surv)==TRUE)-1 
   # Assuming there are only 25 stocks (0:24 StockNumber)
   # Required for creating the stock order object used to arrange models 
     # when the stream and ocean life-history data is added prior to parameter
@@ -233,8 +235,8 @@ stksNum_std <- which(0:(len_stk-1) %not in%c(stksNum_ar, stksNum_surv)==TRUE)-1
 
 # When aggregated standard, ar1, surv, "ModelOrder" is the order of stocks for 
   # aligning with WA and life-history data
-stksOrder <- data.frame(Stocknumber =  c(stksNum_std, stksNum_ar, stksNum_surv),
-                        ModelOrder = 0:(len_stk-1))
+# stksOrder <- data.frame(Stocknumber =  c(stksNum_std, stksNum_ar, stksNum_surv),
+#                         ModelOrder = 0:(len_stk-1))
 # stksOrder: is used to arrange the stocks when the stream and ocean
   # life-history data is added into the complete df.
 
@@ -254,9 +256,6 @@ SRDat_Scale <- SRDat_Scale$Scale
 # If using any of the below mods:
   # overwrite SRDat_std with the main df SRDat
   # Othewise, use standard Ricker model
-# if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|
-#    mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-#    mod=="Liermann_HalfNormRicVar_FixedDelta") 
 SRDat_std <- SRDat
 
 # Assign new stock numbers to each stock so that they are sequential within each 
@@ -268,8 +267,6 @@ SRDat_std <- SRDat_std %>% left_join(ind_std)
 
 # Remove years 1981-1984, 1986-1987  from Cowichan (Stocknumber 23) as per 
   # Tompkins et al. 2005
-# if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-#    mod=="Liermann_HalfNormRicVar_FixedDelta") {
 SRDat_Cow <- SRDat_std %>% filter(Name == "Cowichan" & Yr >= 1985 & Yr !=1986 & Yr != 1987) # length = 10
 n_Cow <- length(SRDat_Cow$Yr)
   #SRDat_Cow$yr_num <- 0:(n_surv_Cow-1) #n_surv_Cow can most likely be exchanged for n_Cow
@@ -283,27 +280,29 @@ SRDat_std <- SRDat_std %>%  filter(Name != "Cowichan") %>% bind_rows(SRDat_Cow) 
   # (stream vs ocean)
 
 WA <- read.csv("DataIn/WatershedArea.csv")
-# Create a df of names and corresponding stock numbers 
-names <- SRDat %>% dplyr::select (Stocknumber, Name) %>% distinct() 
+# Create a df of names and corresponding stock numbers to use in joining
+names <- SRDat %>% dplyr::select (Stocknumber, Name) %>% distinct()
 
-# 
-# if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-#    mod=="Liermann_HalfNormRicVar_FixedDelta") {
-WA <- WA %>% full_join(names, by="Name") %>% full_join (stksOrder, by="Stocknumber") %>% 
-    arrange(Stocknumber)
+# WA <- WA %>% full_join(names, by="Name") %>% full_join (stksOrder, by="Stocknumber") %>% 
+#     arrange(Stocknumber)
 # }
+# Tor: test_WA - removed pipe for full_join by stksOrder
+WA <- WA %>% full_join(names, by="Name") %>% arrange(Stocknumber)
+  # Only difference between WA and test_WA is the ModelOrder
+  # Checking now for ModelOrder future usage
+    # Previously used under the section: Additional code; not currently needed
+  # Final decision: Tor: Removal
+
+
 
 # 
 if (removeSkagit==TRUE) {WA <- WA %>% filter(Name !="Skagit")}
 #
 Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% 
-  summarize(lh=max(Stream))
+  summarize(lh=max(Stream)) %>% arrange (Stocknumber)
 #
-Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
-#
-# if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-#    mod=="Liermann_HalfNormRicVar_FixedDelta") 
-Stream <- Stream  %>% arrange(Stocknumber)
+# Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
+# Stream <- Stream  %>% arrange(Stocknumber) # Added to above code in single pipe for cleanliness
 
 
 #### 2. Create data and parameter lists for TMB --------------------------------
@@ -380,12 +379,10 @@ if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
   # filter(lh==1) %>% pull(lnWA)
   
   
-}
+# }
 
 # Read in wateshed area data and life-history type and scale
-# if (mod!="Ricker_AllMod") 
 data$WA <- WA$WA
-# if (mod!="Ricker_AllMod") 
 data$Stream <- Stream$lh
 data$Scale <- SRDat_Scale #ordered by std, AR1, surv, if all 3 Ricker models uses. 
 # Otherwise ordered by Stocknumber
@@ -394,17 +391,15 @@ data$Scale <- SRDat_Scale #ordered by std, AR1, surv, if all 3 Ricker models use
 
 # Read in log(watershed area) for additional stocks
 # Predicated lnWA for plottig CIs:
-# if (mod!="Ricker_AllMod") 
 data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1)
-  # **** BRICK LINE - this will cause issues with main model if absent *****
 
 # Parameters
 param <- list()
 
 # Below is over-written by the loop ~ line 384
-Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% 
-                      filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) %>% 
-                      summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
+# Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% 
+#                       filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) %>% 
+#                       summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
   # SRDat - main data
   # Groupby Stock Number
   # Filter for specific Stocks
@@ -413,20 +408,17 @@ Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>%
 
 # *Tor* Commented out stock_ar and stock_surv Scale as I don't believe they are 
   # necessary
-Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>%
-                     filter(Stocknumber %in% stksNum_ar) %>%
-                     summarize(Scale.stock_ar = max(Scale)))$Scale.stock_ar
+# Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>%
+#                      filter(Stocknumber %in% stksNum_ar) %>%
+#                      summarize(Scale.stock_ar = max(Scale)))$Scale.stock_ar
 
-Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>%
-                       filter(Stocknumber %in% stksNum_surv) %>%
-                       summarize(Scale.stock_surv = max(Scale)))$Scale.stock_surv
+# Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>%
+#                        filter(Stocknumber %in% stksNum_surv) %>%
+#                        summarize(Scale.stock_surv = max(Scale)))$Scale.stock_surv
 
-
-# if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-#    mod=="Liermann_HalfNormRicVar_FixedDelta"){
+# REWORKS THE ABOVE
 Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% 
   summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
-# }
 
 
 # Parameters for stocks without AR1
@@ -445,13 +437,6 @@ param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std )) # log(B_std$m/Scale.
   # in the TMB Ricker model - S is scaled
 param$logSigma_std <- rep(-2, N_Stocks_std)
 
-
-# if(mod=="Liermann"){
-#   param$logMuA <- 1.5
-#   param$logSigmaA <- 5#1.5#1
-# }
-
-# if(mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta"){
 param$logMuAs <- 1.5
   #param$logSigmaAs <- 1
 param$logMuAo <- 0#1.5
@@ -469,8 +454,6 @@ param$logSigmaA <- -2#5
 #param$ologDelta2 <- log(0.94)#0#21.2 
 #param$ologDeltaSigma <-  -0.412#-0.94 
 
-# if (mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|
-#     mod=="Liermann_PriorRicSig_PriorDeltaSig"){
 ## Lierman model
 param$logDelta1 <- 3#10# with skagit 2.881
 param$logDelta1ocean <- 0# with skagit 2.881
@@ -478,7 +461,6 @@ param$logDelta2 <- log(0.72)#log(0.72/(1-0.72))
 param$Delta2ocean <- 0#log(0.72/(1-0.72)) 
 param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
 # }
-# if (mod=="Liermann"| mod=="Liermann_PriorRicSig_PriorDeltaSig"){ 
 param$logNu1 <- 3#10# with skagit 2.881
 param$logNu1ocean <- 0# with skagit 2.881
 param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) 
@@ -502,17 +484,12 @@ param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.66
 # Compile model if changed:
 #dyn.unload(dynlib(paste("TMB_Files/", mod, sep="")))
 #compile(paste("TMB_Files/", mod, ".cpp", sep=""))
+mod <- "Liermann_PriorRicSig_PriorDeltaSig" 
+  # mod required for dyn.load?
 dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
-# if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|
-#    mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_RicStd"|mod=="Ricker_AllMod"){
-#   obj <- MakeADFun(data, param, DLL=mod, silent=TRUE)#random = c( "logDelta2"), 
-# }
-# if(mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-#    mod=="Liermann_HalfNormRicVar_FixedDelta"){
+
 obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
-  
-# }
-#
+
 
 # For phasing, (not needed)
 # map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
@@ -583,25 +560,6 @@ DeltaSigma <- exp(logDeltaSigma$Estimate)
 # All_Ests_ar <- data.frame()
 # All_Ests_surv <- data.frame()
 
-# Is the below loop needed for new reduced model file?
-# if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|
-#     mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
-#   All_Ests_ar<- All_Ests %>% filter (Param %in% c("logA_ar", "logB_ar", "rho",  
-#                                                   "logSigma_ar", "SMSY_ar", "SREP_ar" ))
-#   SN_ar <- unique(SRDat_ar[, c("Stocknumber")])
-#   All_Ests_ar$Stocknumber <- rep(SN_ar)
-#   All_Ests_ar <- left_join(All_Ests_ar, unique(SRDat_ar[, c("Stocknumber", "Name")]))
-#   
-#   All_Ests_surv<- All_Ests %>% filter (Param %in% c("logA_surv", "logB_surv", "gamma", 
-#                                                     "logSigma_surv", "SMSY_surv", 
-#                                                     "SREP_surv" ))#"gamma"
-#   SN_surv <- unique(SRDat_surv[, c("Stocknumber")])
-#   All_Ests_surv$Stocknumber <- rep(SN_surv)
-#   All_Ests_surv <- left_join(All_Ests_surv, unique(SRDat_surv[, c("Stocknumber", 
-#                                                                   "Name")]))
-#   
-# }
-
 # Combine again
 # All_Est <- bind_rows(All_Ests_std, All_Ests_ar, All_Ests_surv) 
 All_Est <- All_Ests_std
@@ -626,20 +584,6 @@ nLL_std <- data.frame(nLL_std=obj$report()$nLL_std) %>%
   add_column(Stocknumber=SRDat_std$Stocknumber) %>% group_by(Stocknumber) %>% 
   summarize(CnLL=sum(nLL_std))
 aic_std <- nLL_std %>% mutate(aic = 2 * 3 + 2*CnLL) 
-
-# Commented out for testing
-# if (mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_Constm"|
-#     mod=="IWAM_FixedSep_Constyi"|mod=="Ricker_AllMod"){
-#   nLL_ar <- data.frame(nLL_ar=obj$report()$nLL_ar) %>% 
-#     add_column(Stocknumber=SRDat_ar$Stocknumber) %>% group_by(Stocknumber) %>% 
-#     summarize(CnLL=sum(nLL_ar))
-#   aic_ar <- nLL_ar %>% mutate(aic = 2 * 4 + 2*CnLL)
-#   nLL_surv <- data.frame(nLL_surv=obj$report()$nLL_surv) %>% 
-#     add_column(Stocknumber=SRDat_surv$Stocknumber) %>% group_by(Stocknumber) %>% 
-#     summarize(CnLL=sum(nLL_surv))
-#   aic_surv <- nLL_surv %>% mutate(aic = 2 * 4 + 2*CnLL)
-#   
-# }
 
 # Get predicted values and calculate r2
 Pred_std <- data.frame()
@@ -666,10 +610,7 @@ PredlnSREP <- All_Ests %>% filter (Param %in% c("PredlnSREP_S", "PredlnSREP_O", 
 
 # Calculate standardized residuals
   # These are RE-SCALED values
-# if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|
-#     mod=="Liermann_HalfNormRicVar_FixedDelta"){
 SRes <- Preds_std %>% arrange (Stocknumber)
-# }
 
 SRes <- SRes %>% mutate ( Res = ObsLogRS- Pred) #%>% mutate (StdRes = Res/??)
 sigma <- All_Est %>% filter(Param=="logSigma") %>% dplyr::select(Stocknumber, Estimate, Name)
@@ -683,16 +624,15 @@ SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 plot <- TRUE
 # Plotted values are RE-SCALED either by plotting function or are already
   # scaled e.g., "SRes"
+
+# Tor: testing removal of stksNum_ar and stksNum_surv from original call
+  # DONE
 if (plot==TRUE){
   png(paste("DataOut/SR_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
-  PlotSRCurve(SRDat=SRDat_std, All_Est=All_Est, stksNum_ar=stksNum_ar, 
-              # removed SMSY_std=SMSY_std
-              stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit, mod=mod)
+  PlotSRCurve(SRDat=SRDat_std, All_Est=All_Est, r2=r2, removeSkagit=removeSkagit, mod=mod)
   dev.off()
   png(paste("DataOut/SRLin_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
-  PlotSRLinear(SRDat=SRDat_std, All_Est=All_Est, stksNum_ar=stksNum_ar,
-              # removed SMSY_std=SMSY_std
-               stksNum_surv=stksNum_surv, r2=r2, removeSkagit=removeSkagit) 
+  PlotSRLinear(SRDat=SRDat_std, All_Est=All_Est, r2=r2, removeSkagit=removeSkagit)
   dev.off()
   png(paste("DataOut/StdResid_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   PlotStdResid(SRes)
@@ -700,10 +640,8 @@ if (plot==TRUE){
   png(paste("DataOut/ACF_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   Plotacf(SRes)
   dev.off()
-  
+
 }
-# plot <- TRUE
-# SMSY_std not found
 
 
 #### * Plot WA Regression ------------------------------------------------------
@@ -712,12 +650,6 @@ if (plot==TRUE){
 if(plot==TRUE){
   png(paste("DataOut/WAregSMSY_", mod, "_wBC.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
-  #if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  #if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  #if (mod=="IWAM_FixedSep_RicStd") title_plot <- "Separate life-histories: all Std Ricker\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  #if (mod=="IWAM_FixedSep_Constm") title_plot <- "Separate life-histories\n Fixed-effect yi (logDelta1), \nConstant Fixed-effect slope (Delta2)"
-  #if (mod=="IWAM_FixedSep_Constyi") title_plot <- "Separate life-histories\n Constant Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  #if (mod=="Liermann") title_plot <- "Separate life-histories: Random Ricker a\n Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   if (mod=="Liermann_PriorRicSig_PriorDeltaSig") title_plot <- "Prior Ricker sigma and prior WA regression sigma"
   #if (mod=="Liermann_HalfNormRicVar_FixedDelta") title_plot <- "Half-normal Ricker sigma and fixed WA regression sigma"
   #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -728,12 +660,6 @@ if(plot==TRUE){
   png(paste("DataOut/WAregSREP_", mod, "_wBC.png", sep=""), width=7, height=7, units="in", res=500)
   #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
-  #if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  #if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  #if (mod=="IWAM_FixedSep_RicStd") title_plot <- "Separate life-histories: all Std Ricker\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  #if (mod=="IWAM_FixedSep_Constm") title_plot <- "Separate life-histories\n Fixed-effect yi (logDelta1), \nConstant Fixed-effect slope (Delta2)"
-  #if (mod=="IWAM_FixedSep_Constyi") title_plot <- "Separate life-histories\n Constant Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
-  #if (mod=="Liermann") title_plot <- "Separate life-histories: Random Ricker a\n Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   if (mod=="Liermann_PriorRicSig_PriorDeltaSig") title_plot <- "Prior Ricker sigmas and prior on WA regression sigma"
   #if (mod=="Liermann_HalfNormRicVar_FixedDelta") title_plot <- "Half-normal Ricker sigma and fixed WA regression sigma"
   #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"

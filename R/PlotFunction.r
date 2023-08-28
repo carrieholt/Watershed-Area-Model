@@ -22,7 +22,7 @@ t_col <- function(color, percent = 50, name = NULL) {
 
 # Plot SR curves
 
-PlotSRCurve <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar, stksNum_surv, stks_surv, r2, removeSkagit, mod) {
+PlotSRCurve <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar=NULL, stksNum_surv=NULL, stks_surv, r2, removeSkagit, mod) {
   Stks <- unique(SRDat$Stocknumber)
   NStks <- length(Stks)
   par(mfrow=c(5,5), mar=c(2, 2, 1, 0.1) + 0.1)
@@ -84,10 +84,13 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar, stksNum_surv,
       }
     } 
     
-    if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
-    if (i %in% stksNum_ar) col.use <- "red"
-    if (i %in% stksNum_surv) col.use <- "blue"
-    if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") col.use <- "black"
+
+    # if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
+    # if (i %in% stksNum_ar) col.use <- "red"
+    # if (i %in% stksNum_surv) col.use <- "blue"
+    # if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") 
+    col.use <- "black"
+      # removed above give only one mod usage and no more _ar or _surv model order usage
     lines(x=SS, y=RR, col=col.use) 
     
     #For Skagit, add Parken et al. 2006 model curve
@@ -139,7 +142,7 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar, stksNum_surv,
 
 # Plot SR linearized model
 
-PlotSRLinear <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar, stksNum_surv, r2, removeSkagit) {
+PlotSRLinear <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar=NULL, stksNum_surv=NULL, r2, removeSkagit) {
   Stks <- unique(SRDat$Stocknumber)
   NStks <- length(Stks)
   par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
@@ -179,10 +182,13 @@ PlotSRLinear <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar, stksNum_surv
       }
     }
     
-    if (i %in% stksNum_ar) col.use <- "red"
-    if (i %in% stksNum_surv) col.use <- "blue"
-    if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
-    if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") col.use <- "black"
+
+    # if (i %in% stksNum_ar) col.use <- "red"
+    # if (i %in% stksNum_surv) col.use <- "blue"
+    # if (i %not in% c(stksNum_ar, stksNum_surv)) col.use <- "black"
+    # if (mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") 
+    col.use <- "black"
+      # removed above give only one mod usage and no more _ar or _surv model order usage
     
     abline(a=LogA, b=-B, col=col.use)
     

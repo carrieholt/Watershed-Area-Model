@@ -256,24 +256,28 @@ SRDat_Scale <- SRDat_Scale$Scale
 # If using any of the below mods:
   # overwrite SRDat_std with the main df SRDat
   # Othewise, use standard Ricker model
-SRDat_std <- SRDat
+# SRDat_std <- SRDat
+  # Now can remove all _std from SRDat?
 
 # Assign new stock numbers to each stock so that they are sequential within each 
   # model form. These are used in TMB When only one model form is use (std Ricker)
   # then ind_std = Stocknumber
-ind_std <- tibble(ind_std= 0:(length(unique(SRDat_std$Name))-1))
-ind_std <- add_column(ind_std, Stocknumber = (unique(SRDat_std$Stocknumber)))
-SRDat_std <- SRDat_std %>% left_join(ind_std)
+# ind_std <- tibble(ind_std= 0:(length(unique(SRDat_std$Name))-1))
+# ind_std <- add_column(ind_std, Stocknumber = (unique(SRDat_std$Stocknumber)))
+  # this is just two columns with the same numbers?
+# SRDat_std <- SRDat_std %>% left_join(ind_std)
+  # ind_std is now a duplicate column of stock numbers
 
 # Remove years 1981-1984, 1986-1987  from Cowichan (Stocknumber 23) as per 
   # Tompkins et al. 2005
-SRDat_Cow <- SRDat_std %>% filter(Name == "Cowichan" & Yr >= 1985 & Yr !=1986 & Yr != 1987) # length = 10
+SRDat_Cow <- SRDat %>% filter(Name == "Cowichan" & Yr >= 1985 & Yr !=1986 & Yr != 1987) # length = 10
 n_Cow <- length(SRDat_Cow$Yr)
   #SRDat_Cow$yr_num <- 0:(n_surv_Cow-1) #n_surv_Cow can most likely be exchanged for n_Cow
 SRDat_Cow$yr_num <- 0:(n_Cow-1)
-SRDat_std <- SRDat_std %>%  filter(Name != "Cowichan") %>% bind_rows(SRDat_Cow) %>%
-    arrange(ind_std) 
-# }
+SRDat <- SRDat %>%  filter(Name != "Cowichan") %>% bind_rows(SRDat_Cow) %>%
+    # arrange(ind_std) 
+    arrange(Stocknumber)
+  # changed from arrange(ind_std) to arrange(Stocknumber)
 
 
 # * Read in watershed area data and life-history type --------------------------
@@ -315,14 +319,16 @@ TMB_Inputs <- list(rho_Start = 0.0, logDelta1_start=3.00, logDelta2_start =log(0
 
 # Data 
 data <- list()
-Scale_std <- SRDat_std$Scale # Scale enters the TMB data
-data$S_std <- SRDat_std$Sp/Scale_std # Spawners / scale - check Scale calculation
+Scale_std <- SRDat$Scale # Scale enters the TMB data
+data$S_std <- SRDat$Sp/Scale_std # Spawners / scale - check Scale calculation
   # This S_std is not used again in this code
-data$logRS_std <- log( (SRDat_std$Rec/Scale_std) / (SRDat_std$Sp/Scale_std) )
+data$logRS_std <- log( (SRDat$Rec/Scale_std) / (SRDat$Sp/Scale_std) )
   # logged: scaled recruits / scaled spawners
-data$stk_std <- as.numeric(SRDat_std$ind_std) # 
-N_Stocks_std <- length(unique(SRDat_std$Name))
-data$yr_std <- SRDat_std$yr_num
+# data$stk_std <- as.numeric(SRDat$ind_std)
+data$stk_std <- as.numeric(SRDat$Stocknumber) # ind_std and Stocknumber are the same
+
+N_Stocks_std <- length(unique(SRDat$Name))
+data$yr_std <- SRDat$yr_num
 
 # Final remaining if statement for mods
 # if (mod=="Liermann_PriorRicSig_PriorDeltaSig"){
@@ -422,11 +428,11 @@ Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>%
 
 
 # Parameters for stocks without AR1
-param$logA_std <- ( SRDat_std %>% group_by (Stocknumber) %>% 
+param$logA_std <- ( SRDat %>% group_by (Stocknumber) %>% 
                       summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
   # SRDat_std: Rec and Sp are not scaled
 
-B_std <- SRDat_std %>% group_by(Stocknumber) %>% 
+B_std <- SRDat %>% group_by(Stocknumber) %>% 
   summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
   # *Tor* why the negative here?
 
@@ -547,9 +553,9 @@ All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))
 All_Ests_std <- data.frame()
 All_Ests_std <- All_Ests %>% filter (Param %in% c("logA_std", "logB_std", "logSigma_std",  
                                                   "SMSY_std", "SREP_std"))
-SN_std <- unique(SRDat_std[, c("Stocknumber")])
+SN_std <- unique(SRDat[, c("Stocknumber")])
 All_Ests_std$Stocknumber <- rep(SN_std)
-All_Ests_std <- left_join(All_Ests_std, unique(SRDat_std[, c("Stocknumber", "Name")]))
+All_Ests_std <- left_join(All_Ests_std, unique(SRDat[, c("Stocknumber", "Name")]))
 
 logDeltaSigma <- All_Ests %>% filter (Param %in% c("logDeltaSigma")) 
 DeltaSigmaUCL <- exp(logDeltaSigma$Estimate + logDeltaSigma$Std..Error*1.96)
@@ -581,14 +587,14 @@ All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_
 # Calculate AIC
   # No RE-SCALING
 nLL_std <- data.frame(nLL_std=obj$report()$nLL_std) %>% 
-  add_column(Stocknumber=SRDat_std$Stocknumber) %>% group_by(Stocknumber) %>% 
+  add_column(Stocknumber=SRDat$Stocknumber) %>% group_by(Stocknumber) %>% 
   summarize(CnLL=sum(nLL_std))
 aic_std <- nLL_std %>% mutate(aic = 2 * 3 + 2*CnLL) 
 
 # Get predicted values and calculate r2
 Pred_std <- data.frame()
 Pred_std <- All_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
-Preds_std <- SRDat_std %>% dplyr::select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% 
+Preds_std <- SRDat %>% dplyr::select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% 
   add_column(Pred=Pred_std$Estimate)
 # mutate the predicted values with Scale 
   # RE-SCALED VALUES
@@ -629,10 +635,10 @@ plot <- TRUE
   # DONE
 if (plot==TRUE){
   png(paste("DataOut/SR_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
-  PlotSRCurve(SRDat=SRDat_std, All_Est=All_Est, r2=r2, removeSkagit=removeSkagit, mod=mod)
+  PlotSRCurve(SRDat=SRDat, All_Est=All_Est, r2=r2, removeSkagit=removeSkagit, mod=mod)
   dev.off()
   png(paste("DataOut/SRLin_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
-  PlotSRLinear(SRDat=SRDat_std, All_Est=All_Est, r2=r2, removeSkagit=removeSkagit)
+  PlotSRLinear(SRDat=SRDat, All_Est=All_Est, r2=r2, removeSkagit=removeSkagit)
   dev.off()
   png(paste("DataOut/StdResid_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   PlotStdResid(SRes)
@@ -691,9 +697,9 @@ PredlnSREP_PI$Stocknumber <- rep(SN_std)
 
 #  First need to get the scale for each stock
 Scale_PI <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
-PredlnSMSY_PI <- PredlnSMSY_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% 
+PredlnSMSY_PI <- PredlnSMSY_PI %>% left_join(unique(SRDat[, c("Stocknumber", "Name")])) %>% 
   left_join(Scale_PI)
-PredlnSREP_PI <- PredlnSREP_PI %>% left_join(unique(SRDat_std[, c("Stocknumber", "Name")])) %>% 
+PredlnSREP_PI <- PredlnSREP_PI %>% left_join(unique(SRDat[, c("Stocknumber", "Name")])) %>% 
   left_join(Scale_PI)
 
 # Then need to separate observed stream vs ocean type

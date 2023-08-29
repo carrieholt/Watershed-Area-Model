@@ -41,31 +41,22 @@ library(viridis)
 library(hrbrthemes)
 
 # Both helperFunctions and PlotSR are required to be run upon init.
-# Make sure your wd is set prior.
-# source ("R/helperFunctions.R")
 source (here::here("R/helperFunctions.R"))
   # rename to AccessoryFunctions.R
-#source ("R/PlotSR.r")
-# source ("R/PlotFunction.r")
+
 source(here::here("R/PlotFunction.R"))
-  # rename to PlotFunction.R - DONE
 
 # Consider renaming all model.R scripts to include "mod" or some
 # other suffix/prefix
 
 
-#### Call mods -----------------------------------------------------------------
+#### Opening calls -------------------------------------------------------------
 
-# mod <- "Liermann_PriorRicSig_PriorDeltaSig" 
-# Can assume that this model is being used - can take out all loops
-  # Priors on Ricker's parameters - can be stated
-  # Can take out all of the if mod loops
 # Otherwise part of the main wrapper function, best to outright state these early
 removeSkagit <- FALSE 
 remove.EnhStocks <- TRUE
 
 # This is where the original runIWAM function begins
-
 
 #### 1. Read in data -------------------------------------------------
 
@@ -73,8 +64,7 @@ remove.EnhStocks <- TRUE
   # stream num., and year num.
 # NA's are present in this sample data set and will be removed in the 
   # following sections.
-SRDatwNA <- read.csv("DataIn/SRinputfile.csv")
-  # Change to include here::here
+SRDatwNA <- read.csv(here::here("DataIn/SRinputfile.csv"))
 
 
 # * Data Removals and Cleaning ----
@@ -287,37 +277,30 @@ WA <- read.csv("DataIn/WatershedArea.csv")
 # Create a df of names and corresponding stock numbers to use in joining
 names <- SRDat %>% dplyr::select (Stocknumber, Name) %>% distinct()
 
-# WA <- WA %>% full_join(names, by="Name") %>% full_join (stksOrder, by="Stocknumber") %>% 
-#     arrange(Stocknumber)
-# }
-# Tor: test_WA - removed pipe for full_join by stksOrder
 WA <- WA %>% full_join(names, by="Name") %>% arrange(Stocknumber)
   # Only difference between WA and test_WA is the ModelOrder
   # Checking now for ModelOrder future usage
     # Previously used under the section: Additional code; not currently needed
   # Final decision: Tor: Removal
 
-
-
-# 
 if (removeSkagit==TRUE) {WA <- WA %>% filter(Name !="Skagit")}
-#
+
 Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% 
   summarize(lh=max(Stream)) %>% arrange (Stocknumber)
-#
-# Stream <- Stream %>% full_join(stksOrder, by="Stocknumber") %>% arrange(ModelOrder)
 # Stream <- Stream  %>% arrange(Stocknumber) # Added to above code in single pipe for cleanliness
 
 
 #### 2. Create data and parameter lists for TMB --------------------------------
 
 # Only rho_Start used. Disregard other TMB_Input
-TMB_Inputs <- list(rho_Start = 0.0, logDelta1_start=3.00, logDelta2_start =log(0.72), 
-                   logDeltaSigma_start = -0.412, logMuDelta1_mean= 5, logMuDelta1_sig= 10, 
-                   logMuDelta2_mean=-0.5, logMuDelta2_sig= 10, Tau_Delta1_dist= 0.1, 
-                   Tau_Delta2_dist= 0.1, Tau_sigma = 0.01) 
+  # TMB_Inputs is not used anywhere in the code regarding the model
+  # Tor: Can this be deleted?
+# TMB_Inputs <- list(rho_Start = 0.0, logDelta1_start=3.00, logDelta2_start =log(0.72), 
+#                    logDeltaSigma_start = -0.412, logMuDelta1_mean= 5, logMuDelta1_sig= 10, 
+#                    logMuDelta2_mean=-0.5, logMuDelta2_sig= 10, Tau_Delta1_dist= 0.1, 
+#                    Tau_Delta2_dist= 0.1, Tau_sigma = 0.01)
 
-# Data 
+# Data list
 data <- list()
 Scale_std <- SRDat$Scale # Scale enters the TMB data
 data$S_std <- SRDat$Sp/Scale_std # Spawners / scale - check Scale calculation
@@ -326,34 +309,33 @@ data$logRS_std <- log( (SRDat$Rec/Scale_std) / (SRDat$Sp/Scale_std) )
   # logged: scaled recruits / scaled spawners
 # data$stk_std <- as.numeric(SRDat$ind_std)
 data$stk_std <- as.numeric(SRDat$Stocknumber) # ind_std and Stocknumber are the same
-
 N_Stocks_std <- length(unique(SRDat$Name))
 data$yr_std <- SRDat$yr_num
 
 # Final remaining if statement for mods
-# if (mod=="Liermann_PriorRicSig_PriorDeltaSig"){
 data$logMuAs_mean <- 1.5
 data$logMuAs_sig <- 2
-data$logMuAo_mean <- 0#1.5
+data$logMuAo_mean <- 0 #1.5
 data$logMuAo_sig <- 2
-data$HalfNormMean <- 0#TMB_Inputs$Tau_sigma
-data$HalfNormSig <- 1#TMB_Inputs$Tau_sigma
-data$HalfNormMeanA <- 0#0.44#TMB_Inputs$Tau_sigma
-data$HalfNormSigA <- 1#0.5#TMB_Inputs$Tau_sigma
+data$HalfNormMean <- 0 #TMB_Inputs$Tau_sigma
+data$HalfNormSig <- 1 #TMB_Inputs$Tau_sigma
+data$HalfNormMeanA <- 0 #0.44 #TMB_Inputs$Tau_sigma
+data$HalfNormSigA <- 1 #0.5 #TMB_Inputs$Tau_sigma
 data$SigRicPriorNorm <- as.numeric(F)
 data$SigRicPriorGamma <- as.numeric(T)
 data$SigRicPriorCauchy <- as.numeric(F)
 data$biasCor <- as.numeric(TRUE)
 data$Tau_dist <- 0.1
   
-data$sigDelta_mean <- 0.80# See KFrun.R, #For half-normal use N(0,1)
-data$sigDelta_sig <- 0.28# See KFrun.R,
-data$sigNu_mean <- 0.84# See KFrun.R,
-data$sigNu_sig <- 0.275# See KFrun.R,
+data$sigDelta_mean <- 0.80 # See KFrun.R, #For half-normal use N(0,1)
+data$sigDelta_sig <- 0.28 # See KFrun.R,
+data$sigNu_mean <- 0.84 # See KFrun.R,
+data$sigNu_sig <- 0.275 # See KFrun.R,
 data$SigDeltaPriorNorm <- as.numeric(F)
 data$SigDeltaPriorGamma <- as.numeric(T)
 data$SigDeltaPriorCauchy <- as.numeric(F)
 data$Tau_D_dist <- 1
+
 data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>%
   filter(lh==1) %>% pull(lnWA)
   # Add aggregated WAs at inlet level
@@ -377,23 +359,12 @@ if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnW
                                            CUlnWAnoEnh$CUlnWA)
 if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
                                             CUlnWA$CUlnWA )
-  
-  ## Code for using Parken et al. test stocks:
-  # data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>%
-  # filter(lh==0) %>% pull(lnWA)
-  # data$TestlnWAo <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>%
-  # filter(lh==1) %>% pull(lnWA)
-  
-  
-# }
 
 # Read in wateshed area data and life-history type and scale
 data$WA <- WA$WA
 data$Stream <- Stream$lh
 data$Scale <- SRDat_Scale #ordered by std, AR1, surv, if all 3 Ricker models uses. 
 # Otherwise ordered by Stocknumber
-# if (mod=="IWAM_FixedSep") data$order_noChick <- c(0:23)##c(0:15,19)#, 17:23)
-
 
 # Read in log(watershed area) for additional stocks
 # Predicated lnWA for plottig CIs:
@@ -402,30 +373,13 @@ data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1)
 # Parameters
 param <- list()
 
-# Below is over-written by the loop ~ line 384
-# Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% 
-#                       filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) %>% 
-#                       summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
+Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% 
+  summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
   # SRDat - main data
   # Groupby Stock Number
   # Filter for specific Stocks
   # summarize into new df the max Scale
     # Scale has always been max per Stock
-
-# *Tor* Commented out stock_ar and stock_surv Scale as I don't believe they are 
-  # necessary
-# Scale.stock_ar <- (SRDat %>% group_by(Stocknumber) %>%
-#                      filter(Stocknumber %in% stksNum_ar) %>%
-#                      summarize(Scale.stock_ar = max(Scale)))$Scale.stock_ar
-
-# Scale.stock_surv <- (SRDat %>% group_by(Stocknumber) %>%
-#                        filter(Stocknumber %in% stksNum_surv) %>%
-#                        summarize(Scale.stock_surv = max(Scale)))$Scale.stock_surv
-
-# REWORKS THE ABOVE
-Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% 
-  summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
-
 
 # Parameters for stocks without AR1
 param$logA_std <- ( SRDat %>% group_by (Stocknumber) %>% 
@@ -448,80 +402,48 @@ param$logMuAs <- 1.5
 param$logMuAo <- 0#1.5
 param$logSigmaA <- -2#5
   #param$logSigmaAo <- 1
-  
-# }
 
 ## Separate Stream and Ocean type models
-#param$slogDelta1 <- 2.744 #best estimates from run of stream-specific WAreg TMB
+#param$slogDelta1 <- 2.744 # best estimates from run of stream-specific WAreg TMB
 #param$sDelta2 <- 0.857 
 #param$slogDeltaSigma <- -0.709 
 
-#param$ologDelta1 <- 3.00#1.519 #best estimates from run of ocean-specific WAreg TMB 
-#param$ologDelta2 <- log(0.94)#0#21.2 
-#param$ologDeltaSigma <-  -0.412#-0.94 
+#param$ologDelta1 <- 3.00 # 1.519 # best estimates from run of ocean-specific WAreg TMB 
+#param$ologDelta2 <- log(0.94) # 0 # 21.2 
+#param$ologDeltaSigma <-  -0.412 #-0.94 
 
 ## Lierman model
-param$logDelta1 <- 3#10# with skagit 2.881
-param$logDelta1ocean <- 0# with skagit 2.881
-param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) 
-param$Delta2ocean <- 0#log(0.72/(1-0.72)) 
-param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
-# }
+param$logDelta1 <- 3 #10 # with skagit 2.881
+param$logDelta1ocean <- 0 # with skagit 2.881
+param$logDelta2 <- log(0.72) #log(0.72/(1-0.72)) 
+param$Delta2ocean <- 0 #log(0.72/(1-0.72)) 
+param$logDeltaSigma <- -0.412 # from Parken et al. 2006 where sig=0.662
+
 param$logNu1 <- 3#10# with skagit 2.881
 param$logNu1ocean <- 0# with skagit 2.881
 param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) 
 param$Nu2ocean <- 0#log(0.72/(1-0.72)) 
 param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.66
-# }
-
-## Hierarchcial model
-
-#param$logDelta1 <- TMB_Inputs$logDelta1_start
-#param$logDelta2 <- rep(TMB_Inputs$logDelta2_start, 2)
-#param$logDeltaSigma <-TMB_Inputs$logDeltaSigma_start 
-#param$logMuDelta1 <- TMB_Inputs$logDelta1_start
-#param$SigmaDelta1 <- 10
-#param$logMuDelta2 <- TMB_Inputs$logDelta2_start
-#param$SigmaDelta2 <- 1
 
 
 # 3. Estimate SR parameters from synoptic data set and SMSY and SREPs ----------
 
+# mod remains required for the model call to identify the correct file
+# It is easier to reduce the name anyways for ease of calling
+mod <- "Liermann_PriorRicSig_PriorDeltaSig" 
+
 # Compile model if changed:
 #dyn.unload(dynlib(paste("TMB_Files/", mod, sep="")))
 #compile(paste("TMB_Files/", mod, ".cpp", sep=""))
-mod <- "Liermann_PriorRicSig_PriorDeltaSig" 
-  # mod required for dyn.load?
 dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
 
 obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
-
-
-# For phasing, (not needed)
-# map <- list(logDelta1=factor(NA), Delta2=factor(NA), logDeltaSigma=factor(NA)) 
-# obj <- MakeADFun(data, param, DLL="Ricker_AllMod", silent=TRUE, map=map)
 
 upper<-unlist(obj$par)
 upper[1:length(upper)]<- Inf
 
 lower<-unlist(obj$par)
 lower[1:length(lower)]<- -Inf
-
-# if(mod=="Liermann_PriorRicSig_PriorDeltaSig"){
-#   if(data$SigDeltaPriorNorm == 1){
-#     upper[names(upper) == "logDeltaSigma"] <- log(1.39) # See KFrun.R, "SDlSMSYParken"
-#     upper[names(upper) == "logNuSigma"] <- log(1.38)# See KFrun.R, "SDlSREPParken"
-#     lower[names(lower) == "logDeltaSigma"] <- log(0.21) # See KFrun.R, "medSDlogSmsy"
-#     lower[names(lower) == "logNuSigma"] <- log(0.29) # See KFrun.R, "medSDlogSrep"
-#   }
-# }
-# Don't need this any more - setting limits on the parameters
-
-# ## For uniform priors on Ricker var (set all Ricker Sig priors above to F)
-# upper[names(upper) == "logSigma_std"] <- log(2) 
-# lower[names(lower) == "logSigma_std"] <- log(0) #Inf!
-# upper[names(upper) == "logSigmaA"] <- log(2) 
-# lower[names(lower) == "logSigmaA"] <- log(0) #Inf!
 
 
 #### RUN THE MODEL ---------------------------------------------------------
@@ -561,10 +483,6 @@ logDeltaSigma <- All_Ests %>% filter (Param %in% c("logDeltaSigma"))
 DeltaSigmaUCL <- exp(logDeltaSigma$Estimate + logDeltaSigma$Std..Error*1.96)
 DeltaSigmaLCL <- exp(logDeltaSigma$Estimate - logDeltaSigma$Std..Error*1.96) 
 DeltaSigma <- exp(logDeltaSigma$Estimate)
-
-# *Tor* Are these df's needed?
-# All_Ests_ar <- data.frame()
-# All_Ests_surv <- data.frame()
 
 # Combine again
 # All_Est <- bind_rows(All_Ests_std, All_Ests_ar, All_Ests_surv) 
@@ -646,7 +564,6 @@ if (plot==TRUE){
   png(paste("DataOut/ACF_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   Plotacf(SRes)
   dev.off()
-
 }
 
 
@@ -656,7 +573,7 @@ if (plot==TRUE){
 if(plot==TRUE){
   png(paste("DataOut/WAregSMSY_", mod, "_wBC.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
-  if (mod=="Liermann_PriorRicSig_PriorDeltaSig") title_plot <- "Prior Ricker sigma and prior WA regression sigma"
+  title_plot <- "Prior Ricker sigma and prior WA regression sigma"
   #if (mod=="Liermann_HalfNormRicVar_FixedDelta") title_plot <- "Half-normal Ricker sigma and fixed WA regression sigma"
   #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   plotWAregressionSMSY (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, 
@@ -666,7 +583,7 @@ if(plot==TRUE){
   png(paste("DataOut/WAregSREP_", mod, "_wBC.png", sep=""), width=7, height=7, units="in", res=500)
   #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
-  if (mod=="Liermann_PriorRicSig_PriorDeltaSig") title_plot <- "Prior Ricker sigmas and prior on WA regression sigma"
+  title_plot <- "Prior Ricker sigmas and prior on WA regression sigma"
   #if (mod=="Liermann_HalfNormRicVar_FixedDelta") title_plot <- "Half-normal Ricker sigma and fixed WA regression sigma"
   #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   plotWAregressionSREP (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSREP, 
@@ -674,7 +591,6 @@ if(plot==TRUE){
   dev.off()
   #plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, 
   # title1="Common, fixed yi (logDelta1), \nRandom slope (Delta2)")
-  
 }
 
 
@@ -732,7 +648,7 @@ WAs <- WA %>% left_join(Stream) %>% filter(lh == 0) %>% pull(WA)
 WAo <- WA %>% left_join(Stream) %>% filter(lh == 1) %>% pull(WA)
 
 # Get names of WCVI stocks
-sn <- read.csv("DataIn/WCVIStocks.csv")
+sn <- read.csv(here::here("DataIn/WCVIStocks.csv"))
 StockNames <- c(as.vector(sn$Stock), as.vector(InletlnWA$Inlet), as.vector(CUlnWA$CU))
 
 # Get Predicted SMSY and SREP values for new "test" WCVI stocks and their Prediction Intervals
@@ -768,9 +684,6 @@ WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
 # Write SMSY and SREP with PIs to file
 if(remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh_wBC.csv")
 if(!remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh_wBC.csv")
-
-# }
-
 
 #### End -------------------------------------------------
 # This is the end of the original runIWAM() function

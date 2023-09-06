@@ -21,11 +21,6 @@
 # This reduced code snippet has removed the main wrapper function, please
 # refer to IWAM.R for the original complete code repository
 
-#### Set Working Directory -----------------------------------------------------
-
-# Tor's Home Computer
-# setwd("~/GitHub/Watershed-Area-Model")
-# No longer used under here::here conventions
 
 #### Libraries -----------------------------------------------------------------
 
@@ -42,34 +37,28 @@ library(hrbrthemes)
 
 # Both helperFunctions and PlotSR are required to be run upon init.
 source (here::here("R/helperFunctions.R"))
-  # rename to AccessoryFunctions.R
-
 source(here::here("R/PlotFunction.R"))
-
 # Consider renaming all model.R scripts to include "mod" or some
-# other suffix/prefix
+  # other suffix/prefix
 
 
-#### Opening calls -------------------------------------------------------------
+#### Remaining wrapper function objects ----------------------------------------
 
-# Otherwise part of the main wrapper function, best to outright state these early
-removeSkagit <- FALSE 
+# Originally part of the main wrapper function stated outright
+removeSkagit <- FALSE
 remove.EnhStocks <- TRUE
-
-# This is where the original runIWAM function begins
 
 #### 1. Read in data -------------------------------------------------
 
-# Our test data includes: Stock name, stock number, year, spawners, recruits, 
-  # stream num., and year num.
+# Our data includes: Stock name, stock number, year, spawners, recruits, 
+# stream num., and year num.
 # NA's are present in this sample data set and will be removed in the 
-  # following sections.
+# following sections.
 SRDatwNA <- read.csv(here::here("DataIn/SRinputfile.csv"))
 
 
 # * Data Removals and Cleaning ----
 # First, remove any unused stocks using filter()
-
 # For e.g., two stocks not used in Parken et al, and not documented in Liermann
 SRDatwNA <- SRDatwNA %>% filter(Name != "Hoko" & Name != "Hoh") 
 
@@ -91,7 +80,6 @@ stockwNA <- SRDatwNA %>% filter (is.na(Rec) == TRUE) %>%
 SRDat <- SRDatwNA %>% filter(Rec != "NA") 
 
 # Revise yr_num list where NAs have been removed to be continuous
-  # yr_num is used as a method for indexing within [**INSERT**]
 # Create a test df to check the order of stock numbers by yr_num
   # Within the subset of stocks with NA's identified earlier as stocks 20 and 21
   # test_1 is not a required object for the model. It is only for checking
@@ -113,102 +101,44 @@ if( max(SRDat$Stocknumber) >= stockwNA[1]) { # if the max stock number (24)
 # Check for the correction to yr_num - wanted to have the time series - 
 # consistent = re-indexing the stocks - so that there are 
 # no gaps in the. E.g. 0, 1, 2, 3, remove 2 - 0, 1, 3 (now has a break-point)
-# test_2 is not a required object for the model. It is only for checking
+# test_2 is not a required object for the model
 test_2 <- SRDat %>% filter(Stocknumber == stockwNA[1]| Stocknumber == stockwNA[2])
 
-# Future update: mask or simulate NAN's in future - COSEWIC example
+# **Future update: mask or simulate NAN's in future - COSEWIC example
 
 
 # * Scale Calculation ----------------------------------------------------------
-
-# *Tor*:
-  # Scaling in this manner has the following problems:
-    # 1. It is skewed in the presence of outliers.
-    # 2. It is not a form of standarization. Different stocks with the same -
-      # number of digits may vary in distribution and lead to distortion
-      # in the scaled values.
-    # 3. Dividing by base 10 may lead to a loss in information.
-  # Other options to scale - with a targeted range in mind:
-    # 1. Min-max scaling (Issues with knowing true min and max ie. clipping)
-    # 2. z-score normalization (Can affect interpretation if you want it -
-      # in the original units.)
-  # Original notes: hoping for around 1000 - 0.1 to 100 - responsible 
-    # for scaling the spawners
-
-  # New option: scale with a simple scalar across all populations
-    # Next steps:
-      # - If we go by digits, the unique options are: 6, 5, 4, 3
-      # This will mean 10^ 5, 4, 3, 2
-      # and a max range of 10^3?
+# Desired scale: 1000 - 0.1 to 100 - responsible for scaling the spawners
 # Points of scaling application and removal:
   # - This scaling is APPLIED in section 2. Create data and parameter lists
   # - This scaling is REMOVED when plotting within the plot functions defined
   # in the file PlotSR.R
-  # *Tor* I recommend we rename the PlotSR file to make sure its importance
-  # is recognized in the repository.
   # - This scaling is REMOVED for the calculation of predicted values, R2,
   # and Standard Residuals
 
 # Calculate scale for each stock as a tibble (tidyverse df)
 digits <- SRDat %>% group_by(Stocknumber) %>% 
   summarize(maxDigits = count.dig(max(Sp)))
-  # count.dig() Creates a count [numeric] of the max number of digits of spawners as 
-    # digits per stock
+  # count.dig() Creates a count [numeric] of the max number of digits 
+  # of spawners as digits per stock
   # the function count.dig() can be found in the script: helperFunctions.R
 
-# join main df with digits by Stocknumber and re-write over SRDat
+# Join main df with digits by Stocknumber and re-write over SRDat
 SRDat <- left_join(SRDat, digits)
-# mutate main df to create a new column: Scale
+# Mutate main df to create a new column: Scale
 SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1)) # Original Scale
 # SRDat <- SRDat %>% mutate(Scale = 10^4) # Alternate Scale
-  # using mutate; creates a per stock scale by taking the number of digits - 1, as
-    # the exponent on a base 10 log scale
-
-# *Tor*: Working on scale
-  # First: are we really looking to "Scale" or to "Normalize"
-  # I think our goal is to get Spawners to be gaussian, in which cause a log-
-  # transform works great
-  # Check out the three plots below:
-
-# p1 <- ggplot(SRDat, aes(Sp)) +
-#   geom_histogram() +
-#   labs(title='Raw Counts of Spawners')
-# 
-# p2 <- ggplot(SRDat, aes(Sp/Scale))+
-#   geom_histogram()+
-#   labs(title='Scaled Spawners: Sp/(Scale per stock)')
-# 
-# p3 <- ggplot(SRDat, aes(log(Sp)))+
-#   geom_histogram()+
-#   labs(title='Log(Spawners)')
-# 
-# p4 <- ggplot(SRDat, aes(Sp/10^4))+
-#   geom_histogram()+
-#   labs(title='Spawners per 10^5')
-# 
-# plot_grid(p2, p4) # grid of above plots
-# plot(p4)
-# 
-# testing <- SRDat$Sp/10^4
-# original <- SRDat$Sp/SRDat$Scale
+  # using mutate; creates a per stock scale by taking the number of digits - 1,
+  # as the exponent on a base 10 log scale
 
 
 # * Calculation of Survival Covariates -----------------------------------------
-# Pre-calculation of survival covariates 
-  # previously differentiated for standard, AR(1), survival
-# If using mod=="Liermann_PriorRicSig_PriorDeltaSig" SRDat will overwrite
-  # everything done below
 
 # Cowichan, stk-23, not included here because they are modeled as per Tompkins
   # with a survival covariate
-# Create a vector that will be used to identify stocks per model type going forward
-  # Required for distinguishing stocks when plotting SR curves
-# stksNum_ar <- c(4,5,6,10,11,16) # Ricker with a surival co-variate. 
-# stksNum_surv <- c(0,23)
-# stks_surv <- c("Harrison", "Cowichan") # Stock name
 
 # Remove Skagit
-# if (removeSkagit==TRUE) {stksNum_surv <- c(0,22)}
+if (removeSkagit==TRUE) {stksNum_surv <- c(0,22)}
   # only works if removeSkagit is found
   # Changes stksNum_surv - which is no longer used anyways
   # Once _surv is fully removed this line can be removed
@@ -234,29 +164,9 @@ SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1)) # Original Scale
   # ordered when aggregated by std, AR1, surv?
 # Produces df with two columns: stock number, and scale
 SRDat_Scale <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
-
-# Missing a loop file - check if ModelOrder is required - if so -this is where
-  # it would be missing from.
-
-SRDat_Scale <- SRDat_Scale$Scale 
 # Creates the obj. SRDat_Scale into a vector of only the scales - now
-  # ordered by stock number
-  # Not sure if ModelOrder matters in this case
-
-# If using any of the below mods:
-  # overwrite SRDat_std with the main df SRDat
-  # Othewise, use standard Ricker model
-# SRDat_std <- SRDat
-  # Now can remove all _std from SRDat?
-
-# Assign new stock numbers to each stock so that they are sequential within each 
-  # model form. These are used in TMB When only one model form is use (std Ricker)
-  # then ind_std = Stocknumber
-# ind_std <- tibble(ind_std= 0:(length(unique(SRDat_std$Name))-1))
-# ind_std <- add_column(ind_std, Stocknumber = (unique(SRDat_std$Stocknumber)))
-  # this is just two columns with the same numbers?
-# SRDat_std <- SRDat_std %>% left_join(ind_std)
-  # ind_std is now a duplicate column of stock numbers
+# ordered by stock number
+SRDat_Scale <- SRDat_Scale$Scale 
 
 # Remove years 1981-1984, 1986-1987  from Cowichan (Stocknumber 23) as per 
   # Tompkins et al. 2005
@@ -265,8 +175,7 @@ n_Cow <- length(SRDat_Cow$Yr)
   #SRDat_Cow$yr_num <- 0:(n_surv_Cow-1) #n_surv_Cow can most likely be exchanged for n_Cow
 SRDat_Cow$yr_num <- 0:(n_Cow-1)
 SRDat <- SRDat %>%  filter(Name != "Cowichan") %>% bind_rows(SRDat_Cow) %>%
-    # arrange(ind_std) 
-    arrange(Stocknumber)
+  arrange(Stocknumber)
   # changed from arrange(ind_std) to arrange(Stocknumber)
 
 
@@ -287,7 +196,6 @@ if (removeSkagit==TRUE) {WA <- WA %>% filter(Name !="Skagit")}
 
 Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% 
   summarize(lh=max(Stream)) %>% arrange (Stocknumber)
-# Stream <- Stream  %>% arrange(Stocknumber) # Added to above code in single pipe for cleanliness
 
 
 #### 2. Create data and parameter lists for TMB --------------------------------
@@ -363,8 +271,7 @@ if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
 # Read in wateshed area data and life-history type and scale
 data$WA <- WA$WA
 data$Stream <- Stream$lh
-data$Scale <- SRDat_Scale #ordered by std, AR1, surv, if all 3 Ricker models uses. 
-# Otherwise ordered by Stocknumber
+data$Scale <- SRDat_Scale # Ordered by Stocknumber
 
 # Read in log(watershed area) for additional stocks
 # Predicated lnWA for plottig CIs:
@@ -372,14 +279,6 @@ data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1)
 
 # Parameters
 param <- list()
-
-Scale.stock_std <- (SRDat %>% group_by(Stocknumber) %>% 
-  summarize(Scale.stock_std = max(Scale)))$Scale.stock_std
-  # SRDat - main data
-  # Groupby Stock Number
-  # Filter for specific Stocks
-  # summarize into new df the max Scale
-    # Scale has always been max per Stock
 
 # Parameters for stocks without AR1
 param$logA_std <- ( SRDat %>% group_by (Stocknumber) %>% 
@@ -390,7 +289,7 @@ B_std <- SRDat %>% group_by(Stocknumber) %>%
   summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
   # *Tor* why the negative here?
 
-param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock_std )) # log(B_std$m/Scale.stock)
+param$logB_std <- log ( 1/ ( (1/B_std$m)/data$Scale ))
   # *Carrie* Need to apply the scale to the inverse of Beta, and then re-invert and log it.
     # This way the initial parameter is log(Scaled beta)
   # logB is scaled
@@ -451,13 +350,6 @@ opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max =
               lower=lower, upper=upper)
 pl <- obj$env$parList(opt$par) # Gives the parameter estimates from the model
 #summary(sdreport(obj), p.value=TRUE)
-
-
-#library(tmbstan)
-# fitmcmc <- tmbstan(obj, chains=3, iter=1000, init=list(opt$par), 
-# control = list(adapt_delta = 0.95))
-# fitmcmc <- tmbstan(obj, chains=3, iter=1000, init=list("last.par.best"), 
-# control = list(adapt_delta = 0.95))
 
 
 #### 4. Compile model outputs --------------------------------------------------
@@ -531,7 +423,6 @@ PredlnSREP <- data.frame()
 PredlnSREP <- All_Ests %>% filter (Param %in% c("PredlnSREP_S", "PredlnSREP_O", "PredlnSREP_CI", 
                                                 "PredlnSREPs_CI", "PredlnSREPo_CI"))
 
-
 # Calculate standardized residuals
   # These are RE-SCALED values
 SRes <- Preds_std %>% arrange (Stocknumber)
@@ -549,8 +440,6 @@ plot <- TRUE
 # Plotted values are RE-SCALED either by plotting function or are already
   # scaled e.g., "SRes"
 
-# Tor: testing removal of stksNum_ar and stksNum_surv from original call
-  # DONE
 if (plot==TRUE){
   png(paste("DataOut/SR_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
   PlotSRCurve(SRDat=SRDat, All_Est=All_Est, r2=r2, removeSkagit=removeSkagit, mod=mod)
@@ -574,7 +463,6 @@ if(plot==TRUE){
   png(paste("DataOut/WAregSMSY_", mod, "_wBC.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   title_plot <- "Prior Ricker sigma and prior WA regression sigma"
-  #if (mod=="Liermann_HalfNormRicVar_FixedDelta") title_plot <- "Half-normal Ricker sigma and fixed WA regression sigma"
   #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   plotWAregressionSMSY (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, 
                         PredlnWA = data$PredlnWA, title1=title_plot, mod)
@@ -584,7 +472,6 @@ if(plot==TRUE){
   #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
   par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
   title_plot <- "Prior Ricker sigmas and prior on WA regression sigma"
-  #if (mod=="Liermann_HalfNormRicVar_FixedDelta") title_plot <- "Half-normal Ricker sigma and fixed WA regression sigma"
   #title_plot <- "Separate life-histories: n=17\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
   plotWAregressionSREP (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSREP, 
                         PredlnWA = data$PredlnWA, title1=title_plot, mod)

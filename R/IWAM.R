@@ -30,7 +30,7 @@ library(viridis)
 library(hrbrthemes)
 
 source ("R/helperFunctions.R")
-source ("R/PlotSR.r")
+source ("R/PlotFunctions.r")
 
 #-------------------------------------------------------------------------------
 # Function to run integrated watershed-area model

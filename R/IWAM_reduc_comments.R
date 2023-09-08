@@ -58,7 +58,6 @@ source(here::here("R/PlotFunction.R"))
 #### Remaining wrapper function objects ----------------------------------------
 
 # Originally part of the main wrapper function stated outright
-removeSkagit <- FALSE
 remove.EnhStocks <- TRUE
 
 #### 1. Read in data -------------------------------------------------
@@ -75,14 +74,6 @@ SRDatwNA <- read.csv(here::here("DataIn/SRinputfile.csv"))
 # For e.g., two stocks not used in Parken et al, and not documented in Liermann
 SRDatwNA <- SRDatwNA %>% filter(Name != "Hoko" & Name != "Hoh") 
 
-# Remove Skagit and re-align the stock numbers to be continuous post removal
-if (removeSkagit==TRUE) {
-  SRDatwNA <- SRDatwNA %>% filter(Name != "Skagit")
-  # Skagit is Stocknumber = 22. Need to re-align stock numbers of last 2 
-    # stocks: 23 & 24
-  SRDatwNA [which(SRDatwNA$Stocknumber==23),2] = 22
-  SRDatwNA [which(SRDatwNA$Stocknumber==24),2] = 23
-}
 
 # Determine Which stocks have NAs? Below filter returns only stock numbers.
 stockwNA <- SRDatwNA %>% filter (is.na(Rec) == TRUE) %>% 
@@ -150,12 +141,6 @@ SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1)) # Original Scale
 # Cowichan, stk-23, not included here because they are modeled as per Tompkins
   # with a survival covariate
 
-# Remove Skagit
-if (removeSkagit==TRUE) {stksNum_surv <- c(0,22)}
-  # only works if removeSkagit is found
-  # Changes stksNum_surv - which is no longer used anyways
-  # Once _surv is fully removed this line can be removed
-
 # Creates an object with the length of the number of stocks
 # len_stk <- length(unique(SRDat$Stocknumber))
 # Creates a vector of the stock ID's of those not included in the AR or Survival
@@ -205,7 +190,6 @@ WA <- WA %>% full_join(names, by="Name") %>% arrange(Stocknumber)
     # Previously used under the section: Additional code; not currently needed
   # Final decision: Tor: Removal
 
-if (removeSkagit==TRUE) {WA <- WA %>% filter(Name !="Skagit")}
 
 Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% 
   summarize(lh=max(Stream)) %>% arrange (Stocknumber)
@@ -325,14 +309,14 @@ param$logSigmaA <- -2#5
 #param$ologDeltaSigma <-  -0.412 #-0.94 
 
 ## Lierman model
-param$logDelta1 <- 3 #10 # with skagit 2.881
-param$logDelta1ocean <- 0 # with skagit 2.881
+param$logDelta1 <- 3 #10 #
+param$logDelta1ocean <- 0 #
 param$logDelta2 <- log(0.72) #log(0.72/(1-0.72)) 
 param$Delta2ocean <- 0 #log(0.72/(1-0.72)) 
 param$logDeltaSigma <- -0.412 # from Parken et al. 2006 where sig=0.662
 
-param$logNu1 <- 3#10# with skagit 2.881
-param$logNu1ocean <- 0# with skagit 2.881
+param$logNu1 <- 3#10#
+param$logNu1ocean <- 0# 
 param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) 
 param$Nu2ocean <- 0#log(0.72/(1-0.72)) 
 param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.66
@@ -455,10 +439,10 @@ plot <- TRUE
 
 if (plot==TRUE){
   png(paste("DataOut/SR_", mod, ".png", sep=""), width=7, height=7, units="in", res=500)
-  PlotSRCurve(SRDat=SRDat, All_Est=All_Est, r2=r2, removeSkagit=removeSkagit, mod=mod)
+  PlotSRCurve(SRDat=SRDat, All_Est=All_Est, r2=r2, removeSkagit = FALSE, mod=mod)
   dev.off()
   png(paste("DataOut/SRLin_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
-  PlotSRLinear(SRDat=SRDat, All_Est=All_Est, r2=r2, removeSkagit=removeSkagit)
+  PlotSRLinear(SRDat=SRDat, All_Est=All_Est, r2=r2, removeSkagit = FALSE)
   dev.off()
   png(paste("DataOut/StdResid_", mod, ".png", sep=""), width=7, height=7, units="in", res=1000)
   PlotStdResid(SRes)

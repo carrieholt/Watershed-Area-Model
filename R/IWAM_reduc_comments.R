@@ -1,12 +1,20 @@
 
-#### Introduction ------------------------------------------------------
+#### Introduction -------------------------------------------------------------
 
-# This version is a selective copy of IWAM_REDUC.R under work by Tor Kitching
+# This model estimates biological benchmarks for Chinook populations based on 
+# watershed area of the spawning habitat
+# The underlying model uses the relationship between watershed area and 
+# stock-recruitment parameters for a set of Chinook Populations across the NE 
+# (synoptic data set) to derive stock-recruitment parameters (and associated 
+# benchmarks) from novel populations from their watershed areas. 
+# The model is adapted from Parken et al. (2007) and Liermann et al. (2012)
+# This version is taken from IWAM.R (developed by C. Holt, adapted by T. 
+# Kitching)
 
 # Integrated Watershed Area Model
 # Steps:
 # 1. Read in stock-recruitment data, life-history type, and watershed areas
-#   for synoptic survey data, and watershed area and life-history type for 
+#   for synoptic data set, and watershed area and life-history type for 
 #   additional stocks
 # 2. Create data and parameter lists for TMB
 # 3. Run TMB model to estimate Ricker parameters and SMSY & SREP for synoptic 
@@ -18,8 +26,7 @@
 # 6. Calculate prediction intervals for SMSY and SREP estimates for additional 
 #   "test" stocks. These are written to a *.csv file
 
-# This reduced code snippet has removed the main wrapper function, please
-# refer to IWAM.R for the original complete code repository
+# This reduced code snippet has removed the main wrapper function- To be added
 
 
 #### Libraries -----------------------------------------------------------------
@@ -35,11 +42,17 @@ library(zoo)
 library(viridis)
 library(hrbrthemes)
 
-# Both helperFunctions and PlotSR are required to be run upon init.
+# Both helperFunctions and PlotFunctions are required.
+
+# Tor- based on your experience with COSEWIC R package, can we remove here::here 
+# to avoid problems when using in pkg? And in the meantime, if we're running 
+# from *.Proj files, a simple source("R/helperFunctions.R") should work.Correct?
 source (here::here("R/helperFunctions.R"))
 source(here::here("R/PlotFunction.R"))
+
 # Consider renaming all model.R scripts to include "mod" or some
   # other suffix/prefix
+# To do- rename this to IWAM_model.R and rename IWAM.R to IWAMarchived_model.R
 
 
 #### Remaining wrapper function objects ----------------------------------------

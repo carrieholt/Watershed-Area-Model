@@ -78,7 +78,6 @@ SRDatwNA <- SRDatwNA %>% filter(Name != "Hoko" & Name != "Hoh")
 # Determine Which stocks have NAs? Below filter returns only stock numbers.
 stockwNA <- SRDatwNA %>% filter (is.na(Rec) == TRUE) %>% 
   dplyr::select (Stocknumber) %>%  unique() %>% unlist() 
-# Do not use AR(1) model on  stocks with NAs, Humptulips and Queets (20 & 21)
 
 # Remove years with NAs
 SRDat <- SRDatwNA %>% filter(Rec != "NA") 
@@ -136,45 +135,20 @@ SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1)) # Original Scale
   # as the exponent on a base 10 log scale
 
 
-# * Calculation of Survival Covariates -----------------------------------------
-
-# Cowichan, stk-23, not included here because they are modeled as per Tompkins
-  # with a survival covariate
-
-# Creates an object with the length of the number of stocks
-# len_stk <- length(unique(SRDat$Stocknumber))
-# Creates a vector of the stock ID's of those not included in the AR or Survival
-  # model (_ar, and _surv)
-# stksNum_std <- which(0:(len_stk-1) %not in%c(stksNum_ar, stksNum_surv)==TRUE)-1 
-  # Assuming there are only 25 stocks (0:24 StockNumber)
-  # Required for creating the stock order object used to arrange models 
-    # when the stream and ocean life-history data is added prior to parameter
-    # creation (Section 2)
-
-# When aggregated standard, ar1, surv, "ModelOrder" is the order of stocks for 
-  # aligning with WA and life-history data
-# stksOrder <- data.frame(Stocknumber =  c(stksNum_std, stksNum_ar, stksNum_surv),
-#                         ModelOrder = 0:(len_stk-1))
-# stksOrder: is used to arrange the stocks when the stream and ocean
-  # life-history data is added into the complete df.
-
 # What is the scale of S, R, SMSY, and SREP data,
   # ordered when aggregated by std, AR1, surv?
 # Produces df with two columns: stock number, and scale
 SRDat_Scale <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
-# Creates the obj. SRDat_Scale into a vector of only the scales - now
-# ordered by stock number
+# Creates the obj. SRDat_Scale into a vector of only the scales 
 SRDat_Scale <- SRDat_Scale$Scale 
 
 # Remove years 1981-1984, 1986-1987  from Cowichan (Stocknumber 23) as per 
   # Tompkins et al. 2005
 SRDat_Cow <- SRDat %>% filter(Name == "Cowichan" & Yr >= 1985 & Yr !=1986 & Yr != 1987) # length = 10
 n_Cow <- length(SRDat_Cow$Yr)
-  #SRDat_Cow$yr_num <- 0:(n_surv_Cow-1) #n_surv_Cow can most likely be exchanged for n_Cow
 SRDat_Cow$yr_num <- 0:(n_Cow-1)
 SRDat <- SRDat %>%  filter(Name != "Cowichan") %>% bind_rows(SRDat_Cow) %>%
   arrange(Stocknumber)
-  # changed from arrange(ind_std) to arrange(Stocknumber)
 
 
 # * Read in watershed area data and life-history type --------------------------
@@ -185,25 +159,12 @@ WA <- read.csv("DataIn/WatershedArea.csv")
 names <- SRDat %>% dplyr::select (Stocknumber, Name) %>% distinct()
 
 WA <- WA %>% full_join(names, by="Name") %>% arrange(Stocknumber)
-  # Only difference between WA and test_WA is the ModelOrder
-  # Checking now for ModelOrder future usage
-    # Previously used under the section: Additional code; not currently needed
-  # Final decision: Tor: Removal
-
 
 Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% 
   summarize(lh=max(Stream)) %>% arrange (Stocknumber)
 
 
 #### 2. Create data and parameter lists for TMB --------------------------------
-
-# Only rho_Start used. Disregard other TMB_Input
-  # TMB_Inputs is not used anywhere in the code regarding the model
-  # Tor: Can this be deleted?
-# TMB_Inputs <- list(rho_Start = 0.0, logDelta1_start=3.00, logDelta2_start =log(0.72), 
-#                    logDeltaSigma_start = -0.412, logMuDelta1_mean= 5, logMuDelta1_sig= 10, 
-#                    logMuDelta2_mean=-0.5, logMuDelta2_sig= 10, Tau_Delta1_dist= 0.1, 
-#                    Tau_Delta2_dist= 0.1, Tau_sigma = 0.01)
 
 # Data list
 data <- list()

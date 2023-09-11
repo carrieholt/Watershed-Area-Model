@@ -86,14 +86,15 @@ SRDat <- SRDatwNA %>% filter(Rec != "NA")
 # Create a test df to check the order of stock numbers by yr_num
   # Within the subset of stocks with NA's identified earlier as stocks 20 and 21
   # test_1 is not a required object for the model. It is only for checking
-test_1 <- SRDat %>% filter(Stocknumber == stockwNA[1]|Stocknumber == stockwNA[2])
+test_1 <- SRDat %>% filter(Stocknumber == stockwNA[1] | 
+                             Stocknumber == stockwNA[2])
 
 # if/for loop to adjust main df (SRDat) to have a continuous year list
 if( max(SRDat$Stocknumber) >= stockwNA[1]) { # if the max stock number (24)
     # is greater or equal then the stock's identifed (20), then
-  for (i in 1:length(stockwNA)) { # for the number of stocks identifed with NAs (2)
-    len <- length (SRDat [which (SRDat$Stocknumber == stockwNA[i]), ]$yr_num) - 1
-      # create a single value object based on the length of:
+  for (i in 1:length(stockwNA)) { # for  stocks identified with NAs (2)
+    len <- length (SRDat[which (SRDat$Stocknumber == stockwNA[i]), ]$yr_num) - 1
+      # Create a single value object based on the length of:
       # the number of year's - 1
     SRDat [which (SRDat$Stocknumber == stockwNA[i]), ]$yr_num <- c (0:len)
       # re-write the year numbering for  SRDat for the selected stock for a new
@@ -105,7 +106,8 @@ if( max(SRDat$Stocknumber) >= stockwNA[1]) { # if the max stock number (24)
 # consistent = re-indexing the stocks - so that there are 
 # no gaps in the. E.g. 0, 1, 2, 3, remove 2 - 0, 1, 3 (now has a break-point)
 # test_2 is not a required object for the model
-test_2 <- SRDat %>% filter(Stocknumber == stockwNA[1]| Stocknumber == stockwNA[2])
+test_2 <- SRDat %>% filter(Stocknumber == stockwNA[1] | 
+                             Stocknumber == stockwNA[2])
 
 # **Future update: mask or simulate NAN's in future - COSEWIC example
 
@@ -136,7 +138,6 @@ SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1)) # Original Scale
 
 
 # What is the scale of S, R, SMSY, and SREP data,
-  # ordered when aggregated by std, AR1, surv?
 # Produces df with two columns: stock number, and scale
 SRDat_Scale <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
 # Creates the obj. SRDat_Scale into a vector of only the scales 
@@ -144,7 +145,10 @@ SRDat_Scale <- SRDat_Scale$Scale
 
 # Remove years 1981-1984, 1986-1987  from Cowichan (Stocknumber 23) as per 
   # Tompkins et al. 2005
-SRDat_Cow <- SRDat %>% filter(Name == "Cowichan" & Yr >= 1985 & Yr !=1986 & Yr != 1987) # length = 10
+SRDat_Cow <- SRDat %>% filter(Name == "Cowichan" & 
+                                Yr >= 1985 & 
+                                Yr !=1986 & 
+                                Yr != 1987) # length = 10
 n_Cow <- length(SRDat_Cow$Yr)
 SRDat_Cow$yr_num <- 0:(n_Cow-1)
 SRDat <- SRDat %>%  filter(Name != "Cowichan") %>% bind_rows(SRDat_Cow) %>%
@@ -160,8 +164,10 @@ names <- SRDat %>% dplyr::select (Stocknumber, Name) %>% distinct()
 
 WA <- WA %>% full_join(names, by="Name") %>% arrange(Stocknumber)
 
-Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>% group_by(Stocknumber) %>% 
-  summarize(lh=max(Stream)) %>% arrange (Stocknumber)
+Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>% 
+  group_by(Stocknumber) %>% 
+  summarize(lh=max(Stream)) %>% 
+  arrange (Stocknumber)
 
 
 #### 2. Create data and parameter lists for TMB --------------------------------
@@ -169,12 +175,10 @@ Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>% group_by(Stockn
 # Data list
 data <- list()
 Scale_std <- SRDat$Scale # Scale enters the TMB data
-data$S_std <- SRDat$Sp/Scale_std # Spawners / scale - check Scale calculation
-  # This S_std is not used again in this code
-data$logRS_std <- log( (SRDat$Rec/Scale_std) / (SRDat$Sp/Scale_std) )
+data$S_std <- SRDat$Sp/Scale_std # Spawners / scale 
+data$logRS_std <- log( (SRDat$Rec/SRDat$Scale) / (SRDat$Sp/SRDat$Scale) )
   # logged: scaled recruits / scaled spawners
-# data$stk_std <- as.numeric(SRDat$ind_std)
-data$stk_std <- as.numeric(SRDat$Stocknumber) # ind_std and Stocknumber are the same
+data$stk_std <- as.numeric(SRDat$Stocknumber) 
 N_Stocks_std <- length(unique(SRDat$Name))
 data$yr_std <- SRDat$yr_num
 
@@ -202,9 +206,11 @@ data$SigDeltaPriorGamma <- as.numeric(T)
 data$SigDeltaPriorCauchy <- as.numeric(F)
 data$Tau_D_dist <- 1
 
-data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>%
-  filter(lh==1) %>% pull(lnWA)
-  # Add aggregated WAs at inlet level
+data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% 
+  mutate (lnWA=log(WA)) %>%
+  filter(lh==1) %>% 
+  pull(lnWA)
+# Add aggregated WAs at inlet level
 InletlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
   filter(Stock != "Cypre") %>% group_by(Inlet) %>%
   summarize(InletlnWA = log(sum(WA))) %>% filter(Inlet != "San Juan") %>%
@@ -221,18 +227,20 @@ CUlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>%
   filter(Stock != "Cypre") %>% filter(Enh==0) %>%
   group_by(CU) %>% summarize(CUlnWA = log(sum(WA)))
 
-if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA,
+if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, 
+                                         InletlnWAnoEnh$InletlnWA,
                                            CUlnWAnoEnh$CUlnWA)
-if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
+if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, 
+                                          InletlnWA$InletlnWA,
                                             CUlnWA$CUlnWA )
 
-# Read in wateshed area data and life-history type and scale
+# Read in watershed area data and life-history type and scale
 data$WA <- WA$WA
 data$Stream <- Stream$lh
 data$Scale <- SRDat_Scale # Ordered by Stocknumber
 
 # Read in log(watershed area) for additional stocks
-# Predicated lnWA for plottig CIs:
+# Predicted lnWA for plottig CIs:
 data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1)
 
 # Parameters
@@ -248,38 +256,27 @@ B_std <- SRDat %>% group_by(Stocknumber) %>%
   # *Tor* why the negative here?
 
 param$logB_std <- log ( 1/ ( (1/B_std$m)/data$Scale ))
-  # *Carrie* Need to apply the scale to the inverse of Beta, and then re-invert and log it.
-    # This way the initial parameter is log(Scaled beta)
+  # *Carrie* Need to apply the scale to the inverse of Beta, and then re-invert 
+  # and log it. This way the initial parameter is log(Scaled beta)
   # logB is scaled
   # in the TMB Ricker model - S is scaled
 param$logSigma_std <- rep(-2, N_Stocks_std)
 
 param$logMuAs <- 1.5
-  #param$logSigmaAs <- 1
-param$logMuAo <- 0#1.5
-param$logSigmaA <- -2#5
-  #param$logSigmaAo <- 1
+param$logMuAo <- 0
+param$logSigmaA <- -2
 
-## Separate Stream and Ocean type models
-#param$slogDelta1 <- 2.744 # best estimates from run of stream-specific WAreg TMB
-#param$sDelta2 <- 0.857 
-#param$slogDeltaSigma <- -0.709 
-
-#param$ologDelta1 <- 3.00 # 1.519 # best estimates from run of ocean-specific WAreg TMB 
-#param$ologDelta2 <- log(0.94) # 0 # 21.2 
-#param$ologDeltaSigma <-  -0.412 #-0.94 
-
-## Lierman model
-param$logDelta1 <- 3 #10 #
+## Liermann model
+param$logDelta1 <- 3 
 param$logDelta1ocean <- 0 #
-param$logDelta2 <- log(0.72) #log(0.72/(1-0.72)) 
-param$Delta2ocean <- 0 #log(0.72/(1-0.72)) 
+param$logDelta2 <- log(0.72) 
+param$Delta2ocean <- 0 
 param$logDeltaSigma <- -0.412 # from Parken et al. 2006 where sig=0.662
 
-param$logNu1 <- 3#10#
-param$logNu1ocean <- 0# 
-param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) 
-param$Nu2ocean <- 0#log(0.72/(1-0.72)) 
+param$logNu1 <- 3
+param$logNu1ocean <- 0
+param$logNu2 <- log(0.72)
+param$Nu2ocean <- 0
 param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.66
 
 

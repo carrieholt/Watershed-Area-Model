@@ -301,46 +301,58 @@ lower[1:length(lower)]<- -Inf
 
 
 #### RUN THE MODEL ---------------------------------------------------------
-opt <- nlminb(obj$par, obj$fn, obj$gr, control = list(eval.max = 1e5, iter.max = 1e5), 
-              lower=lower, upper=upper)
+# Required objects/inputs
+  # obj created from MakeADFun function (TMB) that requires:
+    # data,
+    # parameters,
+    # associated TMB file name (dll)
+    # misc. information e.g. tracing, random effects parameters 
+
+opt <- nlminb(obj$par, 
+              obj$fn, 
+              obj$gr, 
+              control = list(eval.max = 1e5, iter.max = 1e5), 
+              lower=lower, 
+              upper=upper)
+
 pl <- obj$env$parList(opt$par) # Gives the parameter estimates from the model
 #summary(sdreport(obj), p.value=TRUE)
 
 
 #### 4. Compile model outputs --------------------------------------------------
+  # *Tor*: Rename estimate objects for clarity
+  # Rename All_Ests to  Summary_Ests
+  # Rename All_Est to ____
 
 # Create Table of outputs
-All_Ests <- data.frame(summary(sdreport(obj)))
-All_Ests$Param <- row.names(All_Ests)
+Summary_Ests <- data.frame(summary(sdreport(obj)))
+Summary_Ests$Param <- row.names(Summary_Ests)
+# Rename parameter names
+Summary_Ests$Param <- sapply(Summary_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))[[1]]))
 
 
-# Put together readable data frame of values
-All_Ests$Param <- sapply(All_Ests$Param, function(x) (unlist(strsplit(x, "[.]"))[[1]]))
-
-# By first spliting out stocks modelled with standard Ricker, RickerAR(1), 
-# and Ricker-survival models
-All_Ests_std <- data.frame()
-All_Ests_std <- All_Ests %>% filter (Param %in% c("logA_std", "logB_std", "logSigma_std",  
+All_Est <- data.frame()
+# Remove all of the _std objects from parameters - will require removal from
+  # TMB param's list in advance
+All_Est <- Summary_Ests %>% filter (Param %in% c("logA_std", "logB_std", "logSigma_std",  
                                                   "SMSY_std", "SREP_std"))
 SN_std <- unique(SRDat[, c("Stocknumber")])
-All_Ests_std$Stocknumber <- rep(SN_std)
-All_Ests_std <- left_join(All_Ests_std, unique(SRDat[, c("Stocknumber", "Name")]))
+All_Est$Stocknumber <- rep(SN_std)
+All_Est <- left_join(All_Est, unique(SRDat[, c("Stocknumber", "Name")]))
 
-logDeltaSigma <- All_Ests %>% filter (Param %in% c("logDeltaSigma")) 
+logDeltaSigma <- Summary_Ests %>% filter (Param %in% c("logDeltaSigma")) 
 DeltaSigmaUCL <- exp(logDeltaSigma$Estimate + logDeltaSigma$Std..Error*1.96)
 DeltaSigmaLCL <- exp(logDeltaSigma$Estimate - logDeltaSigma$Std..Error*1.96) 
 DeltaSigma <- exp(logDeltaSigma$Estimate)
 
-# Combine again
-# All_Est <- bind_rows(All_Ests_std, All_Ests_ar, All_Ests_surv) 
-All_Est <- All_Ests_std
-# All_Est$ar <- All_Est$Stocknumber %in% stksNum_ar
-# All_Est$surv <- All_Est$Stocknumber %in% stksNum_surv
+# Combine again and rename
+# All_Est <- All_Ests_std
 All_Est$Param <- sapply(All_Est$Param, function(x) (unlist(strsplit(x, "[_]"))[[1]]))
 All_Est <- All_Est %>%left_join(Stream, by="Stocknumber")
 
+
 All_Deltas <- data.frame()
-All_Deltas <- All_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta", 
+All_Deltas <- Summary_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","sigma_delta", 
                                                 "Delta2_bounded", "logDelta1ocean", 
                                                 "logDelta2ocean", "Delta2ocean", "logNu1", 
                                                 "logNu2", "sigma_nu", "logNu1ocean", 
@@ -358,7 +370,7 @@ aic_std <- nLL_std %>% mutate(aic = 2 * 3 + 2*CnLL)
 
 # Get predicted values and calculate r2
 Pred_std <- data.frame()
-Pred_std <- All_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
+Pred_std <- Summary_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
 Preds_std <- SRDat %>% dplyr::select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% 
   add_column(Pred=Pred_std$Estimate)
 # mutate the predicted values with Scale 
@@ -372,10 +384,10 @@ r2 <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
   # *These are not re-scaled*
   # They are used in the plotting functions and scaled within
 PredlnSMSY <- data.frame() 
-PredlnSMSY <- All_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O", "PredlnSMSY_CI", 
+PredlnSMSY <- Summary_Ests %>% filter (Param %in% c("PredlnSMSY_S", "PredlnSMSY_O", "PredlnSMSY_CI", 
                                                 "PredlnSMSYs_CI", "PredlnSMSYo_CI"))
 PredlnSREP <- data.frame() 
-PredlnSREP <- All_Ests %>% filter (Param %in% c("PredlnSREP_S", "PredlnSREP_O", "PredlnSREP_CI", 
+PredlnSREP <- Summary_Ests %>% filter (Param %in% c("PredlnSREP_S", "PredlnSREP_O", "PredlnSREP_CI", 
                                                 "PredlnSREPs_CI", "PredlnSREPo_CI"))
 
 # Calculate standardized residuals
@@ -441,9 +453,9 @@ if(plot==TRUE){
 # Get predicted values to estimate prediction intervals
   # These values are RE-SCALED to raw estimates during outputting in the TMB code
 PredlnSMSY_PI <- data.frame()
-PredlnSMSY_PI <- All_Ests %>% filter (Param %in% c("PredlnSMSY", "lnSMSY"))
+PredlnSMSY_PI <- Summary_Ests %>% filter (Param %in% c("PredlnSMSY", "lnSMSY"))
 PredlnSREP_PI <- data.frame()
-PredlnSREP_PI <- All_Ests %>% filter (Param %in% c("PredlnSREP", "lnSREP"))
+PredlnSREP_PI <- Summary_Ests %>% filter (Param %in% c("PredlnSREP", "lnSREP"))
 
 PredlnSMSY_PI$Stocknumber <- rep(SN_std)
 PredlnSREP_PI$Stocknumber <- rep(SN_std)
@@ -499,8 +511,8 @@ TestSMSYs <- data.frame()
 TestSMSYo <- data.frame() 
 TestSMSY_SREP <- data.frame() 
 
-TestSMSY <- All_Ests %>% filter (Param %in% c("TestlnSMSYo")) %>% add_column(Stock = StockNames)
-TestSREP <- All_Ests %>% filter (Param %in% c("TestlnSREPo")) %>% add_column(Stock = StockNames)
+TestSMSY <- Summary_Ests %>% filter (Param %in% c("TestlnSMSYo")) %>% add_column(Stock = StockNames)
+TestSREP <- Summary_Ests %>% filter (Param %in% c("TestlnSREPo")) %>% add_column(Stock = StockNames)
 TestSMSYpull <- TestSMSY %>% pull(Estimate)
 TestSREPpull <- TestSREP %>% pull(Estimate)
 

@@ -12,10 +12,13 @@
 # Kitching)
 
 # Integrated Watershed Area Model
-# Steps:
+# Section Descriptions:
 # 1. Read in stock-recruitment data, life-history type, and watershed areas
 #   for synoptic data set, and watershed area and life-history type for 
 #   additional stocks
+#   1.a. Data cleaning
+#   1.b. Scale calculation
+#   1.c. Setup Watershed area sets
 # 2. Create data and parameter lists for TMB
 # 3. Run TMB model to estimate Ricker parameters and SMSY & SREP for synoptic 
 #   data sets, estimate paraemeters of watershed-area regression, and 
@@ -28,6 +31,15 @@
 
 # This reduced code snippet has removed the main wrapper function- To be added
 
+# Future as a function:
+#   - Section 1 e.g. data cleaning and setup not included
+#   - Section 1 scale calculation should be embedded as either a separate 
+#     function or as an input
+#   - Section 2 requires a list of inputs both from the "core" data file
+#     and a params list from TMB
+#   - Section 3 and 4 are basic
+#   - Section 5 should be re-worked so that the ouputs are easily then used in 
+#     the already created PlotFunctions.R
 
 #### Libraries -----------------------------------------------------------------
 
@@ -48,7 +60,7 @@ library(hrbrthemes)
 # to avoid problems when using in pkg? And in the meantime, if we're running 
 # from *.Proj files, a simple source("R/helperFunctions.R") should work.Correct?
 source (here::here("R/helperFunctions.R"))
-source(here::here("R/PlotFunction.R"))
+source(here::here("R/PlotFunctions.R"))
 
 # Consider renaming all model.R scripts to include "mod" or some
   # other suffix/prefix

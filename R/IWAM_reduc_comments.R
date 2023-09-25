@@ -361,10 +361,12 @@ Summary_Ests$Param <- sapply(Summary_Ests$Param, function(x) (unlist(strsplit(x,
 All_Est <- data.frame()
 # Remove all of the _std objects from parameters - will require removal from
   # TMB param's list in advance
+  # They are all _std - waiting on approval from Carrie
 All_Est <- Summary_Ests %>% filter (Param %in% c("logA_std", "logB_std", "logSigma_std",  
                                                   "SMSY_std", "SREP_std"))
-SN_std <- unique(SRDat[, c("Stocknumber")])
-All_Est$Stocknumber <- rep(SN_std)
+
+StNum <- unique(SRDat[, c("Stocknumber")])
+All_Est$Stocknumber <- rep(StNum)
 All_Est <- left_join(All_Est, unique(SRDat[, c("Stocknumber", "Name")]))
 
 logDeltaSigma <- Summary_Ests %>% filter (Param %in% c("logDeltaSigma")) 
@@ -390,21 +392,24 @@ All_Deltas <- Summary_Ests %>% filter (Param %in% c("logDelta1", "logDelta2","si
 
 # Calculate AIC
   # No RE-SCALING
-nLL_std <- data.frame(nLL_std=obj$report()$nLL_std) %>% 
+nLL <- data.frame(nLL=obj$report()$nLL) %>% 
   add_column(Stocknumber=SRDat$Stocknumber) %>% group_by(Stocknumber) %>% 
-  summarize(CnLL=sum(nLL_std))
-aic_std <- nLL_std %>% mutate(aic = 2 * 3 + 2*CnLL) 
+  summarize(CnLL=sum(nLL))
+AIC <- nLL %>% mutate(aic = 2 * 3 + 2*CnLL) 
+
 
 # Get predicted values and calculate r2
-Pred_std <- data.frame()
-Pred_std <- Summary_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
-Preds_std <- SRDat %>% dplyr::select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% 
-  add_column(Pred=Pred_std$Estimate)
+Pred_val <- data.frame()
+Pred_val <- Summary_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
+
+# Replace Preds_std with Predicteds
+Preds <- SRDat %>% dplyr::select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% 
+  add_column(Pred=Pred_val$Estimate)
 # mutate the predicted values with Scale 
   # RE-SCALED VALUES
   # These Preds_stds are not used for plotting
-Preds_std <- Preds_std %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp/Scale) ) )
-r2 <- Preds_std %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
+Preds <- Preds %>% mutate(ObsLogRS = log ( (Rec / Scale) / (Sp/Scale) ) )
+r2 <- Preds %>% group_by(Stocknumber) %>% summarize(r2=cor(ObsLogRS,Pred)^2)
 
 
 # Get predicted values and their SEs to plot CIs
@@ -419,11 +424,13 @@ PredlnSREP <- Summary_Ests %>% filter (Param %in% c("PredlnSREP_S", "PredlnSREP_
 
 # Calculate standardized residuals
   # These are RE-SCALED values
-SRes <- Preds_std %>% arrange (Stocknumber)
+SRes <- Preds %>% arrange (Stocknumber)
 
 SRes <- SRes %>% mutate ( Res = ObsLogRS- Pred) #%>% mutate (StdRes = Res/??)
 sigma <- All_Est %>% filter(Param=="logSigma") %>% dplyr::select(Stocknumber, Estimate, Name)
 SRes <- SRes %>% left_join(sigma) %>% rename(logSig = Estimate)
+  # Slight problem naming with Estimate - can produce clang errors due to overlap
+  # with function name.
 SRes <- SRes %>% mutate (StdRes = Res/exp(logSig))
 
 
@@ -484,8 +491,8 @@ PredlnSMSY_PI <- Summary_Ests %>% filter (Param %in% c("PredlnSMSY", "lnSMSY"))
 PredlnSREP_PI <- data.frame()
 PredlnSREP_PI <- Summary_Ests %>% filter (Param %in% c("PredlnSREP", "lnSREP"))
 
-PredlnSMSY_PI$Stocknumber <- rep(SN_std)
-PredlnSREP_PI$Stocknumber <- rep(SN_std)
+PredlnSMSY_PI$Stocknumber <- rep(StNum)
+PredlnSREP_PI$Stocknumber <- rep(StNum)
 
 
 # To calculate prediction intervals, first get predicted and observed logSMSY 

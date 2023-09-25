@@ -7,7 +7,19 @@ logit <- function(x){
   log(x/(1-x))
 }
 
-
+# Scaling by digits
+digit_scaling <- function(input_data){
+  digits <- input_data %>% group_by(Stocknumber) %>% 
+    summarize(maxDigits = count.dig(max(Sp)))
+  # count.dig() Creates a count [numeric] of the max number of digits 
+  # of spawners as digits per stock
+  # the function count.dig() can be found in the script: helperFunctions.R
+  input_data <- left_join(input_data, digits)
+  input_data <- input_data %>% mutate(Scale = 10^(maxDigits-1))
+  # data <- data %>% mutate(Scale = 10^4)) # Alternate scale
+}
+# 1) group dataset by stock id
+# 2) summarize(maxDigits = count.dig(max()))
 
 gm_mean = function(x, na.rm=TRUE){
   exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))

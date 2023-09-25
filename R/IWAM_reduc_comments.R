@@ -38,8 +38,10 @@
 #   - Section 2 requires a list of inputs both from the "core" data file
 #     and a params list from TMB
 #   - Section 3 and 4 are basic
-#   - Section 5 should be re-worked so that the ouputs are easily then used in 
-#     the already created PlotFunctions.R
+#   - Section 5 could be made so that the ouputs are easily then used in 
+#     the already created PlotFunctions.R OR to have an embedded plots=TRUE
+#   - Section 6 could be worked in similarily to 5
+#   - *Remember to add libraries/dependencies to DESCRIPTION and NAMESPACE*
 
 #### Libraries -----------------------------------------------------------------
 
@@ -123,6 +125,10 @@ test_2 <- SRDat %>% filter(Stocknumber == stockwNA[1] |
 
 # **Future update: mask or simulate NAN's in future - COSEWIC example
 
+# At this point in the function:
+# - Data is read
+# - Undesired stocks removed
+# - Data has a continuous year list
 
 # * Scale Calculation ----------------------------------------------------------
 # Desired scale: 1000 - 0.1 to 100 - responsible for scaling the spawners
@@ -133,21 +139,24 @@ test_2 <- SRDat %>% filter(Stocknumber == stockwNA[1] |
   # - This scaling is REMOVED for the calculation of predicted values, R2,
   # and Standard Residuals
 
+# digit_scaling() is now a function within helperFunctions.R
 # Calculate scale for each stock as a tibble (tidyverse df)
-digits <- SRDat %>% group_by(Stocknumber) %>% 
-  summarize(maxDigits = count.dig(max(Sp)))
+SRDat <- digit_scaling(SRDat)
+
+# Calculate scale for each stock as a tibble (tidyverse df)
+# digits <- SRDat %>% group_by(Stocknumber) %>% 
+#   summarize(maxDigits = count.dig(max(Sp)))
   # count.dig() Creates a count [numeric] of the max number of digits 
   # of spawners as digits per stock
   # the function count.dig() can be found in the script: helperFunctions.R
 
 # Join main df with digits by Stocknumber and re-write over SRDat
-SRDat <- left_join(SRDat, digits)
+# SRDat <- left_join(SRDat, digits)
 # Mutate main df to create a new column: Scale
-SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1)) # Original Scale
+# SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1)) # Original Scale
 # SRDat <- SRDat %>% mutate(Scale = 10^4) # Alternate Scale
   # using mutate; creates a per stock scale by taking the number of digits - 1,
   # as the exponent on a base 10 log scale
-
 
 # What is the scale of S, R, SMSY, and SREP data,
 # Produces df with two columns: stock number, and scale
@@ -184,17 +193,19 @@ Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>%
 
 #### 2. Create data and parameter lists for TMB --------------------------------
 
-# Data list
+#### * DATA ####
+# Data list for TMB DATA and PARAMETER list - labelled as matches
+  # *TOR*: Re-ordered to match TMB input organization
 data <- list()
-Scale_std <- SRDat$Scale # Scale enters the TMB data
+
+Scale_std <- SRDat$Scale # Scale enters the TMB data as: Scale
 data$S_std <- SRDat$Sp/Scale_std # Spawners / scale 
 data$logRS_std <- log( (SRDat$Rec/SRDat$Scale) / (SRDat$Sp/SRDat$Scale) )
-  # logged: scaled recruits / scaled spawners
-data$stk_std <- as.numeric(SRDat$Stocknumber) 
-N_Stocks_std <- length(unique(SRDat$Name))
+# logged: scaled recruits / scaled spawners
+data$stk_std <- as.numeric(SRDat$Stocknumber) # stock number
 data$yr_std <- SRDat$yr_num
+N_Stocks_std <- length(unique(SRDat$Name))
 
-# Final remaining if statement for mods
 data$logMuAs_mean <- 1.5
 data$logMuAs_sig <- 2
 data$logMuAo_mean <- 0 #1.5
@@ -203,21 +214,33 @@ data$HalfNormMean <- 0 #TMB_Inputs$Tau_sigma
 data$HalfNormSig <- 1 #TMB_Inputs$Tau_sigma
 data$HalfNormMeanA <- 0 #0.44 #TMB_Inputs$Tau_sigma
 data$HalfNormSigA <- 1 #0.5 #TMB_Inputs$Tau_sigma
+
+# Read in watershed area data and life-history type and scale
+data$WA <- WA$WA
+data$Stream <- Stream$lh
+data$Scale <- SRDat_Scale # Ordered by Stocknumber
+
 data$SigRicPriorNorm <- as.numeric(F)
 data$SigRicPriorGamma <- as.numeric(T)
 data$SigRicPriorCauchy <- as.numeric(F)
 data$biasCor <- as.numeric(TRUE)
+data$SigDeltaPriorNorm <- as.numeric(F)
+data$SigDeltaPriorGamma <- as.numeric(T)
+data$SigDeltaPriorCauchy <- as.numeric(F)
 data$Tau_dist <- 0.1
-  
+data$Tau_D_dist <- 1
+# logDeltaSigma # currently listed as param in R, but data_scalar in TMB
+# logNuSigma # currently listed as param in R, but data_scalar in TMB
+
 data$sigDelta_mean <- 0.80 # See KFrun.R, #For half-normal use N(0,1)
 data$sigDelta_sig <- 0.28 # See KFrun.R,
 data$sigNu_mean <- 0.84 # See KFrun.R,
 data$sigNu_sig <- 0.275 # See KFrun.R,
-data$SigDeltaPriorNorm <- as.numeric(F)
-data$SigDeltaPriorGamma <- as.numeric(T)
-data$SigDeltaPriorCauchy <- as.numeric(F)
-data$Tau_D_dist <- 1
 
+# Read in log(watershed area) for additional stocks
+# Predicted lnWA for plottig CIs:
+data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1)
+# TestlnWAo
 data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% 
   mutate (lnWA=log(WA)) %>%
   filter(lh==1) %>% 
@@ -246,16 +269,9 @@ if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo,
                                           InletlnWA$InletlnWA,
                                             CUlnWA$CUlnWA )
 
-# Read in watershed area data and life-history type and scale
-data$WA <- WA$WA
-data$Stream <- Stream$lh
-data$Scale <- SRDat_Scale # Ordered by Stocknumber
 
-# Read in log(watershed area) for additional stocks
-# Predicted lnWA for plottig CIs:
-data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1)
 
-# Parameters
+#### * PARAMETERS ####
 param <- list()
 
 # Parameters for stocks without AR1
@@ -266,7 +282,6 @@ param$logA_std <- ( SRDat %>% group_by (Stocknumber) %>%
 B_std <- SRDat %>% group_by(Stocknumber) %>% 
   summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
   # *Tor* why the negative here?
-
 param$logB_std <- log ( 1/ ( (1/B_std$m)/data$Scale ))
   # *Carrie* Need to apply the scale to the inverse of Beta, and then re-invert 
   # and log it. This way the initial parameter is log(Scaled beta)
@@ -275,12 +290,12 @@ param$logB_std <- log ( 1/ ( (1/B_std$m)/data$Scale ))
 param$logSigma_std <- rep(-2, N_Stocks_std)
 
 param$logMuAs <- 1.5
-param$logMuAo <- 0
 param$logSigmaA <- -2
+param$logMuAo <- 0
 
 ## Liermann model
 param$logDelta1 <- 3 
-param$logDelta1ocean <- 0 #
+param$logDelta1ocean <- 0
 param$logDelta2 <- log(0.72) 
 param$Delta2ocean <- 0 
 param$logDeltaSigma <- -0.412 # from Parken et al. 2006 where sig=0.662

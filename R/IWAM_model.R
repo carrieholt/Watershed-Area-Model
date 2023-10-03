@@ -66,7 +66,7 @@ source(here::here("R/PlotFunctions.R"))
 
 # Consider renaming all model.R scripts to include "mod" or some
   # other suffix/prefix
-# To do- rename this to IWAM_model.R and rename IWAM.R to IWAMarchived_model.R
+# To do - rename this to IWAM_model.R and rename IWAM.R to IWAMarchived_model.R
 
 
 #### Remaining wrapper function objects ----------------------------------------
@@ -198,13 +198,13 @@ Stream <- SRDat %>% dplyr::select(Stocknumber, Name, Stream) %>%
   # *TOR*: Re-ordered to match TMB input organization
 data <- list()
 
-Scale_std <- SRDat$Scale # Scale enters the TMB data as: Scale
-data$S_std <- SRDat$Sp/Scale_std # Spawners / scale 
-data$logRS_std <- log( (SRDat$Rec/SRDat$Scale) / (SRDat$Sp/SRDat$Scale) )
+Scale_TMB <- SRDat$Scale # Scale enters the TMB data as: Scale
+data$S <- SRDat$Sp/Scale_TMB # Spawners / scale 
+data$logRS <- log( (SRDat$Rec/SRDat$Scale) / (SRDat$Sp/SRDat$Scale) )
 # logged: scaled recruits / scaled spawners
-data$stk_std <- as.numeric(SRDat$Stocknumber) # stock number
-data$yr_std <- SRDat$yr_num
-N_Stocks_std <- length(unique(SRDat$Name))
+data$stk <- as.numeric(SRDat$Stocknumber) # stock number
+data$yr <- SRDat$yr_num
+N_Stocks <- length(unique(SRDat$Name))
 
 data$logMuAs_mean <- 1.5
 data$logMuAs_sig <- 2
@@ -275,19 +275,19 @@ if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo,
 param <- list()
 
 # Parameters for stocks without AR1
-param$logA_std <- ( SRDat %>% group_by (Stocknumber) %>% 
+param$logA <- ( SRDat %>% group_by (Stocknumber) %>% 
                       summarise(yi = lm(log( Rec / Sp) ~ Sp )$coef[1] ) )$yi
   # SRDat_std: Rec and Sp are not scaled
 
-B_std <- SRDat %>% group_by(Stocknumber) %>% 
+B <- SRDat %>% group_by(Stocknumber) %>% 
   summarise( m = - lm(log( Rec / Sp) ~ Sp )$coef[2] )
   # *Tor* why the negative here?
-param$logB_std <- log ( 1/ ( (1/B_std$m)/data$Scale ))
+param$logB <- log ( 1/ ( (1/B$m)/data$Scale ))
   # *Carrie* Need to apply the scale to the inverse of Beta, and then re-invert 
   # and log it. This way the initial parameter is log(Scaled beta)
   # logB is scaled
   # in the TMB Ricker model - S is scaled
-param$logSigma_std <- rep(-2, N_Stocks_std)
+param$logSigma <- rep(-2, N_Stocks)
 
 param$logMuAs <- 1.5
 param$logSigmaA <- -2
@@ -311,14 +311,16 @@ param$logNuSigma <- -0.412 #from Parken et al. 2006 where sig=0.66
 
 # mod remains required for the model call to identify the correct file
 # It is easier to reduce the name anyways for ease of calling
-mod <- "Liermann_PriorRicSig_PriorDeltaSig" 
+#  <- "Liermann_PriorRicSig_PriorDeltaSig" 
+mod <- "IWAM_Liermann"
 
 # Compile model if changed:
 #dyn.unload(dynlib(paste("TMB_Files/", mod, sep="")))
 #compile(paste("TMB_Files/", mod, ".cpp", sep=""))
+  # Needs to be run to re-create the .dll and .o files from a new .cpp file
 dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
 
-obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA_std"))
+obj <- MakeADFun(data, param, DLL=mod, silent=TRUE, random = c("logA"))
 
 upper<-unlist(obj$par)
 upper[1:length(upper)]<- Inf
@@ -362,8 +364,11 @@ All_Est <- data.frame()
 # Remove all of the _std objects from parameters - will require removal from
   # TMB param's list in advance
   # They are all _std - waiting on approval from Carrie
-All_Est <- Summary_Ests %>% filter (Param %in% c("logA_std", "logB_std", "logSigma_std",  
-                                                  "SMSY_std", "SREP_std"))
+    # Create a new TMB file with new names
+    # Keep the old TMB version for back-work
+    # Name of new model: IWAM_Liermann
+All_Est <- Summary_Ests %>% filter (Param %in% c("logA", "logB", "logSigma",  
+                                                  "SMSY", "SREP"))
 
 StNum <- unique(SRDat[, c("Stocknumber")])
 All_Est$Stocknumber <- rep(StNum)
@@ -400,7 +405,7 @@ AIC <- nLL %>% mutate(aic = 2 * 3 + 2*CnLL)
 
 # Get predicted values and calculate r2
 Pred_val <- data.frame()
-Pred_val <- Summary_Ests %>% filter (Param %in% c("LogRS_Pred_std"))
+Pred_val <- Summary_Ests %>% filter (Param %in% c("LogRS_Pred"))
 
 # Replace Preds_std with Predicteds
 Preds <- SRDat %>% dplyr::select("Stocknumber","yr_num", "Sp", "Rec", "Scale", "Name") %>% 

@@ -49,17 +49,17 @@ Type objective_function<Type>:: operator() ()
   DATA_IVECTOR(stk); // stock number // Org _std
   DATA_IVECTOR(yr); // only occurs once
   
-  DATA_SCALAR(logMuAs_mean);
-  DATA_SCALAR(logMuAs_sig);
-  DATA_SCALAR(logMuAo_mean);
-  DATA_SCALAR(logMuAo_sig);
+  DATA_SCALAR(logMuA_stream_mean);
+  DATA_SCALAR(logMuA_stream_sig);
+  DATA_SCALAR(logMuA_ocean_mean);
+  DATA_SCALAR(logMuA_ocean_sig);
   DATA_SCALAR(HalfNormMean);
   DATA_SCALAR(HalfNormSig);
   DATA_SCALAR(HalfNormMeanA);
   DATA_SCALAR(HalfNormSigA);
   DATA_VECTOR(WA); 
-  DATA_VECTOR(Scale);
-  DATA_IVECTOR(Stream);
+  DATA_VECTOR(scale);
+  DATA_IVECTOR(stream);
   DATA_INTEGER(SigRicPriorNorm);
   DATA_INTEGER(SigRicPriorGamma);
   DATA_INTEGER(SigRicPriorCauchy);
@@ -78,34 +78,34 @@ Type objective_function<Type>:: operator() ()
   DATA_SCALAR(sigNu_sig);
   
   DATA_VECTOR(PredlnWA);
-  DATA_VECTOR(TestlnWAo);
-  //DATA_VECTOR(TestlnWAs);
+  DATA_VECTOR(targetlnWA_ocean);
+  DATA_VECTOR(targetlnWA_stream);
   
   // Remove all _std
   PARAMETER_VECTOR(logA); // Org _std
   PARAMETER_VECTOR(logB); // Org _std
   PARAMETER_VECTOR(logSigma); // Org _std
   
-  PARAMETER(logMuAs);
+  PARAMETER(logMuA_stream);
   PARAMETER(logSigmaA);
-  PARAMETER(logMuAo);
+  PARAMETER(logMuA_ocean);
   PARAMETER(logDelta1);
-  PARAMETER(logDelta1ocean);
+  PARAMETER(logDelta1_ocean);
   PARAMETER(logDelta2);
-  PARAMETER(Delta2ocean);
+  PARAMETER(Delta2_ocean);
   PARAMETER(logDeltaSigma);
   
   PARAMETER(logNu1);
-  PARAMETER(logNu1ocean);
+  PARAMETER(logNu1_ocean);
   PARAMETER(logNu2);
-  PARAMETER(Nu2ocean);
+  PARAMETER(Nu2_ocean);
   PARAMETER(logNuSigma);
   
 
   
   Type ans=0.0; // ans is the log-likelihood - is then additive for each of the distributions
   int N_Obs = S.size(); //size() gives the size of the vector - TMB function
-  int N_stks = Scale.size(); // Removed _std
+  int N_stks = scale.size(); // Removed _std
   
   
 
@@ -117,7 +117,7 @@ Type objective_function<Type>:: operator() ()
   // Standard Ricker model: 
   for (int i = 0; i<N_Obs; i++){
     if(biasCor == 0) {
-      LogRS_Pred(i) = logA(stk(i)) - exp(logB(stk(i))) * S(i); // S is: Sp/Scale
+      LogRS_Pred(i) = logA(stk(i)) - exp(logB(stk(i))) * S(i); // S is: Sp/scale
     }
     if(biasCor == 1) { // correcting for the back-calculation bias - from log transform to raw
       LogRS_Pred(i) = logA(stk(i)) - exp(logB(stk(i))) * S(i) - pow(sigma(stk(i)),2) / Type(2);
@@ -130,7 +130,7 @@ Type objective_function<Type>:: operator() ()
   // Add hierarchical structure to A ==============
   for(int i=0; i<N_stks; i++){
     // add prior on logA, 
-    ans += -dnorm(logA(i), logMuAs + logMuAo * Stream(i), sigmaA, true );
+    ans += -dnorm(logA(i), logMuA_stream + logMuA_ocean * stream(i), sigmaA, true );
      // add prior on sigma 
     if (SigRicPriorGamma == 1) {
        ans += -dgamma(pow(sigma(i),-2), Tau_dist, 1/Tau_dist, true);
@@ -149,9 +149,9 @@ Type objective_function<Type>:: operator() ()
   
   // Add priors for hyperpars ====================
   // MuA prior for stream type
-  ans += -dnorm(logMuAs, logMuAs_mean, logMuAs_sig, true);
+  ans += -dnorm(logMuA_stream, logMuA_stream_mean, logMuA_stream_sig, true);
   // MuA prior for ocean type
-  ans += -dnorm(logMuAo, logMuAo_mean, logMuAo_sig, true);
+  ans += -dnorm(logMuA_ocean, logMuA_ocean_mean, logMuA_ocean_sig, true);
   // sigmaA prior
   if (SigRicPriorGamma == 1) {
     ans += -dgamma(pow(sigmaA,-2), Tau_dist, 1/Tau_dist, true);
@@ -186,12 +186,12 @@ Type objective_function<Type>:: operator() ()
   Type sigma_nu = exp(logNuSigma);
   
   for (int i=0; i<N_stks; i++){ // THE ACTUAL WATERSHED MODEL
-    PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + ( exp(logDelta2) + Delta2ocean * Stream(i) ) * log(WA(i)) ;
+    PredlnSMSY(i) = logDelta1 + logDelta1_ocean * stream(i) + ( exp(logDelta2) + Delta2_ocean * stream(i) ) * log(WA(i)) ;
       // Confusion about log-space vs non log-space
       // From Parken model (allometric equation)
-    ans += -dnorm( PredlnSMSY(i), log(SMSY(i) * Scale(i) ),  sigma_delta, true);
-    PredlnSREP(i) = logNu1 + logNu1ocean * Stream(i) + ( exp(logNu2) + Nu2ocean * Stream(i) ) * log(WA(i)) ;
-    ans += -dnorm( PredlnSREP(i), log(SREP(i) * Scale(i) ),  sigma_nu, true);
+    ans += -dnorm( PredlnSMSY(i), log(SMSY(i) * scale(i) ),  sigma_delta, true);
+    PredlnSREP(i) = logNu1 + logNu1_ocean * stream(i) + ( exp(logNu2) + Nu2_ocean * stream(i) ) * log(WA(i)) ;
+    ans += -dnorm( PredlnSREP(i), log(SREP(i) * scale(i) ),  sigma_nu, true);
   }
   // Stream-type is the base and deviation for the ocean
   
@@ -218,41 +218,44 @@ Type objective_function<Type>:: operator() ()
   
     // Get predicted values for plotting  WA regresssion with CIs
   int N_pred = PredlnWA.size();
-  vector <Type> PredlnSMSYs_CI(N_pred);
-  vector <Type> PredlnSMSYo_CI(N_pred);
-  vector <Type> PredlnSREPs_CI(N_pred);
-  vector <Type> PredlnSREPo_CI(N_pred);
+  vector <Type> PredlnSMSY_stream_CI(N_pred); //_stream/ocean corrections
+  vector <Type> PredlnSMSY_ocean_CI(N_pred);
+  vector <Type> PredlnSREP_stream_CI(N_pred);
+  vector <Type> PredlnSREP_ocean_CI(N_pred);
   
   for (int i=0; i<N_pred; i++){
-    PredlnSMSYs_CI(i) = logDelta1 + exp(logDelta2) * PredlnWA(i);
-    PredlnSMSYo_CI(i) = logDelta1 + logDelta1ocean + (exp(logDelta2) + Delta2ocean) * PredlnWA(i);
-    PredlnSREPs_CI(i) = logNu1 + exp(logNu2) * PredlnWA(i);
-    PredlnSREPo_CI(i) = logNu1 + logNu1ocean + (exp(logNu2) + Nu2ocean) * PredlnWA(i);
+    PredlnSMSY_stream_CI(i) = logDelta1 + exp(logDelta2) * PredlnWA(i);
+    PredlnSMSY_ocean_CI(i) = logDelta1 + logDelta1_ocean + (exp(logDelta2) + Delta2_ocean) * PredlnWA(i);
+    PredlnSREP_stream_CI(i) = logNu1 + exp(logNu2) * PredlnWA(i);
+    PredlnSREP_ocean_CI(i) = logNu1 + logNu1_ocean + (exp(logNu2) + Nu2_ocean) * PredlnWA(i);
   }
   
-  //// Get predicted values for stream-type Test stocks with CIs
-  //int N_tests = TestlnWAs.size();
-  //vector <Type> TestlnSMSYs(N_tests);
-  //vector <Type> TestlnSREPs(N_tests);
-  
-  //for (int i=0; i<N_tests; i++){
-  //  TestlnSMSYs(i) = logDelta1 + exp(logDelta2) * TestlnWAs(i);
-  //  TestlnSREPs(i) = logNu1 + exp(logNu2) * TestlnWAs(i);
-  //}
   
   
-  ///Get predicted values for ocean-type Test stocks with CIs
-  int N_testo = TestlnWAo.size();
-  vector <Type> TestlnSMSYo(N_testo);
-  vector <Type> TestlnSREPo(N_testo);
+  //// Get predicted values for stream-type target stocks with CIs
+  int N_target_stream = targetlnWA_stream.size();
+  vector <Type> targetlnSMSY_stream(N_target_stream);
+  vector <Type> targetlnSREP_stream(N_target_stream);
+
+  for (int i=0; i<N_target_stream; i++){
+    targetlnSMSY_stream(i) = logDelta1 + exp(logDelta2) * targetlnWA_stream(i);
+    targetlnSREP_stream(i) = logNu1 + exp(logNu2) * targetlnWA_stream(i);
+  } 
   
-  for (int i=0; i<N_testo; i++){
-    TestlnSMSYo(i) = logDelta1 + logDelta1ocean + (exp(logDelta2) + Delta2ocean) * TestlnWAo(i);
-    TestlnSREPo(i) = logNu1 + logNu1ocean + (exp(logNu2) + Nu2ocean) * TestlnWAo(i);
+  ///Get predicted values for ocean-type target stocks with CIs
+  int N_target_ocean = targetlnWA_ocean.size();
+  vector <Type> targetlnSMSY_ocean(N_target_ocean);    
+  vector <Type> targetlnSREP_ocean(N_target_ocean);
+  
+  for (int i=0; i<N_target_ocean; i++){
+    targetlnSMSY_ocean(i) = logDelta1 + logDelta1_ocean + (exp(logDelta2) + Delta2_ocean) * targetlnWA_ocean(i);
+    targetlnSREP_ocean(i) = logNu1 + logNu1_ocean + (exp(logNu2) + Nu2_ocean) * targetlnWA_ocean(i);
   }
+
   
-  vector <Type> lnSMSY = log(SMSY*Scale);
-  vector <Type> lnSREP = log(SREP*Scale);
+  
+  vector <Type> lnSMSY = log(SMSY*scale);
+  vector <Type> lnSREP = log(SREP*scale);
   
   
   ADREPORT(SMSY); // Removed _std
@@ -262,14 +265,14 @@ Type objective_function<Type>:: operator() ()
   ADREPORT(PredlnSREP);
   ADREPORT(lnSMSY);
   ADREPORT(lnSREP);
-  ADREPORT(PredlnSMSYs_CI);
-  ADREPORT(PredlnSMSYo_CI);
-  ADREPORT(PredlnSREPs_CI);
-  ADREPORT(PredlnSREPo_CI);
-  ADREPORT(TestlnSMSYo);
-  ADREPORT(TestlnSREPo);
-  //ADREPORT(TestlnSMSYs);
-  //ADREPORT(TestlnSREPs);
+  ADREPORT(PredlnSMSY_stream_CI);
+  ADREPORT(PredlnSMSY_ocean_CI);
+  ADREPORT(PredlnSREP_stream_CI);
+  ADREPORT(PredlnSREP_ocean_CI);
+  ADREPORT(targetlnSMSY_ocean);
+  ADREPORT(targetlnSREP_ocean);
+  ADREPORT(targetlnSMSY_stream);
+  ADREPORT(targetlnSREP_stream);
   REPORT(nLL); // Removed _std
   return ans;
 }

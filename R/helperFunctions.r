@@ -8,6 +8,7 @@ logit <- function(x){
 }
 
 # Scaling by digits
+# Calculate scale for each stock as a tibble (tidyverse df)
 digit_scaling <- function(input_data){
   digits <- input_data %>% group_by(Stocknumber) %>% 
     summarize(maxDigits = count.dig(max(Sp)))
@@ -15,11 +16,14 @@ digit_scaling <- function(input_data){
   # of spawners as digits per stock
   # the function count.dig() can be found in the script: helperFunctions.R
   input_data <- left_join(input_data, digits)
-  input_data <- input_data %>% mutate(Scale = 10^(maxDigits-1))
-  # data <- data %>% mutate(Scale = 10^4)) # Alternate scale
+  input_data <- input_data %>% mutate(scale = 10^(maxDigits-1))
+  # data <- data %>% mutate(scale = 10^4)) # Alternate scale
+  # using mutate; creates a per stock scale by taking the number of digits - 1,
+  # as the exponent on a base 10 log scale
 }
 # 1) group dataset by stock id
 # 2) summarize(maxDigits = count.dig(max()))
+
 
 gm_mean = function(x, na.rm=TRUE){
   exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))

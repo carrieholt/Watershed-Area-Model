@@ -22,31 +22,31 @@ t_col <- function(color, percent = 50, name = NULL) {
 
 # Plot SR curves
 
-PlotSRCurve <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar=NULL, stksNum_surv=NULL, stks_surv, r2, removeSkagit, mod) {
-  Stks <- unique(SRDat$Stocknumber)
+PlotSRCurve <- function(srdat, pars, SMSY_std=NULL, stksNum_ar=NULL, stksNum_surv=NULL, stks_surv, r2, removeSkagit, mod) {
+  Stks <- unique(srdat$Stocknumber)
   NStks <- length(Stks)
   par(mfrow=c(5,5), mar=c(2, 2, 1, 0.1) + 0.1)
   
   for (i in Stks){
-    names <- All_Est %>% dplyr::select ("Name", "Stocknumber") %>% distinct()
-    name <- All_Est %>% filter (Stocknumber==i) %>% dplyr::select ("Name") %>% distinct()
+    names <- pars %>% dplyr::select ("Name", "Stocknumber") %>% distinct()
+    name <- pars %>% filter (Stocknumber==i) %>% dplyr::select ("Name") %>% distinct()
     
-    R <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Rec) 
-    S <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Sp) 
+    R <- srdat %>% filter (Stocknumber==i) %>% dplyr::select(Rec) 
+    S <- srdat %>% filter (Stocknumber==i) %>% dplyr::select(Sp) 
     # what is the scale of Ricker b estimate?
-    Sc <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Scale) %>% distinct() %>% as.numeric()
+    Sc <- srdat %>% filter (Stocknumber==i) %>% dplyr::select(scale) %>% distinct() %>% as.numeric()
     if(name$Name != "Skagit" & name$Name != "KSR") plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(R$Rec) ) )
     if(name$Name == "Skagit") plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(R$Rec) ) )
     if(name$Name == "KSR") plot(x=S$Sp, y=R$Rec, xlab="", ylab="", pch=20, xlim=c(0,500), ylim=c(0,max(R$Rec) ) )
     
-    a <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
+    a <- pars %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
       summarise(A=exp(Estimate)) %>% as.numeric()
     # Divide b by scale
-    b <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logB") %>% 
+    b <- pars %>% filter (Stocknumber==i) %>% filter(Param=="logB") %>% 
       summarise(B=exp(Estimate)/Sc) %>% as.numeric()
     
     
-    if(mod!="IWAM_FixedSep_RicStd" & mod!="Liermann" & mod!="Liermann_PriorRicSig_PriorDeltaSig" & mod!="Liermann_HalfNormRicVar_FixedDelta"){
+    if(mod!="IWAM_FixedSep_RicStd" & mod!="Liermann" & mod!= 'IWAM_Liermann' & mod!="Liermann_PriorRicSig_PriorDeltaSig" & mod!="Liermann_HalfNormRicVar_FixedDelta"){
       if (i %in% stksNum_surv) {  #stocknumber 0 and either 22 or 23, depending on if Skagit is removed
         surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name==name$Name)
         #if(i==0) surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name==name$Name) 
@@ -54,8 +54,8 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar=NULL, stksNum_
         #if(i==22|i==23) { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
         if(name$Name == "Cowichan") { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
         mean.log.surv <- surv.dat %>% summarize(mean = mean(log(Surv)))
-        gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% dplyr::select(Estimate)
-        a <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
+        gamma <- pars %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% dplyr::select(Estimate)
+        a <- pars %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
           summarise(A=exp(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
       }
       
@@ -99,11 +99,11 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar=NULL, stksNum_
     mtext(name$Name, side=3, cex=0.8)
     
     # Plot SMSYs (black for std, red for AR(1), and dashed for Parken et al. 2006)
-    smsy <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
+    smsy <- pars %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
       summarise(SMSY = Estimate * Sc) %>% as.numeric()
-    smsy_ul <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
+    smsy_ul <- pars %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
       summarise(SMSY_ul = Estimate * Sc + 1.96 * Std..Error * Sc ) %>% as.numeric()
-    smsy_ll <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
+    smsy_ll <- pars %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
       summarise(SMSY_ul = Estimate * Sc - 1.96 * Std..Error * Sc ) %>% as.numeric()
     
     
@@ -115,14 +115,14 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar=NULL, stksNum_
     #   if (i %not in% c(stksNum_ar, stksNum_surv))  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     # }
     
-    if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta")  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
+    if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=='IWAM_Liermann'|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta")  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     #else polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     
     if(!is.null(SMSY_std)) {
       SMSY_std <- SMSY_std %>% right_join(names) %>% filter(Name==name$Name)#filter(Stocknumber != 22) 
       if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="Ricker_AllMod"){
-        if(i %in% stksNum_ar) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
-        if(i %in% stksNum_surv) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*Scale.stock[i+1] , col="black")
+        if(i %in% stksNum_ar) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*scale.stock[i+1] , col="black")
+        if(i %in% stksNum_surv) abline(v=SMSY_std$Estimate[which(SMSY_std$Stocknumber==i)]*scale.stock[i+1] , col="black")
       }
     }
     
@@ -142,42 +142,42 @@ PlotSRCurve <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar=NULL, stksNum_
 
 # Plot SR linearized model
 
-PlotSRLinear <- function(SRDat, All_Est, SMSY_std=NULL, stksNum_ar=NULL, stksNum_surv=NULL, r2, removeSkagit) {
-  Stks <- unique(SRDat$Stocknumber)
+PlotSRLinear <- function(srdat, pars, SMSY_std=NULL, stksNum_ar=NULL, stksNum_surv=NULL, r2, removeSkagit) {
+  Stks <- unique(srdat$Stocknumber)
   NStks <- length(Stks)
   par(mfrow=c(5,5), mar=c(3, 2, 2, 1) + 0.1)
   
   for (i in Stks){
-    R <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Rec) 
-    S <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Sp) 
+    R <- srdat %>% filter (Stocknumber==i) %>% dplyr::select(Rec) 
+    S <- srdat %>% filter (Stocknumber==i) %>% dplyr::select(Sp) 
     LogRS <- log(R$Rec/S$Sp)
     
     # what is the scale of Ricker b estimate?
-    Sc <- SRDat %>% filter (Stocknumber==i) %>% dplyr::select(Scale) %>% distinct() %>% as.numeric()
+    Sc <- srdat %>% filter (Stocknumber==i) %>% dplyr::select(scale) %>% distinct() %>% as.numeric()
     plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
     #if(i !=22 & i!=0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
     #if(i ==22) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(LogRS) ) )
     #if(i ==0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(min(LogRS),max(LogRS) ) )
     
-    name <- All_Est %>% filter (Stocknumber==i) %>% dplyr::select ("Name") %>% distinct()
+    name <- pars %>% filter (Stocknumber==i) %>% dplyr::select ("Name") %>% distinct()
     mtext(name$Name, side=3)
     
      
-    LogA <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
+    LogA <- pars %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
       summarise(A=Estimate) %>% as.numeric()
     # Divide b by scale
-    B <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logB") %>% 
+    B <- pars %>% filter (Stocknumber==i) %>% filter(Param=="logB") %>% 
       summarise(B=exp(Estimate)/Sc) %>% as.numeric()
 
-    if(mod!="IWAM_FixedSep_RicStd" & mod!="Liermann" & mod!="Liermann_PriorRicSig_PriorDeltaSig" & mod!="Liermann_HalfNormRicVar_FixedDelta"){
+    if(mod!="IWAM_FixedSep_RicStd" & mod!="Liermann" & mod!="IWAM_Liermann" & mod!="Liermann_PriorRicSig_PriorDeltaSig" & mod!="Liermann_HalfNormRicVar_FixedDelta"){
       if (i %in% stksNum_surv) {  #stocknumber 0 and either 22 or 23, depending on if Skagit is removed
         
         if(i==0) surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name=="Harrison") 
         if(i==22|i==23)surv.dat <- as.data.frame(read.csv("DataIn/Surv.csv")) %>% filter(Name=="Cowichan") 
         if(i==22|i==23) { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
         mean.log.surv <- surv.dat %>% summarize(mean = mean(log(Surv)))
-        gamma <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% dplyr::select(Estimate)
-        LogA <- All_Est %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
+        gamma <- pars %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% dplyr::select(Estimate)
+        LogA <- pars %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
           summarise(LogA.adj=(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
       }
     }
@@ -242,30 +242,30 @@ Plotacf <- function(Preds){
 }
 # What are the upper and lower bounds of KSR, Stikine and Cowichan?
 
-# KSR.SMSY <- All_Est %>% filter(Name=="KSR") %>% filter(Param=="SMSY") %>% select(Estimate) %>% as.numeric()
-# KSR.SMSY.ul <- KSR.SMSY + 1.96 * (All_Est %>% filter(Name=="KSR") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
-# KSR.SMSY.ul <- KSR.SMSY.ul * SRDat %>% filter (Name=="KSR") %>% select(Scale) %>% distinct() %>% as.numeric()
+# KSR.SMSY <- pars %>% filter(Name=="KSR") %>% filter(Param=="SMSY") %>% select(Estimate) %>% as.numeric()
+# KSR.SMSY.ul <- KSR.SMSY + 1.96 * (pars %>% filter(Name=="KSR") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
+# KSR.SMSY.ul <- KSR.SMSY.ul * srdat %>% filter (Name=="KSR") %>% select(scale) %>% distinct() %>% as.numeric()
 # 
-# Stikine.SMSY <- All_Est %>% filter(Name=="Stikine") %>% filter(Param=="SMSY") %>% select(Estimate) %>% as.numeric()
-# Stikine.SMSY.ul <- Stikine.SMSY + 1.96 * (All_Est %>% filter(Name=="Stikine") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
-# Stikine.SMSY.ul <- Stikine.SMSY.ul * SRDat %>% filter (Name=="Stikine") %>% select(Scale) %>% distinct() %>% as.numeric()
+# Stikine.SMSY <- pars %>% filter(Name=="Stikine") %>% filter(Param=="SMSY") %>% select(Estimate) %>% as.numeric()
+# Stikine.SMSY.ul <- Stikine.SMSY + 1.96 * (pars %>% filter(Name=="Stikine") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
+# Stikine.SMSY.ul <- Stikine.SMSY.ul * srdat %>% filter (Name=="Stikine") %>% select(scale) %>% distinct() %>% as.numeric()
 # 
-# Cow.SMSY <- All_Est %>% filter(Name=="Cowichan") %>% filter(Param=="SMSY") %>% select(Estimate) %>% as.numeric()
-# Cow.SMSY.ul <- Cow.SMSY + 1.96 * (All_Est %>% filter(Name=="Cowichan") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
-# Cow.SMSY.ul <- Cow.SMSY.ul * SRDat %>% filter (Name=="Cowichan") %>% select(Scale) %>% distinct() %>% as.numeric()
-# Cow.SMSY.ll <- Cow.SMSY - 1.96 * (All_Est %>% filter(Name=="Cowichan") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
-# Cow.SMSY.ll <- Cow.SMSY.ll * SRDat %>% filter (Name=="Cowichan") %>% select(Scale) %>% distinct() %>% as.numeric()
+# Cow.SMSY <- pars %>% filter(Name=="Cowichan") %>% filter(Param=="SMSY") %>% select(Estimate) %>% as.numeric()
+# Cow.SMSY.ul <- Cow.SMSY + 1.96 * (pars %>% filter(Name=="Cowichan") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
+# Cow.SMSY.ul <- Cow.SMSY.ul * srdat %>% filter (Name=="Cowichan") %>% select(scale) %>% distinct() %>% as.numeric()
+# Cow.SMSY.ll <- Cow.SMSY - 1.96 * (pars %>% filter(Name=="Cowichan") %>% filter(Param=="SMSY") %>% select(Std..Error) %>% as.numeric())
+# Cow.SMSY.ll <- Cow.SMSY.ll * srdat %>% filter (Name=="Cowichan") %>% select(scale) %>% distinct() %>% as.numeric()
 
 
 #------------------------------------------------------------------
 # Plot  WA regression
 
-plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSMSY=NA, PredlnWA, title1, mod) {
+plotWAregressionSMSY <- function (pars, all_Deltas, srdat, stream, WA,  PredlnSMSY=NA, PredlnWA, title1, mod) {
 
-  SMSY <- All_Est %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
+  SMSY <- pars %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique(pars$Stocknumber))-1))
   # what is scale of SMSY?
-  Sc <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
-  SMSY <- SMSY %>% left_join(Sc, by="Stocknumber") %>% mutate(rawSMSY=Estimate*Scale)
+  Sc <- srdat %>% dplyr::select(Stocknumber, scale) %>% distinct()
+  SMSY <- SMSY %>% left_join(Sc, by="Stocknumber") %>% mutate(rawSMSY=Estimate*scale)
   lnSMSY <- log(SMSY$rawSMSY)
   lnWA <- log(WA$WA)
   
@@ -275,15 +275,15 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   plot(y=lnSMSY, x=lnWA, pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
   points(y=lnSMSY, x=lnWA, pch=20, col=col.use, cex=1.5)
   #points(y=lnSMSY[18:length(SMSY$lh)], x=lnWA[18:length(SMSY$lh)], pch=3, col=col.use[18:length(SMSY$lh)], cex=1.5)
-  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% dplyr::select(Estimate) %>% pull()
-  logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% dplyr::select(Estimate) %>% pull()
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
-    logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% dplyr::select(Estimate) %>% pull() + logD1}
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
-    D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logD2)
-    if(nrow(All_Deltas %>% filter(Param=="Delta2ocean"))>=1)  D2o <- (All_Deltas %>% filter(Param=="Delta2ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logD2)
+  logD1 <- all_Deltas %>% filter(Param=="logDelta1") %>% dplyr::select(Estimate) %>% pull()
+  logD2 <- all_Deltas %>% filter(Param=="logDelta2") %>% dplyr::select(Estimate) %>% pull()
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="IWAM_Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
+    logD1o <- all_Deltas %>% filter(Param=="logDelta1_ocean") %>% dplyr::select(Estimate) %>% pull() + logD1}
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann"|mod=="IWAM_Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
+    D2o <- exp(all_Deltas %>% filter(Param=="logDelta2_ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logD2)
+    if(nrow(all_Deltas %>% filter(Param=="Delta2_ocean"))>=1)  D2o <- (all_Deltas %>% filter(Param=="Delta2_ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logD2)
   }
-  #if (mod=="IWAM_FixedCombined") D2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% dplyr::select(Estimate) %>% pull()
+  #if (mod=="IWAM_FixedCombined") D2 <- all_Deltas %>% filter(Param=="Delta2_bounded") %>% dplyr::select(Estimate) %>% pull()
   if(length(logD1)==1&length(logD2)==2){
     abline(a=logD1[1], b=exp(logD2[1]), col="forestgreen", lwd=2)
     abline(a=logD1[1], b=exp(logD2[2]), col="dodgerblue3", lwd=2)
@@ -293,7 +293,7 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
     abline(a=logD1[2], b=exp(logD2[2]), col="dodgerblue3", lwd=2)
   }
   if(mod=="IWAM_FixedCombined") abline(a=logD1, b=exp(logD2), col="maroon", lwd=2)#Actually pulls Delta2_bounded, so no need to log
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="IWAM_Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
     abline(a=logD1, b=exp(logD2), col="forestgreen", lwd=2)
     abline(a=logD1o, b=D2o, col="dodgerblue3", lwd=2)
   }
@@ -336,7 +336,7 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
     text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="maroon", cex=0.8)
   
   }
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta"){
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="IWAM_Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta"){
     text(x=9, y=7,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="forestgreen", cex=0.8)
     text(x=6, y=9.5,labels= paste0("log(Delta1)=",round(logD1o[1],2), ", \nDelta2=", round(D2o[1],2)), col="dodgerblue3", cex=0.8)
   }
@@ -355,12 +355,12 @@ plotWAregressionSMSY <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
 }
 
 
-plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  PredlnSREP=NA, PredlnWA, title1, mod) {
+plotWAregressionSREP <- function (pars, all_Deltas, srdat, stream, WA,  PredlnSREP=NA, PredlnWA, title1, mod) {
   
-  SREP <- All_Est %>% filter(Param=="SREP") %>% mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
+  SREP <- pars %>% filter(Param=="SREP") %>% mutate(ModelOrder=0:(length(unique(pars$Stocknumber))-1))
   # what is scale of SREP?
-  Sc <- SRDat %>% select(Stocknumber, Scale) %>% distinct()
-  SREP <- SREP %>% left_join(Sc) %>% mutate(rawSREP=Estimate*Scale)
+  Sc <- srdat %>% select(Stocknumber, scale) %>% distinct()
+  SREP <- SREP %>% left_join(Sc) %>% mutate(rawSREP=Estimate*scale)
   lnSREP <- log(SREP$rawSREP)
   lnWA <- log(WA$WA)
   
@@ -370,14 +370,14 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   plot(y=lnSREP, x=lnWA, pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SREP)")
   points(y=lnSREP, x=lnWA, pch=20, col=col.use, cex=1.5)
   #points(y=lnSREP[18:length(SREP$lh)], x=lnWA[18:length(SREP$lh)], pch=3, col=col.use[18:length(SREP$lh)], cex=1.5)
-  logN1 <- All_Deltas %>% filter(Param=="logNu1") %>% dplyr::select(Estimate) %>% pull()
-  logN2 <- All_Deltas %>% filter(Param=="logNu2") %>% dplyr::select(Estimate) %>% pull()
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") logN1o <- All_Deltas %>% filter(Param=="logNu1ocean") %>% dplyr::select(Estimate) %>% pull() + logN1
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
-    N2o <- exp(All_Deltas %>% filter(Param=="logNu2ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logN2)
-    if(nrow(All_Deltas %>% filter(Param=="Nu2ocean"))>=1)  N2o <- (All_Deltas %>% filter(Param=="Nu2ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logN2)
+  logN1 <- all_Deltas %>% filter(Param=="logNu1") %>% dplyr::select(Estimate) %>% pull()
+  logN2 <- all_Deltas %>% filter(Param=="logNu2") %>% dplyr::select(Estimate) %>% pull()
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constm"|mod=="Liermann"|mod=="IWAM_Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") logN1o <- all_Deltas %>% filter(Param=="logNu1_ocean") %>% dplyr::select(Estimate) %>% pull() + logN1
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="IWAM_FixedSep_Constyi"|mod=="Liermann"|mod=="IWAM_Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
+    N2o <- exp(all_Deltas %>% filter(Param=="logNu2_ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logN2)
+    if(nrow(all_Deltas %>% filter(Param=="Nu2_ocean"))>=1)  N2o <- (all_Deltas %>% filter(Param=="Nu2_ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logN2)
   }
-  #if (mod=="IWAM_FixedCombined") D2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% dplyr::select(Estimate) %>% pull()
+  #if (mod=="IWAM_FixedCombined") D2 <- all_Deltas %>% filter(Param=="Delta2_bounded") %>% dplyr::select(Estimate) %>% pull()
   if(length(logN1)==1&length(logN2)==2){
     abline(a=logN1[1], b=exp(logN2[1]), col="forestgreen", lwd=2)
     abline(a=logN1[1], b=exp(logN2[2]), col="dodgerblue3", lwd=2)
@@ -387,7 +387,7 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
     abline(a=logN1[2], b=exp(logN2[2]), col="dodgerblue3", lwd=2)
   }
   if(mod=="IWAM_FixedCombined") abline(a=logN1, b=exp(logN2), col="maroon", lwd=2)#Actually pulls Delta2_bounded, so no need to log
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="IWAM_Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta") {
     abline(a=logN1, b=exp(logN2), col="forestgreen", lwd=2)
     abline(a=logN1o, b=N2o, col="dodgerblue3", lwd=2)
   }
@@ -430,7 +430,7 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
     text(x=6, y=10.5,labels= paste0("log(Nu1)=",round(logN1[1],2), ", \nNu2=", round(exp(logN2[1]),2)), col="maroon", cex=0.8)
     
   }
-  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta"){
+  if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=="IWAM_Liermann"|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta"){
     text(x=9, y=7,labels= paste0("log(Nu1)=",round(logN1[1],2), ", \nNu2=", round(exp(logN2[1]),2)), col="forestgreen", cex=0.8)
     text(x=6, y=10.5,labels= paste0("log(Nu1)=",round(logN1o[1],2), ", \nNu2=", round(N2o[1],2)), col="dodgerblue3", cex=0.8)
   }
@@ -449,18 +449,18 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
 }
 
 
-plotWAregression_Parken <- function(data, All_Deltas){
+plotWAregression_Parken <- function(data, all_Deltas){
   par(cex=1.5)
   col.use <- NA
   Parken_data <- as.data.frame(read.csv("DataIn/WA_Parken.csv"))
   for(i in 1:length(Parken_data$lh)) {if (Parken_data$lh[i]==0) col.use[i] <- "forestgreen" else col.use[i] <- "dodgerblue3"}
-  plot(x=log(data$WA), y=log(data$SMSY*data$Scale),pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
-  points(x=log(data$WA), y=log(data$SMSY*data$Scale), pch=20, col=col.use, cex=1.5)
-  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% dplyr::select(Estimate) %>% pull()
-  D2 <- All_Deltas %>% filter(Param=="Delta2_bounded") %>% dplyr::select(Estimate) %>% pull()
+  plot(x=log(data$WA), y=log(data$SMSY*data$scale),pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
+  points(x=log(data$WA), y=log(data$SMSY*data$scale), pch=20, col=col.use, cex=1.5)
+  logD1 <- all_Deltas %>% filter(Param=="logDelta1") %>% dplyr::select(Estimate) %>% pull()
+  D2 <- all_Deltas %>% filter(Param=="Delta2_bounded") %>% dplyr::select(Estimate) %>% pull()
   abline(a=logD1, b=D2, col="maroon", lwd=2)
   
-  #abline(lm(log(data$SMSY*data$Scale) ~ log(data$WA)))
+  #abline(lm(log(data$SMSY*data$scale) ~ log(data$WA)))
   #text(x=9, y=8,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="forestgreen", cex=0.8)
   text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(D2[1],2)), col="maroon", cex=0.8)
   
@@ -468,21 +468,21 @@ plotWAregression_Parken <- function(data, All_Deltas){
   
 }
 
-plotWAregression_ParkenSep <- function(data, All_Deltas){
+plotWAregression_ParkenSep <- function(data, all_Deltas){
   par(cex=1.5)
   col.use <- NA
   Parken_data <- as.data.frame(read.csv("DataIn/WA_Parken.csv"))
   for(i in 1:length(Parken_data$lh)) {if (Parken_data$lh[i]==0) col.use[i] <- "forestgreen" else col.use[i] <- "dodgerblue3"}
-  plot(x=log(data$WA), y=log(data$SMSY*data$Scale),pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
-  points(x=log(data$WA), y=log(data$SMSY*data$Scale), pch=20, col=col.use, cex=1.5)
-  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% dplyr::select(Estimate) %>% pull()
-  logD1o <- All_Deltas %>% filter(Param=="logDelta1ocean") %>% dplyr::select(Estimate) %>% pull() + logD1
-  logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% dplyr::select(Estimate) %>% pull()
-  D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logD2)
+  plot(x=log(data$WA), y=log(data$SMSY*data$scale),pch=20, col=col.use, xlab="log(Watershed Area, km2)", ylab="log(SMSY)")
+  points(x=log(data$WA), y=log(data$SMSY*data$scale), pch=20, col=col.use, cex=1.5)
+  logD1 <- all_Deltas %>% filter(Param=="logDelta1") %>% dplyr::select(Estimate) %>% pull()
+  logD1o <- all_Deltas %>% filter(Param=="logDelta1_ocean") %>% dplyr::select(Estimate) %>% pull() + logD1
+  logD2 <- all_Deltas %>% filter(Param=="logDelta2") %>% dplyr::select(Estimate) %>% pull()
+  D2o <- exp(all_Deltas %>% filter(Param=="logDelta2_ocean") %>% dplyr::select(Estimate) %>% pull() ) + exp(logD2)
   abline(a=logD1, b=exp(logD2), col="forestgreen", lwd=2)
   abline(a=logD1o, b=D2o, col="dodgerblue3", lwd=2)
   
-  #abline(lm(log(data$SMSY*data$Scale) ~ log(data$WA)))
+  #abline(lm(log(data$SMSY*data$scale) ~ log(data$WA)))
   text(x=9, y=7,labels= paste0("log(Delta1)=",round(logD1[1],2), ", \nDelta2=", round(exp(logD2[1]),2)), col="forestgreen", cex=0.8)
   text(x=6, y=10.5,labels= paste0("log(Delta1)=",round(logD1o[1],2), ", \nDelta2=", round(D2o[1],2)), col="dodgerblue3", cex=0.8)
   
@@ -491,37 +491,37 @@ plotWAregression_ParkenSep <- function(data, All_Deltas){
 }
 
 
-
-plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Liermann_SepRicA=NA){
+# Not currently adjusted for IWAM_Liermann * MOST UCRRENT TMB MODEL
+plotRicA <- function (){#pars_Liermann, pars_Ricker_AllMod, pars_Liermann_SepRicA=NA){
   #par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
-  All_Est_Liermann <- readRDS("DataOut/All_Est_Liermann.RDS")
-  All_Est_Ricker_AllMod <- readRDS("DataOut/All_Est_Ricker_AllMod.RDS")
-  All_Est_Ricker_std <- readRDS("DataOut/All_Est_Ricker_std_wBC.RDS")
-  All_Est_Ricker_std_noWAreg <- readRDS("DataOut/All_Est_Ricker_std_noWAreg_wBC.RDS")#From CheckAR1.r
-  All_Est_Liermann_SepRicA <- readRDS("DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_invGamma0.01_wBC.RDS")#readRDS("DataOut/All_Est_Liermann_SepRicA.RDS")#r
-  All_Est_Liermann_HalfNormRicVar <-readRDS( "DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_HalfNormRicVar_wBC.RDS")#readRDS("DataOut/All_Est_Liermann_HalfNormRicVar.RDS")
-  All_Est_Liermann_HalfCauchyRicVar <- readRDS( "DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_HalfCauchyRicVar_wBC.RDS")#readRDS("DataOut/All_Est_Liermann_HalfCauchyRicVar.RDS")
-  All_Est_Liermann_SepRicA_uniformSigmaPrior <- readRDS( "DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_uniformSigmaPrior_wBC.RDS")#readRDS("DataOut/All_Est_Liermann_SepRicA_uniformSigmaPrior.RDS")
-  All_Est_Liermann_SepRicA_noSigmaPrior <- readRDS( "DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_noPriorRicVar_wBC.RDS")# readRDS("DataOut/All_Est_Liermann_SepRicA_noSigmaPrior.RDS")
-  All_Est_Liermann_SepRicA_invGamma0.001 <- readRDS("DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_invGamma0.001_wBC.RDS")#readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.001.RDS")
-  #All_Est_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.1.RDS")
-  All_Est_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/All_Est_Liermann_PriorRicSig_PriorDeltaSig_invGamma0.1_wBC.RDS")
-  All_Est_Liermann_SepRicA_invGamma0.01_invGammaA0.001 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.01_invGammaA0.001.RDS")
-  All_Est_Liermann_SepRicA_invGamma0.001_invGammaA0.01 <- readRDS("DataOut/All_Est_Liermann_SepRicA_invGamma0.001_invGammaA0.01.RDS")
+  pars_Liermann <- readRDS("DataOut/pars_Liermann.RDS")
+  pars_Ricker_AllMod <- readRDS("DataOut/pars_Ricker_AllMod.RDS")
+  pars_Ricker_std <- readRDS("DataOut/pars_Ricker_std_wBC.RDS")
+  pars_Ricker_std_noWAreg <- readRDS("DataOut/pars_Ricker_std_noWAreg_wBC.RDS")#From CheckAR1.r
+  pars_Liermann_SepRicA <- readRDS("DataOut/pars_Liermann_PriorRicSig_PriorDeltaSig_invGamma0.01_wBC.RDS")#readRDS("DataOut/pars_Liermann_SepRicA.RDS")#r
+  pars_Liermann_HalfNormRicVar <-readRDS( "DataOut/pars_Liermann_PriorRicSig_PriorDeltaSig_HalfNormRicVar_wBC.RDS")#readRDS("DataOut/pars_Liermann_HalfNormRicVar.RDS")
+  pars_Liermann_HalfCauchyRicVar <- readRDS( "DataOut/pars_Liermann_PriorRicSig_PriorDeltaSig_HalfCauchyRicVar_wBC.RDS")#readRDS("DataOut/pars_Liermann_HalfCauchyRicVar.RDS")
+  pars_Liermann_SepRicA_uniformSigmaPrior <- readRDS( "DataOut/pars_Liermann_PriorRicSig_PriorDeltaSig_uniformSigmaPrior_wBC.RDS")#readRDS("DataOut/pars_Liermann_SepRicA_uniformSigmaPrior.RDS")
+  pars_Liermann_SepRicA_noSigmaPrior <- readRDS( "DataOut/pars_Liermann_PriorRicSig_PriorDeltaSig_noPriorRicVar_wBC.RDS")# readRDS("DataOut/pars_Liermann_SepRicA_noSigmaPrior.RDS")
+  pars_Liermann_SepRicA_invGamma0.001 <- readRDS("DataOut/pars_Liermann_PriorRicSig_PriorDeltaSig_invGamma0.001_wBC.RDS")#readRDS("DataOut/pars_Liermann_SepRicA_invGamma0.001.RDS")
+  #pars_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/pars_Liermann_SepRicA_invGamma0.1.RDS")
+  pars_Liermann_SepRicA_invGamma0.1 <- readRDS("DataOut/pars_Liermann_PriorRicSig_PriorDeltaSig_invGamma0.1_wBC.RDS")
+  pars_Liermann_SepRicA_invGamma0.01_invGammaA0.001 <- readRDS("DataOut/pars_Liermann_SepRicA_invGamma0.01_invGammaA0.001.RDS")
+  pars_Liermann_SepRicA_invGamma0.001_invGammaA0.01 <- readRDS("DataOut/pars_Liermann_SepRicA_invGamma0.001_invGammaA0.01.RDS")
   
-  RicAL <- All_Est_Liermann %>% filter (Param=="logA")
-  RicALsep <- All_Est_Liermann_SepRicA %>% filter (Param=="logA")
-  RicALhNRV <- All_Est_Liermann_HalfNormRicVar %>% filter (Param=="logA")
-  RicALhCRV <- All_Est_Liermann_HalfCauchyRicVar %>% filter (Param=="logA")
-  RicALsep_uni <- All_Est_Liermann_SepRicA_uniformSigmaPrior %>% filter (Param=="logA")
-  RicALsep_0.1 <- All_Est_Liermann_SepRicA_invGamma0.1 %>% filter (Param=="logA")
-  RicALsep_0.001 <- All_Est_Liermann_SepRicA_invGamma0.001 %>% filter (Param=="logA")
-  RicALsep_0.001_0.01 <- All_Est_Liermann_SepRicA_invGamma0.001_invGammaA0.01 %>% filter (Param=="logA")
-  RicALsep_0.01_0.001 <- All_Est_Liermann_SepRicA_invGamma0.01_invGammaA0.001 %>% filter (Param=="logA")
-  RicALsep_none <- All_Est_Liermann_SepRicA_noSigmaPrior %>% filter (Param=="logA")
-  RicAR <- All_Est_Ricker_AllMod %>% filter (Param=="logA")
-  RicARstd <- All_Est_Ricker_std %>% filter (Param=="logA")#(Param=="logA_std")
-  RicARstd_noWAreg <- All_Est_Ricker_std_noWAreg %>% filter (Param=="logA")#(Param=="logA_std")
+  RicAL <- pars_Liermann %>% filter (Param=="logA")
+  RicALsep <- pars_Liermann_SepRicA %>% filter (Param=="logA")
+  RicALhNRV <- pars_Liermann_HalfNormRicVar %>% filter (Param=="logA")
+  RicALhCRV <- pars_Liermann_HalfCauchyRicVar %>% filter (Param=="logA")
+  RicALsep_uni <- pars_Liermann_SepRicA_uniformSigmaPrior %>% filter (Param=="logA")
+  RicALsep_0.1 <- pars_Liermann_SepRicA_invGamma0.1 %>% filter (Param=="logA")
+  RicALsep_0.001 <- pars_Liermann_SepRicA_invGamma0.001 %>% filter (Param=="logA")
+  RicALsep_0.001_0.01 <- pars_Liermann_SepRicA_invGamma0.001_invGammaA0.01 %>% filter (Param=="logA")
+  RicALsep_0.01_0.001 <- pars_Liermann_SepRicA_invGamma0.01_invGammaA0.001 %>% filter (Param=="logA")
+  RicALsep_none <- pars_Liermann_SepRicA_noSigmaPrior %>% filter (Param=="logA")
+  RicAR <- pars_Ricker_AllMod %>% filter (Param=="logA")
+  RicARstd <- pars_Ricker_std %>% filter (Param=="logA")#(Param=="logA_std")
+  RicARstd_noWAreg <- pars_Ricker_std_noWAreg %>% filter (Param=="logA")#(Param=="logA_std")
   nRicAL <- length(RicALsep$Estimate)
   nRicAstd <- length(RicARstd$Estimate)
 

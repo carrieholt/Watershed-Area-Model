@@ -77,9 +77,9 @@ Type objective_function<Type>:: operator() ()
   DATA_SCALAR(sigNu_mean);
   DATA_SCALAR(sigNu_sig);
   
-  DATA_VECTOR(PredlnWA);
-  DATA_VECTOR(targetlnWA_ocean);
-  DATA_VECTOR(targetlnWA_stream);
+  DATA_VECTOR(pred_lnWA);
+  DATA_VECTOR(target_lnWA_ocean);
+  DATA_VECTOR(target_lnWA_stream);
   
   // Remove all _std
   PARAMETER_VECTOR(logA); // Org _std
@@ -109,7 +109,7 @@ Type objective_function<Type>:: operator() ()
   
   
 
-  vector <Type> LogRS_Pred(N_Obs); // Removed _std
+  vector <Type> logRS_pred(N_Obs); // Removed _std
   vector <Type> sigma = exp(logSigma); // Removed _std
   Type sigmaA = exp(logSigmaA);
   vector <Type> nLL(N_Obs); // negative log-likelihood to calculate AIC - not need for est.
@@ -117,14 +117,14 @@ Type objective_function<Type>:: operator() ()
   // Standard Ricker model: 
   for (int i = 0; i<N_Obs; i++){
     if(biasCor == 0) {
-      LogRS_Pred(i) = logA(stk(i)) - exp(logB(stk(i))) * S(i); // S is: Sp/scale
+      logRS_pred(i) = logA(stk(i)) - exp(logB(stk(i))) * S(i); // S is: Sp/scale
     }
     if(biasCor == 1) { // correcting for the back-calculation bias - from log transform to raw
-      LogRS_Pred(i) = logA(stk(i)) - exp(logB(stk(i))) * S(i) - pow(sigma(stk(i)),2) / Type(2);
+      logRS_pred(i) = logA(stk(i)) - exp(logB(stk(i))) * S(i) - pow(sigma(stk(i)),2) / Type(2);
     } // power function - squared sigma / 2
     // look up TMB pow
-    ans += -dnorm(LogRS_Pred(i), logRS(i),  sigma(stk(i)), true);    
-    nLL(i) = -dnorm(LogRS_Pred(i), logRS(i),  sigma(stk(i)), true);
+    ans += -dnorm(logRS_pred(i), logRS(i),  sigma(stk(i)), true);    
+    nLL(i) = -dnorm(logRS_pred(i), logRS(i),  sigma(stk(i)), true);
   }
   
   // Add hierarchical structure to A ==============
@@ -180,18 +180,18 @@ Type objective_function<Type>:: operator() ()
   
   
   //Liermann's model with both stream and ocean type=================
-  vector <Type> PredlnSMSY(N_stks);
-  vector <Type> PredlnSREP(N_stks);
+  vector <Type> pred_lnSMSY(N_stks);
+  vector <Type> pred_lnSREP(N_stks);
   Type sigma_delta = exp(logDeltaSigma);
   Type sigma_nu = exp(logNuSigma);
   
   for (int i=0; i<N_stks; i++){ // THE ACTUAL WATERSHED MODEL
-    PredlnSMSY(i) = logDelta1 + logDelta1_ocean * stream(i) + ( exp(logDelta2) + Delta2_ocean * stream(i) ) * log(WA(i)) ;
+    pred_lnSMSY(i) = logDelta1 + logDelta1_ocean * stream(i) + ( exp(logDelta2) + Delta2_ocean * stream(i) ) * log(WA(i)) ;
       // Confusion about log-space vs non log-space
       // From Parken model (allometric equation)
-    ans += -dnorm( PredlnSMSY(i), log(SMSY(i) * scale(i) ),  sigma_delta, true);
-    PredlnSREP(i) = logNu1 + logNu1_ocean * stream(i) + ( exp(logNu2) + Nu2_ocean * stream(i) ) * log(WA(i)) ;
-    ans += -dnorm( PredlnSREP(i), log(SREP(i) * scale(i) ),  sigma_nu, true);
+    ans += -dnorm( pred_lnSMSY(i), log(SMSY(i) * scale(i) ),  sigma_delta, true);
+    pred_lnSREP(i) = logNu1 + logNu1_ocean * stream(i) + ( exp(logNu2) + Nu2_ocean * stream(i) ) * log(WA(i)) ;
+    ans += -dnorm( pred_lnSREP(i), log(SREP(i) * scale(i) ),  sigma_nu, true);
   }
   // Stream-type is the base and deviation for the ocean
   
@@ -217,39 +217,39 @@ Type objective_function<Type>:: operator() ()
   }
   
     // Get predicted values for plotting  WA regresssion with CIs
-  int N_pred = PredlnWA.size();
-  vector <Type> PredlnSMSY_stream_CI(N_pred); //_stream/ocean corrections
-  vector <Type> PredlnSMSY_ocean_CI(N_pred);
-  vector <Type> PredlnSREP_stream_CI(N_pred);
-  vector <Type> PredlnSREP_ocean_CI(N_pred);
+  int N_pred = pred_lnWA.size();
+  vector <Type> pred_lnSMSY_stream_CI(N_pred); //_stream/ocean corrections
+  vector <Type> pred_lnSMSY_ocean_CI(N_pred);
+  vector <Type> pred_lnSREP_stream_CI(N_pred);
+  vector <Type> pred_lnSREP_ocean_CI(N_pred);
   
   for (int i=0; i<N_pred; i++){
-    PredlnSMSY_stream_CI(i) = logDelta1 + exp(logDelta2) * PredlnWA(i);
-    PredlnSMSY_ocean_CI(i) = logDelta1 + logDelta1_ocean + (exp(logDelta2) + Delta2_ocean) * PredlnWA(i);
-    PredlnSREP_stream_CI(i) = logNu1 + exp(logNu2) * PredlnWA(i);
-    PredlnSREP_ocean_CI(i) = logNu1 + logNu1_ocean + (exp(logNu2) + Nu2_ocean) * PredlnWA(i);
+    pred_lnSMSY_stream_CI(i) = logDelta1 + exp(logDelta2) * pred_lnWA(i);
+    pred_lnSMSY_ocean_CI(i) = logDelta1 + logDelta1_ocean + (exp(logDelta2) + Delta2_ocean) * pred_lnWA(i);
+    pred_lnSREP_stream_CI(i) = logNu1 + exp(logNu2) * pred_lnWA(i);
+    pred_lnSREP_ocean_CI(i) = logNu1 + logNu1_ocean + (exp(logNu2) + Nu2_ocean) * pred_lnWA(i);
   }
   
   
   
   //// Get predicted values for stream-type target stocks with CIs
-  int N_target_stream = targetlnWA_stream.size();
-  vector <Type> targetlnSMSY_stream(N_target_stream);
-  vector <Type> targetlnSREP_stream(N_target_stream);
+  int N_target_stream = target_lnWA_stream.size();
+  vector <Type> target_lnSMSY_stream(N_target_stream);
+  vector <Type> target_lnSREP_stream(N_target_stream);
 
   for (int i=0; i<N_target_stream; i++){
-    targetlnSMSY_stream(i) = logDelta1 + exp(logDelta2) * targetlnWA_stream(i);
-    targetlnSREP_stream(i) = logNu1 + exp(logNu2) * targetlnWA_stream(i);
+    target_lnSMSY_stream(i) = logDelta1 + exp(logDelta2) * target_lnWA_stream(i);
+    target_lnSREP_stream(i) = logNu1 + exp(logNu2) * target_lnWA_stream(i);
   } 
   
   ///Get predicted values for ocean-type target stocks with CIs
-  int N_target_ocean = targetlnWA_ocean.size();
-  vector <Type> targetlnSMSY_ocean(N_target_ocean);    
-  vector <Type> targetlnSREP_ocean(N_target_ocean);
-  
+  int N_target_ocean = target_lnWA_ocean.size();
+  vector <Type> target_lnSMSY_ocean(N_target_ocean);    
+  vector <Type> target_lnSREP_ocean(N_target_ocean);
+
   for (int i=0; i<N_target_ocean; i++){
-    targetlnSMSY_ocean(i) = logDelta1 + logDelta1_ocean + (exp(logDelta2) + Delta2_ocean) * targetlnWA_ocean(i);
-    targetlnSREP_ocean(i) = logNu1 + logNu1_ocean + (exp(logNu2) + Nu2_ocean) * targetlnWA_ocean(i);
+    target_lnSMSY_ocean(i) = logDelta1 + logDelta1_ocean + (exp(logDelta2) + Delta2_ocean) * target_lnWA_ocean(i);
+    target_lnSREP_ocean(i) = logNu1 + logNu1_ocean + (exp(logNu2) + Nu2_ocean) * target_lnWA_ocean(i);
   }
 
   
@@ -260,19 +260,19 @@ Type objective_function<Type>:: operator() ()
   
   ADREPORT(SMSY); // Removed _std
   ADREPORT(SREP); // Removed _std
-  ADREPORT(LogRS_Pred);
-  ADREPORT(PredlnSMSY);
-  ADREPORT(PredlnSREP);
+  ADREPORT(logRS_pred);
+  ADREPORT(pred_lnSMSY);
+  ADREPORT(pred_lnSREP);
   ADREPORT(lnSMSY);
   ADREPORT(lnSREP);
-  ADREPORT(PredlnSMSY_stream_CI);
-  ADREPORT(PredlnSMSY_ocean_CI);
-  ADREPORT(PredlnSREP_stream_CI);
-  ADREPORT(PredlnSREP_ocean_CI);
-  ADREPORT(targetlnSMSY_ocean);
-  ADREPORT(targetlnSREP_ocean);
-  ADREPORT(targetlnSMSY_stream);
-  ADREPORT(targetlnSREP_stream);
+  ADREPORT(pred_lnSMSY_stream_CI);
+  ADREPORT(pred_lnSMSY_ocean_CI);
+  ADREPORT(pred_lnSREP_stream_CI);
+  ADREPORT(pred_lnSREP_ocean_CI);
+  ADREPORT(target_lnSMSY_ocean);
+  ADREPORT(target_lnSREP_ocean);
+  ADREPORT(target_lnSMSY_stream);
+  ADREPORT(target_lnSREP_stream);
   REPORT(nLL); // Removed _std
   return ans;
 }

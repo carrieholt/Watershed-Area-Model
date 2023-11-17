@@ -98,25 +98,25 @@ PlotSRCurve <- function(srdat, pars, SMSY_std=NULL, stksNum_ar=NULL, stksNum_sur
     
     mtext(name$Name, side=3, cex=0.8)
     
-    # Plot SMSYs (black for std, red for AR(1), and dashed for Parken et al. 2006)
-    smsy <- pars %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
+    # Plot SMSY_stream (black for std, red for AR(1), and dashed for Parken et al. 2006)
+    SMSY <- pars %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
       summarise(SMSY = Estimate * Sc) %>% as.numeric()
-    smsy_ul <- pars %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
+    SMSY_ul <- pars %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
       summarise(SMSY_ul = Estimate * Sc + 1.96 * Std..Error * Sc ) %>% as.numeric()
-    smsy_ll <- pars %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
+    SMSY_ll <- pars %>% filter (Stocknumber==i) %>% filter(Param=="SMSY") %>% 
       summarise(SMSY_ul = Estimate * Sc - 1.96 * Std..Error * Sc ) %>% as.numeric()
     
     
-    abline(v = smsy, col=col.use)
+    abline(v = SMSY, col=col.use)
 
     # if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="Ricker_AllMod"){
-    #   if (i %in% stksNum_ar) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(1,0,0, alpha=0.1), border=NA ) 
-    #   if (i %in% stksNum_surv) polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(0,0,1, alpha=0.1), border=NA ) 
-    #   if (i %not in% c(stksNum_ar, stksNum_surv))  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
+    #   if (i %in% stksNum_ar) polygon(x=c(SMSY_ul, SMSY_ll, SMSY_ll, SMSY_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(1,0,0, alpha=0.1), border=NA ) 
+    #   if (i %in% stksNum_surv) polygon(x=c(SMSY_ul, SMSY_ll, SMSY_ll, SMSY_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=rgb(0,0,1, alpha=0.1), border=NA ) 
+    #   if (i %not in% c(stksNum_ar, stksNum_surv))  polygon(x=c(SMSY_ul, SMSY_ll, SMSY_ll, SMSY_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     # }
     
-    if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=='IWAM_Liermann'|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta")  polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
-    #else polygon(x=c(smsy_ul, smsy_ll, smsy_ll, smsy_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
+    if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|mod=='IWAM_Liermann'|mod=="Liermann_PriorRicSig_PriorDeltaSig"|mod=="Liermann_HalfNormRicVar_FixedDelta")  polygon(x=c(SMSY_ul, SMSY_ll, SMSY_ll, SMSY_ul), y=c(-10000,-10000,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
+    #else polygon(x=c(SMSY_ul, SMSY_ll, SMSY_ll, SMSY_ul), y=c(0,0,max(R$Rec),max(R$Rec)), col=grey(0.8, alpha=0.4), border=NA )
     
     if(!is.null(SMSY_std)) {
       SMSY_std <- SMSY_std %>% right_join(names) %>% filter(Name==name$Name)#filter(Stocknumber != 22) 
@@ -150,20 +150,20 @@ PlotSRLinear <- function(srdat, pars, SMSY_std=NULL, stksNum_ar=NULL, stksNum_su
   for (i in Stks){
     R <- srdat %>% filter (Stocknumber==i) %>% dplyr::select(Rec) 
     S <- srdat %>% filter (Stocknumber==i) %>% dplyr::select(Sp) 
-    LogRS <- log(R$Rec/S$Sp)
+    logRS <- log(R$Rec/S$Sp)
     
     # what is the scale of Ricker b estimate?
     Sc <- srdat %>% filter (Stocknumber==i) %>% dplyr::select(scale) %>% distinct() %>% as.numeric()
-    plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
-    #if(i !=22 & i!=0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(LogRS) ) )
-    #if(i ==22) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(LogRS) ) )
-    #if(i ==0) plot(x=S$Sp, y=LogRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(min(LogRS),max(LogRS) ) )
+    plot(x=S$Sp, y=logRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(logRS) ) )
+    #if(i !=22 & i!=0) plot(x=S$Sp, y=logRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)), ylim=c(0,max(logRS) ) )
+    #if(i ==22) plot(x=S$Sp, y=logRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(0,max(logRS) ) )
+    #if(i ==0) plot(x=S$Sp, y=logRS, xlab="", ylab="", pch=20, xlim=c(0,max(S$Sp)*3), ylim=c(min(logRS),max(logRS) ) )
     
     name <- pars %>% filter (Stocknumber==i) %>% dplyr::select ("Name") %>% distinct()
     mtext(name$Name, side=3)
     
      
-    LogA <- pars %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
+    logA <- pars %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
       summarise(A=Estimate) %>% as.numeric()
     # Divide b by scale
     B <- pars %>% filter (Stocknumber==i) %>% filter(Param=="logB") %>% 
@@ -177,8 +177,8 @@ PlotSRLinear <- function(srdat, pars, SMSY_std=NULL, stksNum_ar=NULL, stksNum_su
         if(i==22|i==23) { surv.dat <- surv.dat %>% filter(Yr >= 1985 & Yr !=1986 & Yr != 1987) }
         mean.log.surv <- surv.dat %>% summarize(mean = mean(log(Surv)))
         gamma <- pars %>% filter (Stocknumber==i) %>% filter(Param=="gamma") %>% dplyr::select(Estimate)
-        LogA <- pars %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
-          summarise(LogA.adj=(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
+        logA <- pars %>% filter (Stocknumber==i) %>% filter(Param=="logA") %>% 
+          summarise(logA.adj=(Estimate + gamma$Estimate*mean.log.surv$mean)) %>% as.numeric()
       }
     }
     
@@ -190,7 +190,7 @@ PlotSRLinear <- function(srdat, pars, SMSY_std=NULL, stksNum_ar=NULL, stksNum_su
     col.use <- "black"
       # removed above give only one mod usage and no more _ar or _surv model order usage
     
-    abline(a=LogA, b=-B, col=col.use)
+    abline(a=logA, b=-B, col=col.use)
     
     # For Skagit, add the best fit based on Parken et al. 2006 Ricker estimates
     skagit_alpha <- 7.74
@@ -260,7 +260,7 @@ Plotacf <- function(Preds){
 #------------------------------------------------------------------
 # Plot  WA regression
 
-plotWAregressionSMSY <- function (pars, all_Deltas, srdat, stream, WA,  PredlnSMSY=NA, PredlnWA, title1, mod) {
+plotWAregressionSMSY <- function (pars, all_Deltas, srdat, stream, WA,  pred_lnSMSY=NA, pred_lnWA, title1, mod) {
 
   SMSY <- pars %>% filter(Param=="SMSY") %>% mutate(ModelOrder=0:(length(unique(pars$Stocknumber))-1))
   # what is scale of SMSY?
@@ -307,21 +307,21 @@ plotWAregressionSMSY <- function (pars, all_Deltas, srdat, stream, WA,  PredlnSM
   }
   
   
-  if(exists("PredlnSMSY")){
-    PredlnSMSY <- PredlnSMSY %>% mutate (up = Estimate + 1.96 * Std..Error, lo=Estimate - 1.96*Std..Error) 
-    #up_S <- PredlnSMSY %>% filter(Param== "PredlnSMSY_S") %>% dplyr::select(up) %>% pull()
-    #lo_S <- PredlnSMSY %>% filter(Param== "PredlnSMSY_S") %>% dplyr::select(lo) %>% pull()
-    #up_O <- PredlnSMSY %>% filter(Param== "PredlnSMSY_O") %>% dplyr::select(up) %>% pull()
-    #lo_O <- PredlnSMSY %>% filter(Param== "PredlnSMSY_O") %>% dplyr::select(lo) %>% pull()
-    up_S <- PredlnSMSY %>% filter(Param== "PredlnSMSYs_CI") %>% dplyr::select(up) %>% pull()
-    lo_S <- PredlnSMSY %>% filter(Param== "PredlnSMSYs_CI") %>% dplyr::select(lo) %>% pull()
-    up_O <- PredlnSMSY %>% filter(Param== "PredlnSMSYo_CI") %>% dplyr::select(up) %>% pull()
-    lo_O <- PredlnSMSY %>% filter(Param== "PredlnSMSYo_CI") %>% dplyr::select(lo) %>% pull()
-    up <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% dplyr::select(up) %>% pull()
-    lo <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% dplyr::select(lo) %>% pull()
-    if(is.na(up_S[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_S, rev(lo_S)), col=rgb(0,0.4,0, alpha=0.2), border=NA)
-    if(is.na(up_O[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_O, rev(lo_O)), col=rgb(0,0.2,0.4, alpha=0.2), border=NA)
-    if(is.na(up[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up, rev(lo)), col=rgb(0.6,0.2,0.4, alpha=0.2), border=NA)
+  if(exists("pred_lnSMSY")){
+    pred_lnSMSY <- pred_lnSMSY %>% mutate (up = Estimate + 1.96 * Std..Error, lo=Estimate - 1.96*Std..Error) 
+    #up_S <- pred_lnSMSY %>% filter(Param== "pred_lnSMSY_S") %>% dplyr::select(up) %>% pull()
+    #lo_S <- pred_lnSMSY %>% filter(Param== "pred_lnSMSY_S") %>% dplyr::select(lo) %>% pull()
+    #up_O <- pred_lnSMSY %>% filter(Param== "pred_lnSMSY_O") %>% dplyr::select(up) %>% pull()
+    #lo_O <- pred_lnSMSY %>% filter(Param== "pred_lnSMSY_O") %>% dplyr::select(lo) %>% pull()
+    up_S <- pred_lnSMSY %>% filter(Param== "pred_lnSMSY_stream_CI") %>% dplyr::select(up) %>% pull()
+    lo_S <- pred_lnSMSY %>% filter(Param== "pred_lnSMSY_stream_CI") %>% dplyr::select(lo) %>% pull()
+    up_O <- pred_lnSMSY %>% filter(Param== "pred_lnSMSY_ocean_CI") %>% dplyr::select(up) %>% pull()
+    lo_O <- pred_lnSMSY %>% filter(Param== "pred_lnSMSY_ocean_CI") %>% dplyr::select(lo) %>% pull()
+    up <- pred_lnSMSY %>% filter(Param== "pred_lnSMSY_CI") %>% dplyr::select(up) %>% pull()
+    lo <- pred_lnSMSY %>% filter(Param== "pred_lnSMSY_CI") %>% dplyr::select(lo) %>% pull()
+    if(is.na(up_S[1])==FALSE) polygon(x=c(pred_lnWA, rev(pred_lnWA)), y=c(up_S, rev(lo_S)), col=rgb(0,0.4,0, alpha=0.2), border=NA)
+    if(is.na(up_O[1])==FALSE) polygon(x=c(pred_lnWA, rev(pred_lnWA)), y=c(up_O, rev(lo_O)), col=rgb(0,0.2,0.4, alpha=0.2), border=NA)
+    if(is.na(up[1])==FALSE) polygon(x=c(pred_lnWA, rev(pred_lnWA)), y=c(up, rev(lo)), col=rgb(0.6,0.2,0.4, alpha=0.2), border=NA)
   }
 
   if(length(logD1)==2&length(logD2)==2){
@@ -355,7 +355,7 @@ plotWAregressionSMSY <- function (pars, all_Deltas, srdat, stream, WA,  PredlnSM
 }
 
 
-plotWAregressionSREP <- function (pars, all_Deltas, srdat, stream, WA,  PredlnSREP=NA, PredlnWA, title1, mod) {
+plotWAregressionSREP <- function (pars, all_Deltas, srdat, stream, WA,  pred_lnSREP=NA, pred_lnWA, title1, mod) {
   
   SREP <- pars %>% filter(Param=="SREP") %>% mutate(ModelOrder=0:(length(unique(pars$Stocknumber))-1))
   # what is scale of SREP?
@@ -401,21 +401,21 @@ plotWAregressionSREP <- function (pars, all_Deltas, srdat, stream, WA,  PredlnSR
   }
   
   
-  if(exists("PredlnSREP")){
-    PredlnSREP <- PredlnSREP %>% mutate (up = Estimate + 1.96 * Std..Error, lo=Estimate - 1.96*Std..Error) 
-    #up_S <- PredlnSREP %>% filter(Param== "PredlnSREP_S") %>% dplyr::select(up) %>% pull()
-    #lo_S <- PredlnSREP %>% filter(Param== "PredlnSREP_S") %>% dplyr::select(lo) %>% pull()
-    #up_O <- PredlnSREP %>% filter(Param== "PredlnSREP_O") %>% dplyr::select(up) %>% pull()
-    #lo_O <- PredlnSREP %>% filter(Param== "PredlnSREP_O") %>% dplyr::select(lo) %>% pull()
-    up_S <- PredlnSREP %>% filter(Param== "PredlnSREPs_CI") %>% dplyr::select(up) %>% pull()
-    lo_S <- PredlnSREP %>% filter(Param== "PredlnSREPs_CI") %>% dplyr::select(lo) %>% pull()
-    up_O <- PredlnSREP %>% filter(Param== "PredlnSREPo_CI") %>% dplyr::select(up) %>% pull()
-    lo_O <- PredlnSREP %>% filter(Param== "PredlnSREPo_CI") %>% dplyr::select(lo) %>% pull()
-    up <- PredlnSREP %>% filter(Param== "PredlnSREP_CI") %>% dplyr::select(up) %>% pull()
-    lo <- PredlnSREP %>% filter(Param== "PredlnSREP_CI") %>% dplyr::select(lo) %>% pull()
-    if(is.na(up_S[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_S, rev(lo_S)), col=rgb(0,0.4,0, alpha=0.2), border=NA)
-    if(is.na(up_O[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up_O, rev(lo_O)), col=rgb(0,0.2,0.4, alpha=0.2), border=NA)
-    if(is.na(up[1])==FALSE) polygon(x=c(PredlnWA, rev(PredlnWA)), y=c(up, rev(lo)), col=rgb(0.6,0.2,0.4, alpha=0.2), border=NA)
+  if(exists("pred_lnSREP")){
+    pred_lnSREP <- pred_lnSREP %>% mutate (up = Estimate + 1.96 * Std..Error, lo=Estimate - 1.96*Std..Error) 
+    #up_S <- pred_lnSREP %>% filter(Param== "pred_lnSREP_S") %>% dplyr::select(up) %>% pull()
+    #lo_S <- pred_lnSREP %>% filter(Param== "pred_lnSREP_S") %>% dplyr::select(lo) %>% pull()
+    #up_O <- pred_lnSREP %>% filter(Param== "pred_lnSREP_O") %>% dplyr::select(up) %>% pull()
+    #lo_O <- pred_lnSREP %>% filter(Param== "pred_lnSREP_O") %>% dplyr::select(lo) %>% pull()
+    up_S <- pred_lnSREP %>% filter(Param== "pred_lnSREP_stream_CI") %>% dplyr::select(up) %>% pull()
+    lo_S <- pred_lnSREP %>% filter(Param== "pred_lnSREP_stream_CI") %>% dplyr::select(lo) %>% pull()
+    up_O <- pred_lnSREP %>% filter(Param== "pred_lnSREP_ocean_CI") %>% dplyr::select(up) %>% pull()
+    lo_O <- pred_lnSREP %>% filter(Param== "pred_lnSREP_ocean_CI") %>% dplyr::select(lo) %>% pull()
+    up <- pred_lnSREP %>% filter(Param== "pred_lnSREP_CI") %>% dplyr::select(up) %>% pull()
+    lo <- pred_lnSREP %>% filter(Param== "pred_lnSREP_CI") %>% dplyr::select(lo) %>% pull()
+    if(is.na(up_S[1])==FALSE) polygon(x=c(pred_lnWA, rev(pred_lnWA)), y=c(up_S, rev(lo_S)), col=rgb(0,0.4,0, alpha=0.2), border=NA)
+    if(is.na(up_O[1])==FALSE) polygon(x=c(pred_lnWA, rev(pred_lnWA)), y=c(up_O, rev(lo_O)), col=rgb(0,0.2,0.4, alpha=0.2), border=NA)
+    if(is.na(up[1])==FALSE) polygon(x=c(pred_lnWA, rev(pred_lnWA)), y=c(up, rev(lo)), col=rgb(0.6,0.2,0.4, alpha=0.2), border=NA)
   }
   
   if(length(logN1)==2&length(logN2)==2){
@@ -526,8 +526,8 @@ plotRicA <- function (){#pars_Liermann, pars_Ricker_AllMod, pars_Liermann_SepRic
   nRicAstd <- length(RicARstd$Estimate)
 
   
-  #box.data <- data.frame(RicLogA=c(RicAL$Estimate,RicALsep$Estimate, RicAR$Estimate), Model=c(rep("Hierarchical_logA_combined",nRicA),rep("Hierarchical_logA_sep",nRicA), rep("Fixed_logA",nRicA)))
-  box.data <- data.frame(RicLogA = c(RicARstd_noWAreg$Estimate, RicARstd$Estimate, RicALsep_0.1$Estimate, RicALsep$Estimate, RicALsep_0.001$Estimate, 
+  #box.data <- data.frame(RiclogA=c(RicAL$Estimate,RicALsep$Estimate, RicAR$Estimate), Model=c(rep("Hierarchical_logA_combined",nRicA),rep("Hierarchical_logA_sep",nRicA), rep("Fixed_logA",nRicA)))
+  box.data <- data.frame(RiclogA = c(RicARstd_noWAreg$Estimate, RicARstd$Estimate, RicALsep_0.1$Estimate, RicALsep$Estimate, RicALsep_0.001$Estimate, 
                                    RicALhNRV$Estimate, RicALhCRV$Estimate, RicALsep_uni$Estimate, RicALsep_none$Estimate), 
                          Model = c(rep("Fixed\neffects\nNoWAreg",nRicAstd), rep("Fixed\neffects",nRicAstd), rep("InvGamma\n(0.1, 0.1)", nRicAL), 
                                  rep("InvGamma\n(0.01,0.01)",nRicAL), rep("Inv\nGamma\n(0.001, 0.001)", nRicAL),
@@ -545,13 +545,13 @@ plotRicA <- function (){#pars_Liermann, pars_Ricker_AllMod, pars_Liermann_SepRic
   cols.order <- c(grey(0.2), grey(0.5), cols[3], cols[2], t_col(color=cols[1], percent=70), t_col(cols[1], percent=50), t_col(cols[1], percent=30), "white", cols[4])
   #print cols.order and then cut and past into line: scale_fill_manual below. These are the colours I used in the plot of priors. can add a legend to quickly see how ggplot reorders this befor plotting
   
-  ggplot(box.data, aes(x=reorder(as.factor(Model),order), y=RicLogA, fill=as.factor(Model))) +  
+  ggplot(box.data, aes(x=reorder(as.factor(Model),order), y=RiclogA, fill=as.factor(Model))) +  
     geom_boxplot(outlier.size=-1) + 
     scale_fill_manual(values=c("#808080", "#808080", "#35B779E6", "#31688EE6", "#4401544C", "#4401547F", "#440154B2", "white", "#FDE725E6" )) +
     #scale_fill_viridis(discrete = TRUE, alpha=0.6) + 
     geom_jitter(color="black", shape=as.factor(box.data$lh), size=2, alpha=0.9) + #,aes(shape=lh)?. I like shape 16,17
     scale_shape_manual(values=c(16,17)) + #Does not work 
-    ggtitle("Distribution of Ricker LogA") +
+    ggtitle("Distribution of Ricker logA") +
     theme(legend.position="none") +
     theme(axis.text=element_text(size=10),
           axis.title=element_text(size=20,face="bold"),
@@ -594,7 +594,7 @@ plotTestStocks <- function(data = ParkenTestSMSY){
 
 # With bias correction invGamm0.1 for Rsig and inGamm1 deltaSig
 #Stock       LL       UL     SMSY Source
-#TestlnSMSYo.9 S.Thompson 42839.86 150375.6 80262.51   IWAM
+#TestlnSMSY_ocean.9 S.Thompson 42839.86 150375.6 80262.51   IWAM
 
 # png(paste("DataOut/TestStock_PI_wBC.png", sep=""), width=9, height=7, units="in", res=500)
 # plotTestStocks()
@@ -720,18 +720,18 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=TRUE,
   
   # par(mfrow=c(7,3), mar = c(2, 3, 2, 1) + 0.1)
   # for (i in 1:N_stk){
-  #   ymax[i] <- max(WCVI_srep$Estimate[i], WCVIEsc[,i], na.rm=T)#WCVI_sgen$SGEN[i]*4
+  #   ymax[i] <- max(WCVI_SREP$Estimate[i], WCVIEsc[,i], na.rm=T)#WCVI_sgen$SGEN[i]*4
   #   plot(x= Years, y= WCVIEsc[,i], type="l", lwd=3, col=col.pal[1], ylab="", xlab="", las=0, xaxt="n", bty="n", ylim=c(0,ymax[i]))
   #   axis(side=1, tick=FALSE, padj=-1.8)
   #   abline(h=0)
   #   axis(side=2)
   #   mtext(StockNames$StockNames[i], side=3, line=0.5, at="1960")
   #   legend(x="topleft", legend=NA, title= paste( "   Sgen=", WCVI_sgen$SGEN[i] ), bty="n" )
-  #   abline(h=WCVI_smsy$Estimate[i], col=col.pal[4], lwd=2)
-  #   abline(h=WCVI_srep$Estimate[i], col=col.pal[3], lwd=2)
+  #   abline(h=WCVI_SMSY$Estimate[i], col=col.pal[4], lwd=2)
+  #   abline(h=WCVI_SREP$Estimate[i], col=col.pal[3], lwd=2)
   #   abline(h=WCVI_sgen$SGEN[i], col=col.pal[2], lwd=2)
-  #   polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_smsy$LL[i],2), rep(WCVI_smsy$UL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
-  #   polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_srep$LL[i],2), rep(WCVI_srep$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
+  #   polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_SMSY$LL[i],2), rep(WCVI_SMSY$UL[i],2)), col=col.pal.light[4], border=NA)#col.pal[4])
+  #   polygon(x=c(range(Years), rev(range(Years))), y=c(rep(WCVI_SREP$LL[i],2), rep(WCVI_SREP$UL[i],2)), col=col.pal.light[3], border=NA)#col.pal[3])
   # }
   
   N_inlets <- 5 + N_stk
@@ -771,26 +771,26 @@ plotWCVI_timeseries <- function(WCVIEsc=WCVIEsc, remove.EnhStocks=TRUE,
    
       if(!is.null(boot)){
         if(is.list(boot)){
-          smsy.U <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
-          smsy.L <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
-          polygon(x=c(range(Years), rev(range(Years))), y=c(rep(smsy.L,2), rep(smsy.U,2)), col=col.pal.light[4], border=NA)#col.pal[3])
+          SMSY.U <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
+          SMSY.L <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
+          polygon(x=c(range(Years), rev(range(Years))), y=c(rep(SMSY.L,2), rep(SMSY.U,2)), col=col.pal.light[4], border=NA)#col.pal[3])
           sgen.U <- boot$SGEN.boot %>% add_column(stock=row.names(boot$SGEN.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
           sgen.L <- boot$SGEN.boot %>% add_column(stock=row.names(boot$SGEN.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
           polygon(x=c(range(Years), rev(range(Years))), y=c(rep(sgen.L,2), rep(sgen.U,2)), col=col.pal.light[2], border=NA)#col.pal[3])
-          srep.U <- boot$SREP.boot %>% add_column(stock=row.names(boot$SREP.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
-          srep.L <- boot$SREP.boot %>% add_column(stock=row.names(boot$SREP.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
-          polygon(x=c(range(Years), rev(range(Years))), y=c(rep(srep.L,2), rep(srep.U,2)), col=col.pal.light[3], border=NA)#col.pal[3])
+          SREP.U <- boot$SREP.boot %>% add_column(stock=row.names(boot$SREP.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
+          SREP.L <- boot$SREP.boot %>% add_column(stock=row.names(boot$SREP.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
+          polygon(x=c(range(Years), rev(range(Years))), y=c(rep(SREP.L,2), rep(SREP.U,2)), col=col.pal.light[3], border=NA)#col.pal[3])
         }
         if(!is.list(boot)){
-          # smsy.U <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SMSY") %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
-          # smsy.L <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
-          # polygon(x=c(range(Years), rev(range(Years))), y=c(rep(smsy.L,2), rep(smsy.U,2)), col=col.pal.light[4], border=NA)#col.pal[3])
+          # SMSY.U <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SMSY") %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(upr)
+          # SMSY.L <- boot$SMSY.boot %>% add_column(stock=row.names(boot$SMSY.boot)) %>% filter(stock==    WCVI_rps$StockNames[i]) %>% pull(lwr)
+          # polygon(x=c(range(Years), rev(range(Years))), y=c(rep(SMSY.L,2), rep(SMSY.U,2)), col=col.pal.light[4], border=NA)#col.pal[3])
           sgen.U <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SGEN") %>% filter(Stock== WCVI_rps$StockNames[i]) %>% pull(upr)
           sgen.L <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SGEN") %>% filter(Stock== WCVI_rps$StockNames[i]) %>% pull(lwr)
           polygon(x=c(range(Years), rev(range(Years))), y=c(rep(sgen.L,2), rep(sgen.U,2)), col=col.pal.light[2], border=NA)#col.pal[3])
-          srep.U <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SREP") %>% filter(Stock== WCVI_rps$StockNames[i]) %>% pull(upr)
-          srep.L <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SREP") %>% filter(Stock== WCVI_rps$StockNames[i]) %>%  pull(lwr)
-          polygon(x=c(range(Years), rev(range(Years))), y=c(rep(srep.L,2), rep(srep.U,2)), col=col.pal.light[3], border=NA)#col.pal[3])
+          SREP.U <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SREP") %>% filter(Stock== WCVI_rps$StockNames[i]) %>% pull(upr)
+          SREP.L <- read.csv("DataOut/wcviCK-BootstrappedRPs.csv") %>% filter (RP=="SREP") %>% filter(Stock== WCVI_rps$StockNames[i]) %>%  pull(lwr)
+          polygon(x=c(range(Years), rev(range(Years))), y=c(rep(SREP.L,2), rep(SREP.U,2)), col=col.pal.light[3], border=NA)#col.pal[3])
           
         }
        

@@ -67,8 +67,8 @@ sGenOptimum <- function ( S, theta ) {
   prt <- S * exp( loga - b * S)
   sMSY <- ( 1 - gsl::lambert_W0 (exp ( 1 - loga) ) ) / b
   epsilon <- log(sMSY) - log(prt)
-  nLogLike <- - sum( dnorm ( epsilon, 0, 1, log = T))
-  return( nLogLike )
+  nlogLike <- - sum( dnorm ( epsilon, 0, 1, log = T))
+  return( nlogLike )
 }
 
 
@@ -98,8 +98,8 @@ bEst <- function(b, SMSY, SREP){
   
   pred <- (b * SMSY - log( 1 - b * SMSY) ) / b
   epsilon <- log(SREP) - log(pred)
-  nLogLike <- - sum( dnorm ( epsilon, 0, 1, log = T))
-  return(nLogLike)
+  nlogLike <- - sum( dnorm ( epsilon, 0, 1, log = T))
+  return(nlogLike)
 }
 bSolver <- function (SMSY, SREP) {
   # Function to estimate b from SMSY and SREP, where SMAX is bounded between 1/3 of SREP and SREP

@@ -620,7 +620,7 @@ if (run.bootstraps){
 }
 
 #-------------------------------------------------------------------------------
-# Now run bootstraps to derive LRPs with uncertainty in benchmarks
+# Now run bootstraps to derive LRPs with uncertainty in benchmarks ************* FORMAL SUBMISSION VALUES ******************
 # See implementation of this in WCVI_LRPs.Rmd
 
 run.bootstraps <- FALSE

@@ -72,10 +72,10 @@ Type objective_function<Type>:: operator() ()
   //DATA_SCALAR(logDeltaSigma);
   //DATA_SCALAR(logNuSigma);
   
-  DATA_SCALAR(sigDelta_mean);
-  DATA_SCALAR(sigDelta_sig);
-  DATA_SCALAR(sigNu_mean);
-  DATA_SCALAR(sigNu_sig);
+  DATA_SCALAR(SigDelta_mean);
+  DATA_SCALAR(SigDelta_sig);
+  DATA_SCALAR(SigNu_mean);
+  DATA_SCALAR(SigNu_sig);
   
   DATA_VECTOR(pred_lnWA);
   DATA_VECTOR(target_lnWA_ocean);
@@ -197,8 +197,8 @@ Type objective_function<Type>:: operator() ()
   
   // Normal prior on sigma_delta and sigma_nu
   if (SigDeltaPriorNorm == 1) {
-    ans += -dnorm(sigma_delta, sigDelta_mean, sigDelta_sig, true);
-    ans += -dnorm(sigma_nu, sigNu_mean, sigNu_sig, true);
+    ans += -dnorm(sigma_delta, SigDelta_mean, SigDelta_sig, true);
+    ans += -dnorm(sigma_nu, SigNu_mean, SigNu_sig, true);
   }
   
   // Inverse gamma prior on sigma_delta and sigma_nu

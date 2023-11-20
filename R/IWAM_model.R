@@ -222,10 +222,10 @@ data$Tau_D_dist <- 1
 # logDeltaSigma # currently listed as param in R, but data_scalar in TMB
 # logNuSigma # currently listed as param in R, but data_scalar in TMB
 
-data$sigDelta_mean <- 0.80 # See KFrun.R, #For half-normal use N(0,1)
-data$sigDelta_sig <- 0.28 # See KFrun.R,
-data$sigNu_mean <- 0.84 # See KFrun.R,
-data$sigNu_sig <- 0.275 # See KFrun.R,
+data$SigDelta_mean <- 0.80 # See KFrun.R, #For half-normal use N(0,1)
+data$SigDelta_sig <- 0.28 # See KFrun.R,
+data$SigNu_mean <- 0.84 # See KFrun.R,
+data$SigNu_sig <- 0.275 # See KFrun.R,
 
 # Read in log(watershed area) for additional stocks
 # Predicted lnWA for plottig CIs:

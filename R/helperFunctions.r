@@ -162,7 +162,7 @@ Sgen.fn2 <- function ( a.par, SREP,  explicit = TRUE , plot=FALSE) {
     }
   
   if( !explicit ){
-    SMSY <- log(a.bar)/ b.par * (0.5 - 0.07 * log(a.par))
+    SMSY <- log(a.par)/ b.par * (0.5 - 0.07 * log(a.par))
   }
   
   sgen.out <- sGenSolver( log(a.par), b.par )

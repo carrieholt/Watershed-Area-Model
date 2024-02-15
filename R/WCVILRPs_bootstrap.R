@@ -631,7 +631,7 @@ if (run.bootstraps){
   outBench <- list() 
   
   for (k in 1:nBS) {
-    out <- Get.LRP.bs(run_logReg=FALSE)
+    out <- Get.LRP.bs(run_logReg=FALSE, prod = "LifeStageModel")
     outBench[[k]] <- out$bench
   }
 

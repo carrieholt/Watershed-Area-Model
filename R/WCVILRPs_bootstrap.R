@@ -55,19 +55,37 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
   #----------------------------------------------------------------------------
-  if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
-  if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv")
+  ExtInd <- TRUE
+  if(!ExtInd){
+    if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
+    if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv") 
+  }
+  if(ExtInd){wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_ExtInd.csv")}
   
   # Remove Cypre as it's not a core indicator (Diana McHugh, 22 Oct 2020)
-  stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
-    filter (Param == "SMSY") %>% 
-    rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
-    dplyr::select (-Param, -X)#, -CU)
-  stock_SREP <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
-    filter (Param == "SREP") %>% 
-    rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
-    dplyr::select (-Param, -X)
-  wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
+  if(!ExtInd){
+    stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
+      filter (Param == "SMSY") %>% 
+      rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
+      dplyr::select (-Param, -X)#, -CU)
+    stock_SREP <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
+      filter (Param == "SREP") %>% 
+      rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
+      dplyr::select (-Param, -X)
+    wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
+  }
+  
+  if(ExtInd){
+    stock_SMSY <- wcviRPs_long %>%  
+      filter (Param == "SMSY") %>% 
+      rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
+      dplyr::select (-Param, -X)#, -CU)
+    stock_SREP <- wcviRPs_long %>%  
+      filter (Param == "SREP") %>% 
+      rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
+      dplyr::select (-Param, -X)
+    wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
+  }
   
   # Calculate scale for each stock
   digits <- count.dig(stock_SMSY$SMSY)
@@ -154,32 +172,45 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
       select(alpha,stkName) %>% rename(inlets=stkName, lnalpha=alpha)
     lnalpha_nBC_inlet <- read.csv("DataIn/CUPars_nBC.csv") %>% 
       select(alpha,stkName) %>% rename(inlets=stkName, lnalpha_nBC=alpha)
-    WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
-      filter (Stock != "Cypre") %>% rename(inlets=Inlet)
+    if(!ExtInd) {
+      WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
+        filter (Stock != "Cypre") %>% rename(inlets=Inlet)  
+    }
+    if(ExtInd) {
+      WCVIStocks <- read.csv("DataIn/WCVIStocks_ExtInd.csv") %>% 
+        rename(inlets=Inlet)
+      SWVIlna <- lnalpha_inlet %>% filter(inlets == "Barkley") %>% pull(lnalpha)
+      lnalpha_inlet <- rbind(lnalpha_inlet, data.frame(lnalpha = SWVIlna, inlets ="Nitinat"))
+      lnalpha_inlet <- rbind(lnalpha_inlet, data.frame(lnalpha = SWVIlna, inlets ="San Juan"))
+    }
+    
     Ric.A <- lnalpha_inlet %>% left_join(WCVIStocks, by="inlets") %>% select(c(lnalpha,inlets,CU,Stock))
     
-    wcviRPs <- wcviRPs %>% left_join(Ric.A) %>% mutate(a.RR=exp(lnalpha))
-    wcviRPs[wcviRPs$Stock=="Nitinat",]$a.RR <- exp(1)
-    wcviRPs[wcviRPs$Stock=="San Juan",]$a.RR <- exp(1)
-    wcviRPs[wcviRPs$Stock=="Nitinat",]$a.RR <- exp(1)
+    wcviRPs <- wcviRPs %>% left_join(Ric.A, by= "Stock") %>% mutate(a.RR=exp(lnalpha))
+    # wcviRPs[wcviRPs$Stock=="Nitinat",]$a.RR <- exp(1)
+    # wcviRPs[wcviRPs$Stock=="San Juan",]$a.RR <- exp(1)
+    # wcviRPs[wcviRPs$Stock=="Nitinat",]$a.RR <- exp(1)
     
-    wcviRPs[wcviRPs$Stock=="Barkley",]$a.RR <- 
-      wcviRPs[wcviRPs$inlets=="Barkley",]$a.RR[1]
-    wcviRPs[wcviRPs$Stock=="Clayoquot",]$a.RR <- 
-      wcviRPs[wcviRPs$inlets=="Clayoquot",]$a.RR[1]
-    wcviRPs[wcviRPs$Stock=="Kyuquot",]$a.RR <- 
-      wcviRPs[wcviRPs$inlets=="Kyuquot",]$a.RR[1]
-    wcviRPs[wcviRPs$Stock=="Nootka/Esperanza",]$a.RR <- 
-      wcviRPs[wcviRPs$inlets=="Nootka/Esperanza",]$a.RR[1]
-    wcviRPs[wcviRPs$Stock=="Quatsino",]$a.RR <- 
-      wcviRPs[wcviRPs$inlets=="Quatsino",]$a.RR[1]
-    wcviRPs[wcviRPs$Stock=="WCVI South",]$a.RR <- 
-      wcviRPs[wcviRPs$inlets=="Barkley",]$a.RR[1]
-    wcviRPs[wcviRPs$Stock=="WCVI Nootka & Kyuquot",]$a.RR <- 
-      wcviRPs[wcviRPs$inlets=="Nootka/Esperanza",]$a.RR[1]
-    wcviRPs[wcviRPs$Stock=="WCVI North",]$a.RR <- 
-      wcviRPs[wcviRPs$inlets=="Quatsino",]$a.RR[1]
-    
+    # Add aggregate alphas, if included in input, e.g., WCVI_SMSY_noEnh_wBC.csv 
+    if(dim(wcviRPs[wcviRPs$Stock=="Barkley",])[1]>0){ # if aggregates are in input file
+      wcviRPs[wcviRPs$Stock=="Barkley",]$a.RR <- 
+        wcviRPs[wcviRPs$inlets=="Barkley",]$a.RR[1]
+      wcviRPs[wcviRPs$Stock=="Clayoquot",]$a.RR <- 
+        wcviRPs[wcviRPs$inlets=="Clayoquot",]$a.RR[1]
+      wcviRPs[wcviRPs$Stock=="Kyuquot",]$a.RR <- 
+        wcviRPs[wcviRPs$inlets=="Kyuquot",]$a.RR[1]
+      wcviRPs[wcviRPs$Stock=="Nootka/Esperanza",]$a.RR <- 
+        wcviRPs[wcviRPs$inlets=="Nootka/Esperanza",]$a.RR[1]
+      wcviRPs[wcviRPs$Stock=="Quatsino",]$a.RR <- 
+        wcviRPs[wcviRPs$inlets=="Quatsino",]$a.RR[1]
+      wcviRPs[wcviRPs$Stock=="WCVI South",]$a.RR <- 
+        wcviRPs[wcviRPs$inlets=="Barkley",]$a.RR[1]
+      wcviRPs[wcviRPs$Stock=="WCVI Nootka & Kyuquot",]$a.RR <- 
+        wcviRPs[wcviRPs$inlets=="Nootka/Esperanza",]$a.RR[1]
+      wcviRPs[wcviRPs$Stock=="WCVI North",]$a.RR <- 
+        wcviRPs[wcviRPs$inlets=="Quatsino",]$a.RR[1]
+    }
+      
     wcviRPs <- wcviRPs %>% select(-c(inlets, CU, lnalpha)) %>% rename(a.par=a.RR)
     
     # When incorporating uncertainty in Ricker A:
@@ -219,6 +250,60 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
                          "SREPLL", "SREPUL", "a.par")]#"CU"
  
   }# if(prod == "RunReconstruction"){
+  
+  
+  
+  if(prod == "Parken"){
+    est_loga <- function(SMSY, SREP, shortloga=FALSE){
+      
+      loga <- nlminb(start = (0.5 - SMSY/SREP) / 0.07, 
+                     objective = calc_loga, 
+                     SMSY= SMSY, 
+                     SREP=SREP)$par
+      if(shortloga) loga <- (0.5 - SMSY/SREP) / 0.07
+      beta <- loga/SREP
+      return( list( loga = loga , beta = beta, SMSY = SMSY, SREP = SREP) )
+    }
+    
+    if(!ExtInd) {
+      WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
+        filter (Stock != "Cypre") %>% rename(inlets=Inlet)  
+      if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
+      if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv")
+      
+    }
+    if(ExtInd) {
+      WCVIStocks <- read.csv("DataIn/WCVIStocks_ExtInd.csv") %>% 
+        rename(inlets=Inlet)
+      wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_ExtInd.csv")
+    }
+    
+    
+    wcvi_SMSY <- wcviRPs_long %>% filter(Param == "SMSY") %>% select(Estimate) 
+    wcvi_SREP <- wcviRPs_long %>% filter(Param == "SREP") %>% select(Estimate) 
+    lnalpha_Parkin <- purrr::map2_dfr (wcvi_SMSY, wcvi_SREP, shortloga=FALSE, est_loga)
+    
+    sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP), SREP_logSE$SE))
+    if(min(sREP)<0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, SREP_SE$SE))
+    
+    
+    SGENcalcs <- purrr::map2_dfr (exp(median(lnalpha_Parkin$loga)), sREP/Scale, Sgen.fn2)
+    
+    wcviRPs <- wcviRPs %>% mutate (SGEN = SGENcalcs$SGEN) %>% 
+      mutate(SGEN=round(SGEN*Scale,0))
+    wcviRPs <- wcviRPs %>% mutate (a.par = SGENcalcs$apar) %>% 
+      mutate(a.par=round(a.par,2))
+    wcviRPs <- wcviRPs %>% mutate (SMSY = SGENcalcs$SMSY) %>% 
+      mutate(SMSY=round(SMSY*Scale,0))
+    
+    wcviRPs <- wcviRPs[c("Stock", "SGEN", "SMSY", "SMSYLL", "SMSYUL", "SREP", 
+                         "SREPLL", "SREPUL", "a.par")]#"CU"
+    
+    
+  }
+  
+  
+  
   
   
   
@@ -626,72 +711,95 @@ if (run.bootstraps){
 run.bootstraps <- FALSE
 
 if (run.bootstraps){
-  set.seed(1)#10#12#13(work for 1000), for 100, 200, 300, (for 5000trials), 1, 2, 3 (for 20000trials)
-  nBS <- 20000 # number trials for bootstrapping
-  outBench <- list() 
-  
-  for (k in 1:nBS) {
-    out <- Get.LRP.bs(run_logReg=FALSE, prod = "LifeStageModel")
-    outBench[[k]] <- out$bench
+  # for (j in 1:5){
+    set.seed(1)#j#10#12#13(work for 1000), for 100, 200, 300, (for 5000trials), 1, 2, 3 (for 20000trials)
+    # set.seed(3)#10#12#13(work for 1000), for 100, 200, 300, (for 5000trials), 1, 2, 3 (for 20000trials)
+    nBS <- 40000#80000#40000  # number trials for bootstrapping
+    outBench <- list() 
+    
+    for (k in 1:nBS) {
+      # out <- Get.LRP.bs(run_logReg=FALSE, prod = "LifeStageModel")
+      out <- Get.LRP.bs(run_logReg=FALSE, prod = "Parken")
+      outBench[[k]] <- out$bench
+    }
+    
+    # # Is 200 enough trials? Yes
+    # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
+    # plot(running.mean)
+    
+    
+    # Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th and 
+    # 95th percentiles
+    SGEN.bs <- select(as.data.frame(outBench), starts_with("SGEN"))
+    ExtInd <- TRUE
+    if(!ExtInd){
+      stockNames <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
+        filter(Stock != "Cypre") %>% pull(Stock)
+    }
+    if(ExtInd){
+      stockNames <- read.csv("DataOut/WCVI_SMSY_ExtInd.csv") %>% 
+        pull(Stock)
+    }
+    
+    stockNames <- unique(stockNames)
+    
+    rownames(SGEN.bs) <- stockNames
+    SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.5), 
+                            lwr=apply(SGEN.bs, 1, quantile, 0.025),
+                            upr=apply(SGEN.bs, 1, quantile, 0.975) )
+    
+    SMSY.bs <- select(as.data.frame(outBench), starts_with("SMSY"))
+    rownames(SMSY.bs) <- stockNames
+    SMSY.boot <- data.frame(SMSY= apply(SMSY.bs, 1, quantile, 0.5), 
+                            lwr=apply(SMSY.bs, 1, quantile, 0.025),
+                            upr=apply(SMSY.bs, 1, quantile, 0.975) )
+    
+    SREP.bs <- select(as.data.frame(outBench), starts_with("SREP"))
+    rownames(SREP.bs) <- stockNames
+    SREP.boot <- data.frame(SREP= apply(SREP.bs, 1, quantile, 0.5), 
+                            lwr=apply(SREP.bs, 1, quantile, 0.025),
+                            upr=apply(SREP.bs, 1, quantile, 0.975) )
+    
+    boot <- list(SGEN.boot=SGEN.boot, SMSY.boot=SMSY.boot, 
+                 SREP.boot=SREP.boot)
+    
+    df1 <- data.frame(boot[["SGEN.boot"]], Stock=rownames(boot[["SGEN.boot"]]), RP="SGEN") 
+    df1 <- df1 %>% rename(Value=SGEN)
+    df2 <- data.frame(boot[["SREP.boot"]], Stock=rownames(boot[["SREP.boot"]]), RP="SREP")
+    df2 <- df2 %>% rename(Value=SREP)
+    df3 <- data.frame(boot[["SMSY.boot"]], Stock=rownames(boot[["SMSY.boot"]]), RP="SMSY")
+    df3 <- df3 %>% rename(Value=SMSY)  
+    dfout <- add_row(df1, df2)
+    dfout <- add_row(dfout, df3)
+    rownames(dfout) <- NULL
+    # now round to 2 signif digits
+    dfout <- dfout %>% mutate(Value=signif(Value, 2)) %>% 
+      mutate(lwr=signif(lwr,2)) %>% 
+      mutate (upr=signif(upr,2))
+    
+    # if(!ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs.csv") 
+    # if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd.csv") 
+    write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_Parken.csv")     
+    # write.csv(dfout, paste("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v",j,".csv", sep=""))     
+    
   }
-
-  # # Is 200 enough trials? Yes
-  # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
-  # plot(running.mean)
   
-
-  # Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th and 
-  # 95th percentiles
-  SGEN.bs <- select(as.data.frame(outBench), starts_with("SGEN"))
-  stockNames <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
-    filter(Stock != "Cypre") %>% pull(Stock)
-  stockNames <- unique(stockNames)
-
-  rownames(SGEN.bs) <- stockNames
-  SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.5), 
-                          lwr=apply(SGEN.bs, 1, quantile, 0.025),
-                          upr=apply(SGEN.bs, 1, quantile, 0.975) )
-  
-  SMSY.bs <- select(as.data.frame(outBench), starts_with("SMSY"))
-  rownames(SMSY.bs) <- stockNames
-  SMSY.boot <- data.frame(SMSY= apply(SMSY.bs, 1, quantile, 0.5), 
-                          lwr=apply(SMSY.bs, 1, quantile, 0.025),
-                          upr=apply(SMSY.bs, 1, quantile, 0.975) )
-  
-  SREP.bs <- select(as.data.frame(outBench), starts_with("SREP"))
-  rownames(SREP.bs) <- stockNames
-  SREP.boot <- data.frame(SREP= apply(SREP.bs, 1, quantile, 0.5), 
-                          lwr=apply(SREP.bs, 1, quantile, 0.025),
-                          upr=apply(SREP.bs, 1, quantile, 0.975) )
-  
-  boot <- list(SGEN.boot=SGEN.boot, SMSY.boot=SMSY.boot, 
-               SREP.boot=SREP.boot)
-  
-  df1 <- data.frame(boot[["SGEN.boot"]], Stock=rownames(boot[["SGEN.boot"]]), RP="SGEN") 
-  df1 <- df1 %>% rename(Value=SGEN)
-  df2 <- data.frame(boot[["SREP.boot"]], Stock=rownames(boot[["SREP.boot"]]), RP="SREP")
-  df2 <- df2 %>% rename(Value=SREP)
-  df3 <- data.frame(boot[["SMSY.boot"]], Stock=rownames(boot[["SMSY.boot"]]), RP="SMSY")
-  df3 <- df3 %>% rename(Value=SMSY)  
-  dfout <- add_row(df1, df2)
-  dfout <- add_row(dfout, df3)
-  rownames(dfout) <- NULL
-  # now round to 2 signif digits
-  dfout <- dfout %>% mutate(Value=signif(Value, 2)) %>% 
-    mutate(lwr=signif(lwr,2)) %>% 
-    mutate (upr=signif(upr,2))
-  
-  write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs.csv") 
-  
-}
+# }
 #Found with 20000 the results have stabilized to two significant digits. Use 20000v1, and recommend 2 signifcant digits to users
 # To check the SE is within 2% with 5 trials of 20,000
+# Reran with 80000 to get closer results 20 March 2024
 
-d1 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v1.csv")
-d2 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v2.csv")
-d3 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v3.csv")
-d4 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v4.csv")
-d5 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v5.csv")
+d1 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v1.csv")
+d2 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v2.csv")
+d3 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v3.csv")
+d4 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v4.csv")
+d5 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v5.csv")
+
+# d1 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v1.csv")
+# d2 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v2.csv")
+# d3 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v3.csv")
+# d4 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v4.csv")
+# d5 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v5.csv")
 n<-length(d1$Value)
 sd.Value <- NA; sd.lwr <- NA; sd.upr <- NA
 mean.Value <- NA; mean.lwr <- NA; mean.upr <- NA

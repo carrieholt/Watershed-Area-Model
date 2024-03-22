@@ -55,17 +55,33 @@ Get.LRP <- function (remove.EnhStocks=TRUE, prod="LifeStageModel",
   #if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh.csv")
   if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
   if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv")
+  ExtInd <- FALSE
+  if(ExtInd){wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_ExtInd.csv")}
   
   # Remove Cypre as it's not a core indicator (Diana McHugh, 22 Oct 2020)
-  stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
-    filter (Param == "SMSY") %>% 
-    rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
-    dplyr::select (-Param, -X)#, -CU)
-  stock_SREP <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
-    filter (Param == "SREP") %>% 
-    rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
-    dplyr::select (-Param, -X)
-  wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
+  if(!ExtInd){
+    stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
+      filter (Param == "SMSY") %>% 
+      rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
+      dplyr::select (-Param, -X)#, -CU)
+    stock_SREP <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
+      filter (Param == "SREP") %>% 
+      rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
+      dplyr::select (-Param, -X)
+    wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
+  }
+  
+  if(ExtInd){
+    stock_SMSY <- wcviRPs_long %>%  
+      filter (Param == "SMSY") %>% 
+      rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
+      dplyr::select (-Param, -X)#, -CU)
+    stock_SREP <- wcviRPs_long %>%  
+      filter (Param == "SREP") %>% 
+      rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
+      dplyr::select (-Param, -X)
+    wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
+  }
   
   # Calculate scale for each stock
   digits <- count.dig(stock_SMSY$SMSY)
@@ -112,8 +128,13 @@ Get.LRP <- function (remove.EnhStocks=TRUE, prod="LifeStageModel",
                          "SREPLL", "SREPUL", "a.par")]#"CU"
     
     # Write this to a csv file so that it can be called in plotting functions
-    if (remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_noEnh.csv")
-    if (!remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_wEnh.csv")
+    if(!ExtInd){
+      if (remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_noEnh.csv")
+      if (!remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_wEnh.csv")
+    }
+    if(ExtInd){
+      write.csv(wcviRPs, "DataOut/wcviRPs_ExtInd.csv")
+    }
     
   }#   if(prod == "LifeStageModel"){
   
@@ -300,6 +321,8 @@ Get.LRP <- function (remove.EnhStocks=TRUE, prod="LifeStageModel",
     add_column(Recruits = NA)
     
   if(remove.EnhStocks) write.csv(Inlet_Sum_csv, file="DataOut/Inlet_Sum.csv", row.names=F)
+  if(!remove.EnhStocks) write.csv(Inlet_Sum_csv, file="DataOut/Inlet_Sum_wEnh.csv", row.names=F)
+  # Copy this file over to SalmonLRP_RetroEval/WCVICaseStudy/DataIn/
   #----------------------------------------------------------------------------
   # Sum escapements across indicators within CUs
   #----------------------------------------------------------------------------

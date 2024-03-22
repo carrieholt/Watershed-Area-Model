@@ -297,11 +297,21 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     CUlnWAnoEnh <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
       filter(Stock != "Cypre") %>% filter(Enh==0) %>%
       group_by(CU) %>% summarize(CUlnWA = log(sum(WA)))
-    if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA,
-                                             CUlnWAnoEnh$CUlnWA)
-    if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
-                                              CUlnWA$CUlnWA )
 
+    ExtInd <- FALSE# If using core indicators as provided in 2020 then this is F
+    if(!ExtInd){
+      if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA,
+                                               CUlnWAnoEnh$CUlnWA)
+      if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
+                                                CUlnWA$CUlnWA )
+    }
+
+    if(ExtInd){# If using extemsive indicators provided in 2024 without aggregation
+      data$TestlnWAo <- read.csv("DataIn/WCVIStocks_ExtInd.csv") %>% mutate (lnWA=log(WA)) %>%
+        filter(lh==1) %>% pull(lnWA)
+      
+    }
+    
     ## Code for using Parken et al. test stocks:
     # data$TestlnWAs <- read.csv("DataIn/ParkenTestStocks.csv") %>% mutate (lnWA=log(WA)) %>%
     # filter(lh==0) %>% pull(lnWA)
@@ -831,8 +841,14 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   WAo <- WA %>% left_join(Stream) %>% filter(lh == 1) %>% pull(WA)
   
   # Get names of WCVI stocks
-  sn <- read.csv("DataIn/WCVIStocks.csv")
-  StockNames <- c(as.vector(sn$Stock), as.vector(InletlnWA$Inlet), as.vector(CUlnWA$CU))
+  if(!ExtInd) {
+    sn <- read.csv("DataIn/WCVIStocks.csv")
+    StockNames <- c(as.vector(sn$Stock), as.vector(InletlnWA$Inlet), as.vector(CUlnWA$CU))
+  }  
+  if(ExtInd) {
+    sn <- read.csv("DataIn/WCVIStocks_ExtInd.csv")
+    StockNames <- c(as.vector(sn$Stock))
+  }
   
   # Get Predicted SMSY and SREP values for new "test" WCVI stocks and their Prediction Intervals
   TestSMSY <- data.frame() 
@@ -860,8 +876,14 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
   
   # Write SMSY and SREP with PIs to file
-  if(remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh_wBC.csv")
-  if(!remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh_wBC.csv")
+  if(!ExtInd){
+    if(remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh_wBC.csv")
+    if(!remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh_wBC.csv")
+  }  
+  if(ExtInd){# this includes BC
+    write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd.csv")
+  }  
+  
   
 }# End of runIWAM() function
 

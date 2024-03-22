@@ -17,18 +17,18 @@ remove.EnhStocks <- TRUE
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-# test <- seq(0,4, len=40)
-# lna_sigma <- 0.51
-# plot(x=test, y=dnorm(test, 1,lna_sigma), type="l", xlab="LogA", 
-# ylab="Probability Density", ylim=c(0,1))
-# # With this lna_sigma, 95% of probabilty density is within bounds mean 
-# # +/- 1.0 (assuming range 0-2, mean=1). 0.51*1.96 = 1.0
-# 
-# lnalpha_cu <- read.csv("DataIn/CUPars_wBC.csv") %>% 
-#   select(alpha,stkName) %>% rename(inlets=stkName, lnalpha=alpha)
-# lines(x=test, y=dnorm(test, lnalpha_cu$lnalpha[1], lna_sigma), col="grey")
-# lines(x=test, y=dnorm(test, lnalpha_cu$lnalpha[2], lna_sigma), col="grey")
-# lines(x=test, y=dnorm(test, lnalpha_cu$lnalpha[3], lna_sigma), col="grey")
+test <- seq(0,4, len=40)
+lna_sigma <- 0.51
+plot(x=test, y=dnorm(test, 1,lna_sigma), type="l", xlab="LogA",
+ylab="Probability Density", ylim=c(0,1))
+# With this lna_sigma, 95% of probabilty density is within bounds mean
+# +/- 1.0 (assuming range 0-2, mean=1). 0.51*1.96 = 1.0
+
+lnalpha_cu <- read.csv("DataIn/CUPars_wBC.csv") %>%
+  select(alpha,stkName) %>% rename(inlets=stkName, lnalpha=alpha)
+lines(x=test, y=dnorm(test, lnalpha_cu$lnalpha[1], lna_sigma), col="grey")
+lines(x=test, y=dnorm(test, lnalpha_cu$lnalpha[2], lna_sigma), col="grey")
+lines(x=test, y=dnorm(test, lnalpha_cu$lnalpha[3], lna_sigma), col="grey")
 # 
 
 
@@ -190,10 +190,11 @@ cu <- c(rep("Life-History-Model", 1000),
         rep("Run Reconstruction-North", 1000))
 
 df <- data.frame(Value = x, Productivity = group, cu=cu)
+# df <- df %>% filter(Productivity != "Life-History-Model")
 alpha_plot <- ggplot(df) + 
   aes(x = Value, fill = Productivity, alpha = cu, linetype = Productivity) + 
   geom_density(bw=0.2) + 
-  scale_alpha_manual(values = c("Life-History-Model" = 0.5, 
+  scale_alpha_manual(values = c("Life-History-Model" = 0.5,
                                 "Run Reconstruction-South" = 0.2,
                                 "Run Reconstruction-Nootka Kyuquot" = 0.2,
                                 "Run Reconstruction-North" = 0.2), 
@@ -206,45 +207,58 @@ alpha_plot <- ggplot(df) +
   theme(legend.title = element_blank(), legend.position = "bottom") + 
   geom_vline (xintercept = median(lnalpha_Parkin$loga), linetype = "dotted") +
   xlim(c(0,3))
-ggsave(plot=alpha_plot,filename=here::here("DataOut/alpha_plots.png"))
+ggsave(plot=alpha_plot,filename=here::here("DataOut/alpha_plots_RR.png"))
 
 # plot Sgen values
 # 
 
-LH_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs.csv"))
-RR_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs_ProdRR.csv"))
-Pa_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRP-ParkenProd.csv"))
+# LH_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs.csv"))
+# RR_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs_ProdRR.csv"))
+# Pa_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRP-ParkenProd.csv"))
+LH_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs_ExtInd.csv"))
+RR_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs_ExtInd_RunReconstruction.csv"))
+Pa_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs_ExtInd_Parken.csv"))
+
+core_ind <- read.csv(here::here("DataIn", "WCVIStocks_ExtInd.csv"))
 
 LH_sgens <- LH_sgens %>% mutate(Prod="LifeHistory")
 RR_sgens <- RR_sgens %>% mutate(Prod="RunReconstruction")
 Pa_sgens <- Pa_sgens %>% mutate(Prod="Parken")
 
 df <- rbind(LH_sgens, RR_sgens, Pa_sgens)
-df <- df %>% filter(RP=="SGEN")
+df <- left_join(df, core_ind, by="Stock")
+df <- df %>% filter(CoreInd==1)
+
+benchmark <- "SGEN"#"SMSY"#"SREP"
+
+df <- df %>% filter(RP==benchmark)
 order <- c("LifeHistory", "RunReconstruction", "Parken")
 df <-   df %>% mutate(Prod=factor(Prod, levels=order))
-Sgen_plot_prod_assumption <-ggplot(df, 
-                                   aes(x=Stock, y=Value,ymin=lwr, ymax=upr, 
+upper_y_lim <- max(df$upr)
+Benchmark_plot_prod_assumption <-ggplot(df, 
+                                   aes(x=Stock, y=Value,#ymin=lwr, ymax=upr, 
                                        fill=as.factor(Prod))) + 
        # aes(x=reorder(Prod <- factor(Prod, 
        #                                  levels=names("LifeHistory", "RunReconstruction", "Parken"))))) +
   geom_bar(aes( y=Value), stat="identity",
            position=position_dodge(), alpha=0.7) + 
-  geom_errorbar(width=0.1,
+  geom_errorbar(aes(x=Stock, y=Value,ymin=lwr, ymax=upr),
+                width=0.1,
                 alpha = 0.9,
                 size=0.8,
                 position=position_dodge(width=0.9), colour="grey") +
-  coord_cartesian(ylim=c(0, 4000)) +
-  theme(legend.position = "bottom") + 
+  coord_cartesian(ylim=c(0, upper_y_lim)) +
+  theme(legend.position = "bottom", legend.text=element_text(size=8)) + 
   theme(strip.background = element_rect(fill = alpha('black', 0.1))) + 
-  ylab("Sgen") +
+  ylab(benchmark) +
   xlab(element_blank()) + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  guides(fill=guide_legend(title="Assumption about Productivity:"))
+  guides(fill=guide_legend(title="Assumption about Productivity:")) +
+  theme(legend.title=element_text(size=8))
   
   
-ggsave(plot=Sgen_plot_prod_assumption, 
-       filename=here::here("DataOut", "Sgen_plot_prod_assumption.png"))
+ggsave(plot=Benchmark_plot_prod_assumption, 
+       filename=here::here("DataOut", paste(benchmark,"_plot_prod_assumption.png", sep="")))
 
 
 

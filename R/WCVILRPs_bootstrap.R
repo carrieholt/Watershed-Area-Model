@@ -55,40 +55,76 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
   #----------------------------------------------------------------------------
-  ExtInd <- TRUE
+  ExtInd <- FALSE#TRUE
+  CoreInd <- TRUE#FALSE
+  AllExMH <- FALSE
   if(!ExtInd){
-    if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
-    if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv") 
+    if(!CoreInd & !AllExMH) {
+      if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
+      if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv")   
+    }
+    if(CoreInd & !AllExMH){
+      wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_CoreInd.csv")
+    }
+    if(!CoreInd & AllExMH){
+      wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_AllExMH.csv")
+    }
+    
   }
   if(ExtInd){wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_ExtInd.csv")}
   
   # Remove Cypre as it's not a core indicator (Diana McHugh, 22 Oct 2020)
-  if(!ExtInd){
+  if(!ExtInd & !CoreInd){
     stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
-      filter (Param == "SMSY") %>% 
+      filter (Param == "SMSY") %>% filter(!duplicated(Stock)) %>%#remove duplicate San Juan CU for AllexMH
       rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
       dplyr::select (-Param, -X)#, -CU)
     stock_SREP <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
-      filter (Param == "SREP") %>% 
+      filter (Param == "SREP") %>% filter(!duplicated(Stock)) %>% #remove duplicate San Juan CU for AllexMH
       rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
       dplyr::select (-Param, -X)
     wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
+    if(AllExMH){ # Add the inlet back in as the end of the list of inlets, for AllExMH only
+      SJ_SMSY <- wcviRPs_long %>% filter(Stock=="San Juan") %>% 
+        filter (Param == "SMSY") %>% 
+        filter(!duplicated(Stock)) %>%
+        rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
+        dplyr::select (-Param, -X)
+      SJ_SREP <- wcviRPs_long %>% filter(Stock=="San Juan") %>% 
+        filter (Param == "SREP") %>% 
+        filter(!duplicated(Stock)) %>%
+        rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
+        dplyr::select (-Param, -X)
+      SJ <- left_join(SJ_SMSY, SJ_SREP, by = "Stock")
+      stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
+        filter (Param == "SMSY") %>% filter(!duplicated(Stock)) %>%#remove duplicate San Juan CU for AllexMH
+        rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
+        dplyr::select (-Param, -X)#, -CU)
+      stock_SREP <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
+        filter (Param == "SREP") %>% filter(!duplicated(Stock)) %>% #remove duplicate San Juan CU for AllexMH
+        rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
+        dplyr::select (-Param, -X)
+      
+      wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
+      wcviRPs <- wcviRPs %>% add_row(SJ, .after=22)
+    }
   }
   
-  if(ExtInd){
+  if(ExtInd|CoreInd){
     stock_SMSY <- wcviRPs_long %>%  
       filter (Param == "SMSY") %>% 
       rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
       dplyr::select (-Param, -X)#, -CU)
-    stock_SREP <- wcviRPs_long %>%  
+    stock_SREP <- wcviRPs_long %>% 
       filter (Param == "SREP") %>% 
       rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
       dplyr::select (-Param, -X)
     wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
+    
   }
   
   # Calculate scale for each stock
-  digits <- count.dig(stock_SMSY$SMSY)
+  digits <- count.dig(wcviRPs$SMSY)#count.dig(stock_SMSY$SMSY)
   Scale <- 10^(digits)
   
   #SREP_SE <- wcviRPs %>% mutate(SE = ((wcviRPs$SREP) - (wcviRPs$SREPLL)) / 1.96)
@@ -714,12 +750,12 @@ if (run.bootstraps){
   # for (j in 1:5){
     set.seed(1)#j#10#12#13(work for 1000), for 100, 200, 300, (for 5000trials), 1, 2, 3 (for 20000trials)
     # set.seed(3)#10#12#13(work for 1000), for 100, 200, 300, (for 5000trials), 1, 2, 3 (for 20000trials)
-    nBS <- 40000#80000#40000  # number trials for bootstrapping
+    nBS <- 80000#40000  # number trials for bootstrapping
     outBench <- list() 
     
     for (k in 1:nBS) {
       # out <- Get.LRP.bs(run_logReg=FALSE, prod = "LifeStageModel")
-      out <- Get.LRP.bs(run_logReg=FALSE, prod = "Parken")
+      out <- Get.LRP.bs(run_logReg=FALSE, prod = "LifeStageModel")
       outBench[[k]] <- out$bench
     }
     
@@ -731,17 +767,46 @@ if (run.bootstraps){
     # Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th and 
     # 95th percentiles
     SGEN.bs <- select(as.data.frame(outBench), starts_with("SGEN"))
-    ExtInd <- TRUE
+    ExtInd <- FALSE# must change this in the function above as well ****
+    CoreInd <- TRUE# must change this in the function above as well ****
+    AllExMH <- FALSE# must change this in the function above as well ****
     if(!ExtInd){
-      stockNames <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
-        filter(Stock != "Cypre") %>% pull(Stock)
+      if(!CoreInd & !AllExMH){
+        if(remove.EnhStocks) {
+          stockNames <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
+            filter(Stock != "Cypre") %>% 
+            filter(Param == "SMSY") %>% pull(Stock)  
+        }
+        if(!remove.EnhStocks) {
+          stockNames <- read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv") %>% 
+            filter(Stock != "Cypre") %>% 
+            filter(Param == "SMSY") %>% pull(Stock)  
+        }
+        stockNames <- stockNames %>% filter(Param=SMSY)
+      }
+        
+      if(CoreInd){
+        stockNames <- read.csv("DataOut/WCVI_SMSY_CoreInd.csv") %>% 
+          filter(Param == "SMSY") %>%  
+          pull(Stock)  
+      }
+      if(AllExMH){
+        stockNames <- read.csv("DataOut/WCVI_SMSY_AllExMH.csv") %>% 
+          filter(Stock != "Cypre") %>% 
+          filter(Param=="SMSY") %>% 
+          pull(Stock)  
+        stockNames[23] <- "San Juan Inlet"
+      }
+      
+          
     }
     if(ExtInd){
       stockNames <- read.csv("DataOut/WCVI_SMSY_ExtInd.csv") %>% 
         pull(Stock)
+      stockNames <- stockNames %>% filter(Param=SMSY)
     }
     
-    stockNames <- unique(stockNames)
+   
     
     rownames(SGEN.bs) <- stockNames
     SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.5), 
@@ -777,11 +842,14 @@ if (run.bootstraps){
       mutate(lwr=signif(lwr,2)) %>% 
       mutate (upr=signif(upr,2))
     
-    # if(!ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs.csv") 
-    # if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd.csv") 
-    write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_Parken.csv")     
+    if(!ExtInd & !CoreInd & !AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs.csv") 
+    if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd.csv") 
+    if(CoreInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_CoreInd.csv") 
+    if(AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_AllExMH.csv") 
+    # write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_Parken.csv")     
     # write.csv(dfout, paste("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v",j,".csv", sep=""))     
     
+   
   }
   
 # }

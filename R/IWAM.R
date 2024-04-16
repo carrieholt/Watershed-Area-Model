@@ -298,12 +298,53 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
       filter(Stock != "Cypre") %>% filter(Enh==0) %>%
       group_by(CU) %>% summarize(CUlnWA = log(sum(WA)))
 
-    ExtInd <- FALSE# If using core indicators as provided in 2020 then this is F
+    ExtInd <- FALSE#If using core indicators as provided in 2020 then this is F
     if(!ExtInd){
-      if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA,
-                                               CUlnWAnoEnh$CUlnWA)
-      if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
-                                                CUlnWA$CUlnWA )
+      CoreInd <- FALSE # Only core escapement indicators
+      AllExMH <- FALSE # All esc indicators except major hatchery facilities
+      
+      if(!CoreInd){ # Inital data sets here: using PNI>0.5 or all esc inds
+        if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA,
+                                                 CUlnWAnoEnh$CUlnWA)
+        if(!remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
+                                                  CUlnWA$CUlnWA )
+      }
+      if(CoreInd){ # Core indicators are 6 natural ind from SWVI and N&K
+        data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% 
+          mutate (lnWA=log(WA)) %>%
+          filter(lh==1) %>% 
+          filter(CoreInd==1) %>% 
+          pull(lnWA)
+        
+        # Add aggregated WAs at inlet level
+        InletlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+          filter(lh==1) %>% filter(CoreInd==1) %>%  group_by(Inlet) %>%
+          summarize(InletlnWA = log(sum(WA))) 
+        CUlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+          filter(lh==1) %>% filter(CoreInd==1) %>% group_by(CU) %>%
+          summarize(CUlnWA = log(sum(WA)))
+        data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
+                            CUlnWA$CUlnWA)
+      }
+      
+      if(AllExMH){# All Esc Ind except 3 major hatchery facilities
+        data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% 
+          mutate (lnWA=log(WA)) %>%
+          filter(lh==1) %>% 
+          filter(highEnh==0) %>% 
+          pull(lnWA)
+        
+        # Add aggregated WAs at inlet level
+        InletlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+          filter(lh==1) %>% filter(highEnh==0) %>%  group_by(Inlet) %>%
+          summarize(InletlnWA = log(sum(WA))) 
+        CUlnWA <- data.frame(read.csv("DataIn/WCVIStocks.csv")) %>% 
+          filter(lh==1) %>% filter(highEnh==0) %>% group_by(CU) %>%
+          summarize(CUlnWA = log(sum(WA)))
+        data$TestlnWAo <- c(data$TestlnWAo, InletlnWA$InletlnWA,
+                            CUlnWA$CUlnWA)
+      }
+      
     }
 
     if(ExtInd){# If using extemsive indicators provided in 2024 without aggregation
@@ -842,8 +883,14 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   
   # Get names of WCVI stocks
   if(!ExtInd) {
-    sn <- read.csv("DataIn/WCVIStocks.csv")
-    StockNames <- c(as.vector(sn$Stock), as.vector(InletlnWA$Inlet), as.vector(CUlnWA$CU))
+    if(!CoreInd & !AllExMH) sn <- read.csv("DataIn/WCVIStocks.csv")
+    if(CoreInd & !AllExMH) sn <- read.csv("DataIn/WCVIStocks.csv") %>% 
+        filter(CoreInd==1)
+    if(!CoreInd & AllExMH) sn <- read.csv("DataIn/WCVIStocks.csv") %>% 
+        filter(highEnh==0)
+    StockNames <- c(as.vector(sn$Stock), 
+                    as.vector(InletlnWA$Inlet), 
+                    as.vector(CUlnWA$CU))
   }  
   if(ExtInd) {
     sn <- read.csv("DataIn/WCVIStocks_ExtInd.csv")
@@ -877,8 +924,17 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   
   # Write SMSY and SREP with PIs to file
   if(!ExtInd){
-    if(remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh_wBC.csv")
-    if(!remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh_wBC.csv")
+    if(!CoreInd & !AllExMH){
+      if(remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh_wBC.csv")
+      if(!remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh_wBC.csv") 
+    }
+    if(CoreInd & !AllExMH){
+      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_CoreInd.csv")
+    }
+    if(!CoreInd & AllExMH){
+      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_AllExMH.csv")
+    }
+    
   }  
   if(ExtInd){# this includes BC
     write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd.csv")

@@ -182,9 +182,9 @@ x <- c(rnorm(1000, 1, lna_sigma),
        rnorm(1000, lnalpha_cu$lnalpha[1], lna_sigma), 
        rnorm(1000, lnalpha_cu$lnalpha[2], lna_sigma), 
        rnorm(1000, lnalpha_cu$lnalpha[3], lna_sigma) )
-group <- c(rep("Life-History-Model", 1000), 
+group <- c(rep("Life-Cycle-Model", 1000), 
            rep("Run-Reconstruction", 1000*3))
-cu <- c(rep("Life-History-Model", 1000),
+cu <- c(rep("Life-Cycle-Model", 1000),
         rep("Run Reconstruction-South", 1000),
         rep("Run Reconstruction-Nootka Kyuquot", 1000),
         rep("Run Reconstruction-North", 1000))
@@ -194,12 +194,12 @@ df <- data.frame(Value = x, Productivity = group, cu=cu)
 alpha_plot <- ggplot(df) + 
   aes(x = Value, fill = Productivity, alpha = cu, linetype = Productivity) + 
   geom_density(bw=0.2) + 
-  scale_alpha_manual(values = c("Life-History-Model" = 0.5,
+  scale_alpha_manual(values = c("Life-Cycle-Model" = 0.5,
                                 "Run Reconstruction-South" = 0.2,
                                 "Run Reconstruction-Nootka Kyuquot" = 0.2,
                                 "Run Reconstruction-North" = 0.2), 
                      guide = "none") + 
-  scale_linetype_manual(values = c("Life-History-Model" = "solid", 
+  scale_linetype_manual(values = c("Life-Cycle-Model" = "solid", 
                                    "Run-Reconstruction" = "dashed")) +
   labs(x = "ln(alpha)", y = "Density") + 
   theme_bw() + 
@@ -207,7 +207,7 @@ alpha_plot <- ggplot(df) +
   theme(legend.title = element_blank(), legend.position = "bottom") + 
   geom_vline (xintercept = median(lnalpha_Parkin$loga), linetype = "dotted") +
   xlim(c(0,3))
-ggsave(plot=alpha_plot,filename=here::here("DataOut/alpha_plots_RR.png"))
+ggsave(plot=alpha_plot,filename=here::here("DataOut/alpha_plots.png"))
 
 # plot Sgen values
 # 
@@ -215,13 +215,13 @@ ggsave(plot=alpha_plot,filename=here::here("DataOut/alpha_plots_RR.png"))
 # LH_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs.csv"))
 # RR_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs_ProdRR.csv"))
 # Pa_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRP-ParkenProd.csv"))
-LH_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs_ExtInd.csv"))
+LH_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs_ExtInd_LifeHistory.csv"))
 RR_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs_ExtInd_RunReconstruction.csv"))
 Pa_sgens <- read.csv(here::here("DataOut", "wcviCK-BootstrappedRPs_ExtInd_Parken.csv"))
 
 core_ind <- read.csv(here::here("DataIn", "WCVIStocks_ExtInd.csv"))
 
-LH_sgens <- LH_sgens %>% mutate(Prod="LifeHistory")
+LH_sgens <- LH_sgens %>% mutate(Prod="LifeCycle")
 RR_sgens <- RR_sgens %>% mutate(Prod="RunReconstruction")
 Pa_sgens <- Pa_sgens %>% mutate(Prod="Parken")
 
@@ -229,10 +229,10 @@ df <- rbind(LH_sgens, RR_sgens, Pa_sgens)
 df <- left_join(df, core_ind, by="Stock")
 df <- df %>% filter(CoreInd==1)
 
-benchmark <- "SGEN"#"SMSY"#"SREP"
+benchmark <- "SGEN"#"SMSY"#"SREP"#
 
 df <- df %>% filter(RP==benchmark)
-order <- c("LifeHistory", "RunReconstruction", "Parken")
+order <- c("LifeCycle", "RunReconstruction", "Parken")
 df <-   df %>% mutate(Prod=factor(Prod, levels=order))
 upper_y_lim <- max(df$upr)
 Benchmark_plot_prod_assumption <-ggplot(df, 

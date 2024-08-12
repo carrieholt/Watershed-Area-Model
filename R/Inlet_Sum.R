@@ -1,9 +1,14 @@
+#----------------------------------------------------------------------------
+# Code to create SR time-series that are summed across indicators stocks within
+# inlets for wCVI Chinook (Inlet_Sums.csv)
+# Required for developing LRPs for WCVI Chinook
+#----------------------------------------------------------------------------
 
-# Create Inlet_Sums.csv
 
+# First specify indictor stocks to include
 remove.EnhStocks <- FALSE
-CoreInd <- TRUE#FALSE#TRUE
-AllExMH <- FALSE
+CoreInd <- FALSE#TRUE
+AllExMH <- TRUE# FALSE
 
 
 #----------------------------------------------------------------------------
@@ -12,6 +17,7 @@ AllExMH <- FALSE
 
 WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% 
   dplyr::select (-"Little.Zeballos")
+# Little Zeballos is not an indicator stock
 
 # Take "." out of name as in escapement data
 WCVIEsc_names <- sapply(colnames(WCVIEsc), 
@@ -26,15 +32,8 @@ EnhStocks <- data.frame(read.csv("DataIn/WCVIstocks.csv")) %>% filter (Enh==1) %
   pull(Stock)
 EnhStocks <- as.character(EnhStocks)
 
-#EnhStocks <- c("Burman",  "Conuma", "Leiner", "Nitinat", "Sarita",  
-#               "Somass",  "Zeballos", "San Juan", "Tranquil")
-# Artlish removed from Enhanced stocks 23 Dec. 2020
-# Tranquil added 18 Jan 2021
-
 
 if (remove.EnhStocks) {WCVIEsc <- WCVIEsc %>% dplyr::select(-EnhStocks) }
-
-
 
 Years <- rownames(WCVIEsc)
 
@@ -80,21 +79,22 @@ for (i in 1:length(Inlet_Names)) {
 
 # Create csv files of inlet-level escapements for projection-based LRP
 Inlet_Sum_csv <- as.data.frame(Inlet_Sum) %>% 
-  add_column(Years=as.numeric(Years))
-Inlet_Sum_csv <- Inlet_Sum_csv %>%  pivot_longer(cols=Inlet_Names) %>% 
+  tibble::add_column(Years=as.numeric(Years))
+Inlet_Sum_csv <- Inlet_Sum_csv %>% tidyr::pivot_longer(cols=Inlet_Names) %>% 
   rename(BroodYear=Years, Inlet=name, Escapement=value)
 
-n_inlets <- length(WCVIStocks %>% select(CU, Inlet) %>% distinct() %>% pull(Inlet))
+n_inlets <- length(WCVIStocks %>% select(CU, Inlet) %>% distinct() %>% 
+                     pull(Inlet))
 
 WCVIStocks_inlets <- WCVIStocks %>% select(CU, Inlet) %>% distinct() %>% 
-  add_column(Inlet_ID=1:n_inlets)
+  tibble::add_column(Inlet_ID=1:n_inlets)
 
 
 Inlet_Sum_csv <- Inlet_Sum_csv %>% left_join(WCVIStocks_inlets, by="Inlet")
 
 Inlet_Sum_csv <-  Inlet_Sum_csv %>% rename(Inlet_Name=Inlet, CU_Name=CU, 
                                            Spawners=Escapement) %>% 
-  add_column(Recruits = NA)
+  tibble::add_column(Recruits = NA)
 
 # Inlet_Sum_csv <- Inlet_Sum_csv %>% add_column(row.names(WCVIEsc))
 

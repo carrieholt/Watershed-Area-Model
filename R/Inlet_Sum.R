@@ -13,6 +13,13 @@ AllExMH <- TRUE# FALSE
 
 #----------------------------------------------------------------------------
 # Sum escapements across indicators within inlets
+# Escapement data provided by DFO South Coast Area Stock Assessment Sept 2020, 
+# Diana Dobson pers. comm. Updated 2021 (D. McHugh pers. comm.)
+# Notes from Diana Dobson: 
+# Extracted from "WCVI_term_model_revisions_updated.xlsx"
+# 1. Escapement data are generated from extensive WCVI indicators - i.e those with the most complete time-series and consistent observation methodology.
+# 2. Raw escapement estimates from these indicators are infilled annually to create a time-series of WCVI natural escapement for the 'WCVI term' files used for forecasting and as CTC model input.
+# 3. Estimates are infilled for either missing data or poor quality estimates (i.e. incomplete surveys, etc.)
 #----------------------------------------------------------------------------
 
 WCVIEsc <- data.frame(read.csv("DataIn/WCVIEsc.csv", row.names="Yr")) %>% 

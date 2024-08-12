@@ -3,9 +3,16 @@
 # bootstrapping from SREP estimates from the watershed-area model and Ricker 
 # a values from a plausible range derived from expert opinion and a 
 # life-history model
+# Includes;
+# (1) function to estimate benchmarks for WCVI Chinook CUs and logistic
+# regression to estimate LRP for the entire SMU: Get.LRP.bs()
+# (2) bootstrapping code to estimate uncertainty intervals in CU-specific 
+# benchmarks
 #-------------------------------------------------------------------------------
+
+
 #-------------------------------------------------------------------------------
-# Libraries and Functions
+# Libraries 
 #-------------------------------------------------------------------------------
 library(tidyverse)
 library(ggplot2)
@@ -13,12 +20,12 @@ library(gsl)
 library(TMB)
 library(viridis)
 
-# Functions
+#-------------------------------------------------------------------------------
+# Libraries 
+#-------------------------------------------------------------------------------
 source("R/helperFunctions.r")
 
-
-#-------------------------------------------------------------------------------
-# Function to estimate LRPs for WCVI CK
+# Function Get.LRP.bs() provided below
 # Arguments; 
   # remove.EnhStocks = A logical reflecting if enhanced stock are to be 
     # included
@@ -40,25 +47,34 @@ source("R/helperFunctions.r")
   # "WCVI_SMSY_noEnh.csv" or "WCVI_SMSY_wEnh.csv" exist
 # Returns:
   # csv file, DataOut/wcviRPs_noEnh.csv or DataOut/wcviRPs_wEnh.csv of stock, 
-    # inlet, and CU level Sgen, adjusted SMSY values(adjusted for expert derived 
-    # productivity) and SREP values from integrated watershed-area model
-  # Dataframe $out
-  # Dataframe $WCVIEsc
-  # Dataframe $SMU_Esc
-  # Dataframe $CU_Status
-  # Dataframe $SMU_ppn
-
+    # inlet, and CU level Sgen and SMSY values (both using expert derived 
+    # productivity), and SREP values from integrated watershed-area model. SMSY 
+    # is called adjusted SMSY as it differs from SMSY estimates from watershed-
+    # area model that does not consider expert derived productivity
+  # LRP based on logistic regression (out$LRP), where the logistic regression is 
+    # described in : 
+    # Holt, C.A., et al. 2023. Guidelines for Defining Limit Reference Points for 
+    # Pacific Salmon Stock Management Units. DFO Can. Sci. Advis. Sec. Res. Doc. 
+    # 2023/009. iv+66p.
+    # Holt, K.R., et al.  2023. Case Study Applications of LRP Estimation Methods 
+    # to Pacific Salmon Stock Management Units. DFO Can. Sci. Advis. Sec. Res. 
+    # Doc. 2023/010. iv+129p.
+  
 
 Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE, 
                         prod="LifeStageModel", LOO = NA, run_logReg=TRUE){
 
   #----------------------------------------------------------------------------
-  # Read in watershed area-based reference points (SREP and SMSY)
+  # Identify which indicator stocks to include
   #----------------------------------------------------------------------------
   ExtInd <- FALSE#TRUE
   CoreInd <- TRUE#FALSE
   AllExMH <- FALSE
-  if(!ExtInd){
+  
+  #----------------------------------------------------------------------------
+  # Read in watershed area-based reference points (SREP and SMSY)
+  #----------------------------------------------------------------------------
+   if(!ExtInd){
     if(!CoreInd & !AllExMH) {
       if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
       if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv")   
@@ -845,7 +861,7 @@ if (run.bootstraps){
     if(!ExtInd & !CoreInd & !AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs.csv") 
     if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd.csv") 
     if(CoreInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_CoreInd.csv") 
-    if(AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_AllExMH.csv") 
+    if(AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_AllExMH_Aug2024.csv") 
     # write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_Parken.csv")     
     # write.csv(dfout, paste("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v",j,".csv", sep=""))     
     

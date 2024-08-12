@@ -923,22 +923,27 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
   
   # Write SMSY and SREP with PIs to file
-  if(!ExtInd){
-    if(!CoreInd & !AllExMH){
-      if(remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh_wBC.csv")
-      if(!remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh_wBC.csv") 
-    }
-    if(CoreInd & !AllExMH){
-      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_CoreInd.csv")
-    }
-    if(!CoreInd & AllExMH){
-      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_AllExMH.csv")
-    }
+  write.results <- TRUE
+  if(write.results)
+  {
+    if(!ExtInd){
+      if(!CoreInd & !AllExMH){
+        if(remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_noEnh_wBC.csv")
+        if(!remove.EnhStocks) write.csv(WCVISMSY, "DataOut/WCVI_SMSY_wEnh_wBC.csv") 
+      }
+      if(CoreInd & !AllExMH){
+        write.csv(WCVISMSY, "DataOut/WCVI_SMSY_CoreInd.csv")
+      }
+      if(!CoreInd & AllExMH){
+        write.csv(WCVISMSY, "DataOut/WCVI_SMSY_AllExMH.csv")
+      }
+      
+    }  
+    if(ExtInd){# this includes BC
+      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd.csv")
+    }  
     
-  }  
-  if(ExtInd){# this includes BC
-    write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd.csv")
-  }  
+  }
   
   
 }# End of runIWAM() function

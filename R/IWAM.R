@@ -1,22 +1,34 @@
 #-------------------------------------------------------------------------
 # Integrated Watershed Area Model
+# This model is based on Parken et al. (2006) and Liermann et al. (2010)
+
+# Parken, C.K., McNicol, R.E., and Irvine, J.R. 2006. Habitat-based methods to 
+# estimate escapement goals for data limited Chinook salmon stocks in British 
+# Columbia, 2004. DFO Can. Sci. Advis. Res. Doc. 2006/83. vii + 67 p.
+
+# Liermann, M.C., Sharma, R., and Parken, C.K. 2010. Using accessible watershed 
+# size to predict management parameters for Chinook salmon, Oncorhynchus 
+ #tshawytscha, populations with little or no spawner-recruit data: A Bayesian 
+# hierarchical modelling approach. Fisheries Management and Ecology 17: 40–51
+
+
 # Steps:
 # 1. Read in stock-recruitment data, life-history type, and watershed areas
 #   for synoptic survey data, and watershed area and life-history type for 
-#   additional stocks
+#   additional 'test' (out-of-sample) stocks, e.g., for WCVI Chinook here
 # 2. Create data and parameter lists for TMB
 # 3. Run TMB model to estimate Ricker parameters and SMSY & SREP for synoptic 
-#   data sets, estimate paraemeters of watershed-area regression, and 
-#   estimate SMSY and SREP for additional stocks 
+#   data sets, estimate parameters of watershed-area regression, and 
+#   estimate SMSY and SREP for additional 'test' (out-of-sample) stocks 
 # 4. Compile model outputs
 # 5. Calculate diagnostics for SR models in synoptic data set and plot SR 
 #   curves, etc.
 # 6. Calculate prediction intervals for SMSY and SREP estimates for additional 
-#   "test" stocks. These are written to a *.csv file
+#   "test" (out-of-sample) stocks. These are written to a *.csv file
 #---------------------------------------------------------
 
 #-------------------------------------------------------------------------------
-# Libaries
+# Libraries
 #-------------------------------------------------------------------------------
 
 library(rsample)
@@ -39,27 +51,37 @@ source ("R/PlotSR.r")
 # remove.EnhStocks <- TRUE # A logical representing if enhanced stocks should 
   # be removed for WCVI CK case study
 # removeSkagit <- FALSE # A logical representing if Skagit should be removed
- mod <- "Liermann_PriorRicSig_PriorDeltaSig" # A character for the TMB model 
-  # to be used. Optoins include:
+# mod <- "Liermann_PriorRicSig_PriorDeltaSig" # A character for the TMB model 
+  # to be used. Options include:
   #"Liermann_HalfNormRicVar_FixedDelta"
   #"Ricker_AllMod"#"Liermann"#""Ricker_AllMod"
   #"IWAM_FixedSep_RicStd"##"IWAM_FixedSep_Constm"
   #"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"
   #"IWAM_FixedSep"#"IWAM_FixedCombined"
 # plot <- FALSE # A logical representing if plots should be produced
+# Ext <- FALSE # A logical representing if all extensive indicators are to be 
+  # included for WCVI Chinook out-of-sample stocks
+# CoreInd <- FALSE # A logical representing if only core indicators are to be 
+  # included for WCVI Chinook out-of-sample stocks
+# AllExMH <- FALSE # A logical representing if all indicators except those from 
+  # major hatchery facilities are to be included for WCVI Chinook out-of-sample 
+  # stocks. This set is used for the FSAR Res. Doc. (2024)
+
 
 # Returns:
-# csv file of SMSY and SREP values from watershed-are model
-  # DataOut/WCVI_SMSY_noEnh,csv or 
-  # DataOutWCVI_SMSY_wEnh.csv
+# csv file of SMSY and SREP values from watershed-area model
+  # DataOut/WCVI_SMSY_noEnh_wBC,csv (without enhancement) or 
+  # DataOutWCVI_SMSY_wEnh_wBC.csv (with enhancement)
 # plots of SR diagnostics and Watershed-area regression
 
 runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE, 
-                    mod = "Liermann_PriorRicSig_PriorDeltaSig", plot = FALSE){
+                    mod = "Liermann_PriorRicSig_PriorDeltaSig", plot = FALSE,
+                    ExtInd = FALSE, CoreInd = FALSE, AllExMH = FALSE){
   
   if( plot== TRUE) {
+    # Plots individual SR plots
     # For SR plotting purposes below, need to estimate std Ricker SMSY for AR1 
-    # stocks, "SMSY_std":
+    # stocks, "SMSY_std", within this code, R/CheckAR1.r:
     source ("R/CheckAR1.r")
   }
   
@@ -69,8 +91,8 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   #-----------------------------------------------------------------------------
   
   SRDatwNA <- read.csv("DataIn/SRinputfile.csv")
+  # Remove two stocks not used in Parken et al, and not documented in Liermann 
   SRDatwNA <- SRDatwNA %>% filter(Name != "Hoko" & Name != "Hoh") 
-  #remove two stocks not used in Parken et al, and not documented in Liermann 
   if (removeSkagit==TRUE) {
     SRDatwNA <- SRDatwNA %>% filter(Name != "Skagit")
     # Skagit is Stocknumber=22. Need to re-align stock numbers of last 2 
@@ -105,12 +127,19 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   SRDat <- SRDat %>% mutate(Scale = 10^(maxDigits-1))
   
   
+  #----------------------------------------------------------------------------
+  # For Res. Doc. (2023 and 2024), the standard Ricker model is used for all 
+  # stocks to allow for a common hierarchical productivity parameter. The 
+  # following code orders the stocks according to individual model variants, 
+  # which are not used in the Res. Doc.
+  
+  # The following stocks have evidence of AR(1) Ricker dynamics
   stks_ar <- c("Chikamin", "Keta", "Blossom", "Situk", "Siletz", "Columbia Sp")
-  # Cowichan, stk-23, not included here becuase modelled as per Tompkins with a 
-  # surival covariate
+  # Cowichan, stk-23, not included here because modelled as per Tompkins with a 
+  # survival covariate
   stksNum_ar <- c(4,5,6,10,11,16)
   
-  # Ricker with a surival co-variate. 
+  # The following stocks have evidence for Ricker with a survival co-variate. 
   stksNum_surv <- c(0,23)
   stks_surv <- c("Harrison", "Cowichan")
   if (removeSkagit==TRUE) {stksNum_surv <- c(0,22)}
@@ -142,15 +171,18 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   SRDat_std <- SRDat %>% filter(Stocknumber %not in% c(stksNum_ar,stksNum_surv)) 
   SRDat_ar <- SRDat %>% filter(Stocknumber %in% stksNum_ar) 
   SRDat_surv <- SRDat %>% filter(Stocknumber %in% stksNum_surv) 
-  # Othewise, use standard Ricker model
+  #----------------------------------------------------------------------------
+  
+  # Otherwise, use the standard Ricker model for all stocks (as in the Res. 
+  # Doc.)
   if(mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|
      mod=="Liermann_PriorRicSig_PriorDeltaSig"|
      mod=="Liermann_HalfNormRicVar_FixedDelta") SRDat_std <- SRDat
   
   
-  # Assign new stock numbers to each stock so that they are sequential within each 
-  # model form. These are used in TMB When only one model form is use (std Ricker)
-  # then ind_std = Stocknumber
+  # Assign new stock numbers to each stock so that they are sequential within 
+  # each model form. These are used in TMB When only one model form is use (std 
+  # Ricker) then ind_std = Stocknumber
   ind_std <- tibble(ind_std= 0:(length(unique(SRDat_std$Name))-1))
   ind_std <- add_column(ind_std, Stocknumber = (unique(SRDat_std$Stocknumber)))
   SRDat_std <- SRDat_std %>% left_join(ind_std)
@@ -166,7 +198,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   
   
   # Remove years 1981-1984, 1986-1987  from Cowichan (Stocknumber 23) as per 
-  # Tompkins et al. 2005
+  # Tompkins et al. 2005, cited in Parken et al. (2006)
   SRDat_surv_Cow <- SRDat_surv %>% filter(Name == "Cowichan" & 
                                             Yr >= 1985 & Yr !=1986 &Yr != 1987) 
   n_surv_Cow <- length(SRDat_surv_Cow$Yr)
@@ -298,10 +330,10 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
       filter(Stock != "Cypre") %>% filter(Enh==0) %>%
       group_by(CU) %>% summarize(CUlnWA = log(sum(WA)))
 
-    ExtInd <- FALSE#If using core indicators as provided in 2020 then this is F
+    # ExtInd <- FALSE#If using core indicators as provided in 2020,this is F
     if(!ExtInd){
-      CoreInd <- FALSE # Only core escapement indicators
-      AllExMH <- FALSE # All esc indicators except major hatchery facilities
+      # CoreInd <- FALSE # Only core escapement indicators
+      # AllExMH <- FALSE # All esc indicators except major hatchery facilities
       
       if(!CoreInd){ # Inital data sets here: using PNI>0.5 or all esc inds
         if(remove.EnhStocks) data$TestlnWAo <- c(data$TestlnWAo, InletlnWAnoEnh$InletlnWA,
@@ -948,8 +980,22 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   
 }# End of runIWAM() function
 
+#-------------------------------------------------------------------------------
+# Run Integrated Watershed-Area model for indicators except for those 
+# associated with major hatchery facilities, used in FSAR  Res. Doc. (2024)
+#-------------------------------------------------------------------------------
 
-#---------------------------------------------------------------------------------------------------
+runIWAM(AllExMH=TRUE)
+
+
+
+
+
+#---------------------------------------------------------------------------------
+# Additional code; not currently needed 
+#---------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
 # #Code for deriving SMSY and SREP for Parken et al. 2006 test stocks
 #  StockNamess <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 0) %>% pull(Stock)
 #  StockNameso <- read.csv("DataIn/ParkenTestStocks.csv") %>% filter(lh == 1) %>% pull(Stock)
@@ -1017,7 +1063,10 @@ if(getInits){
 
 
 
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------
+# Additional code; not currently needed 
+#---------------------------------------------------------------------------------
+
 test <- FALSE
 if(test==TRUE){
 

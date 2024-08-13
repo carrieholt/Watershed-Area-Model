@@ -1,6 +1,6 @@
 
 #---------------------------------------------------------
-# Libaries
+# Libraries
 
 library(rsample)
 library(tidyverse)
@@ -65,7 +65,7 @@ param$logB_std <- log ( 1/ ( (1/B_std$m)/Scale.stock ))#log(B_std$m/Scale.stock)
 param$logSigma_std <- rep(-2, N_Stks)
 
 
-# Compile model if changed:
+## Compile model if changed, or run for the first time:
 #dyn.unload(dynlib("TMB_Files/Ricker_CheckAr1"))
 #compile("TMB_Files/Ricker_CheckAr1.cpp")
 
@@ -195,7 +195,7 @@ param$rho <- rep(TMB_Inputs$rho_Start, N_Stks)
 param$logSigma_ar <- rep(-2, N_Stks)
 
 
-# Compile model if changed:
+# Compile model if changed, or run for first time:
 #dyn.unload(dynlib("TMB_Files/Ricker_ar1"))
 #compile("TMB_Files/Ricker_ar1.cpp")
 

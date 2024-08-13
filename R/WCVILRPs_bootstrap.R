@@ -68,8 +68,8 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
   # Identify which indicator stocks to include
   #----------------------------------------------------------------------------
   ExtInd <- FALSE#TRUE
-  CoreInd <- TRUE#FALSE
-  AllExMH <- FALSE
+  CoreInd <- FALSE
+  AllExMH <- TRUE#FALSE
   
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
@@ -90,17 +90,20 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
   if(ExtInd){wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_ExtInd.csv")}
   
   # Remove Cypre as it's not a core indicator (Diana McHugh, 22 Oct 2020)
+  # Remove duplicate San Juan for AllExMH (San Juan is an Inlet and a stock)
+    # since it is the only stock in the inlet
   if(!ExtInd & !CoreInd){
     stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
-      filter (Param == "SMSY") %>% filter(!duplicated(Stock)) %>%#remove duplicate San Juan CU for AllexMH
+      filter (Param == "SMSY") %>% filter(!duplicated(Stock)) %>%
       rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
       dplyr::select (-Param, -X)#, -CU)
     stock_SREP <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
-      filter (Param == "SREP") %>% filter(!duplicated(Stock)) %>% #remove duplicate San Juan CU for AllexMH
+      filter (Param == "SREP") %>% filter(!duplicated(Stock)) %>% 
       rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
       dplyr::select (-Param, -X)
     wcviRPs <- stock_SMSY %>% left_join(stock_SREP, by="Stock")
-    if(AllExMH){ # Add the inlet back in as the end of the list of inlets, for AllExMH only
+    # For AllExMH, add the San Juan inlet back, at the end of the list of inlets
+    if(AllExMH){ 
       SJ_SMSY <- wcviRPs_long %>% filter(Stock=="San Juan") %>% 
         filter (Param == "SMSY") %>% 
         filter(!duplicated(Stock)) %>%
@@ -113,11 +116,11 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
         dplyr::select (-Param, -X)
       SJ <- left_join(SJ_SMSY, SJ_SREP, by = "Stock")
       stock_SMSY <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
-        filter (Param == "SMSY") %>% filter(!duplicated(Stock)) %>%#remove duplicate San Juan CU for AllexMH
+        filter (Param == "SMSY") %>% filter(!duplicated(Stock)) %>%
         rename(SMSY=Estimate, SMSYLL=LL, SMSYUL=UL) %>% 
         dplyr::select (-Param, -X)#, -CU)
       stock_SREP <- wcviRPs_long %>% filter(Stock != "Cypre") %>% 
-        filter (Param == "SREP") %>% filter(!duplicated(Stock)) %>% #remove duplicate San Juan CU for AllexMH
+        filter (Param == "SREP") %>% filter(!duplicated(Stock)) %>% 
         rename(SREP=Estimate, SREPLL=LL, SREPUL=UL) %>% 
         dplyr::select (-Param, -X)
       
@@ -140,7 +143,7 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
   }
   
   # Calculate scale for each stock
-  digits <- count.dig(wcviRPs$SMSY)#count.dig(stock_SMSY$SMSY)
+  digits <- count.dig(wcviRPs$SMSY)
   Scale <- 10^(digits)
   
   #SREP_SE <- wcviRPs %>% mutate(SE = ((wcviRPs$SREP) - (wcviRPs$SREPLL)) / 1.96)

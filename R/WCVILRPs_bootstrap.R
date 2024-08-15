@@ -4,10 +4,16 @@
 # a values from a plausible range derived from expert opinion and a 
 # life-history model
 # Includes;
-# (1) function to estimate benchmarks for WCVI Chinook CUs and logistic
-# regression to estimate LRP for the entire SMU: Get.LRP.bs()
+# (1) function to (a) estimate benchmarks for WCVI Chinook CUs and (b) logistic 
+    # regression to estimate LRP for the entire SMU: Get.LRP.bs()
 # (2) bootstrapping code to estimate uncertainty intervals in CU-specific 
-# benchmarks
+  # benchmarks and logistic regression LRPs
+
+# Note the choice of indicators for WCVI Chinook, must be specified in both (1)
+# and (2)
+
+# For the FSAR Res. Doc. (2024) only the estimates of benchmarks are needed  
+# (1a), not the logistic regression LRP (1b)
 #-------------------------------------------------------------------------------
 
 
@@ -65,11 +71,22 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
                         prod="LifeStageModel", LOO = NA, run_logReg=TRUE){
 
   #----------------------------------------------------------------------------
-  # Identify which indicator stocks to include
+  # Step 1a Estimate benchmarks for WCVI Chinook CUs 
   #----------------------------------------------------------------------------
-  ExtInd <- FALSE#TRUE
-  CoreInd <- FALSE
-  AllExMH <- TRUE#FALSE
+  
+  #----------------------------------------------------------------------------
+  # Specify which indicator stocks to include for WCVI Chinook
+  #----------------------------------------------------------------------------
+  ExtInd <- TRUE # Should all extensive indicators be included? This is run
+  # for purposes for generating benchmarks for all indicators for the FSAR Res. 
+  # Doc. (2024)
+  CoreInd <- FALSE # Should only core indicators be included
+  AllExMH <- FALSE # Should all indicators except those with large 
+    # hatchery facilities be included? 
+  # If all are set to False, then the indicators with PNI >0.5 are used, which 
+  # is the base case for: Holt, K. et al. 2023. 2023. Case Study Applications  
+  # of LRP Estimation Methods to Pacific Salmon Stock Management Units. DFO Can. 
+  # Sci. Advis. Sec. Res. Doc. 2023/010. iv+129p.
   
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
@@ -152,32 +169,44 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
   #SREP_logSE <- wcviRPs %>% mutate(SE = (log(wcviRPs$SREPUL) - log(wcviRPs$SREP)) / 1.96)
   SREP_logSE <- SREP_logSE %>% dplyr::select(Stock, SE)
   
+  # # Alternative approach- calculate SREP_SE first, then converts it to the 
+  # # untransformed scale to a log scale
+  # # Not approprioprite estimation of SREP_SE as logSREP is normally distributed,
+  # # not SREP
+  # SREP_SE <- wcviRPs %>% mutate(SE = (wcviRPs$SREP - wcviRPs$SREPLL) / 1.96)
+  # SREP_logSE_2 <- sqrt( log(1 + ( SREP_SE$SE * SREP_SE$SE) / 
+  #                           ( wcviRPs$SREP*wcviRPs$SREP) )) 
+  
   #----------------------------------------------------------------------------
   # Calculate Sgen 2 ways
   #----------------------------------------------------------------------------
   
-  # 1.Use Watershed-area SMSY and SREP to estimate Sgen (assuming productivity
-  # SGENcalcs <- purrr::map2_dfr (wcviRPs$SMSY/Scale,wcviRPs$SREP/Scale, Sgen.fn) 
+  # Sgen and SMSY are calculated using (a) estimates of productivity (ln alpha 
+  # from a Ricker model) from either a life-cycle model or from the run 
+  # reconstruction and (b) estiamte of SREP from watershed-area models, with 
+  # uncertainty intervals
+  # Bootstrapped Sgen and SMSY uncertainty intevarls are then generated from 
   
-  # 2. Assume independent estimate of productivity and watershed-area 
-  # estimate of SREP
+  # An alternative approach (not implemented) is to use Watershed-area based
+  # estimate of SMSY and SREP to estimate Sgen (using inferred productivity)
+  # SGENcalcs <- purrr::map2_dfr(wcviRPs$SMSY/Scale,wcviRPs$SREP/Scale, Sgen.fn) 
   
-  # For base case assume no variablity in RicA among stocks. 
-  # Add variability in Ric.A when drawing MC samples from prediction intervals 
-  # of WA model so that Ric.A is drawn multiple times for each stock from 
-  # rnorm distribution
   
-  # There are two assumptions about productivity, (1) from life-stage model with 
-  # expert opinion (W. Luedke pers. comm.), and (2) from "RunReconstruction
-  # which assumes same harvest rates across wCVI Chinook stocks (D. Dobson 
-  # pers. comm.)  The default is the life-stage model with expert opinion (1)
+  # At first, we assume no variability in Ric.A among stocks. 
+  # Then, we add variability in Ric.A when drawing MC samples from prediction 
+  # intervals of WA model so that Ric.A is drawn multiple times for each stock 
+  # from an rnorm distribution
   
-  # Lower estimate of Ricker a derived from life-stage model (Luedke pers.
-  # comm.) 
+  # As described above, there are two assumptions about productivity, (1) from 
+  # life-cycle model with expert opinion (W. Luedke pers. comm.), and (2) from 
+  # the RunReconstruction which assumes same harvest rates across wCVI Chinook 
+  # stocks (D. Dobson  pers. comm.)  The default is the life-cycle model with 
+  # expert opinion (1)
+  
+ 
   # DEFAULT
-  if(prod == "LifeStageModel"){
-    Mean.Ric.A <- 1 # Derived from life-history model (Luedke pers.comm.) and 
-    # WCVI CK run reconstruction SR analysis (Dobson pers. comm.)
+  if(prod == "LifeStageModel"){ # 'life-cycle model'
+    Mean.Ric.A <- 1 
     Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, 0))
     
     
@@ -189,25 +218,31 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
     # test <- seq(0,4, len=40)
     # plot(x=test, y=dnorm(test, 1,0.255), type="l", xlab="LogA", 
     # ylab="Probability Density", ylim=c(0,5))
-    # # With this sigma, 95% of probablity density is within bounds mean 
+    # # With this sigma, 95% of probability density is within bounds mean 
     # +/- 0.50 (assuming range 0.5-1.5, mean=1). 0.255*1.96 = 0.50
-    # lines(x=test, y=dnorm(test, 1,0.51))# With this sigma, 95% of probablity 
+    # lines(x=test, y=dnorm(test, 1,0.51))# With this sigma, 95% of probability 
     # density is within bounds mean +/- 1.0 
     # (assuming range 0-2.0, mean=1). 0.510*1.96 = 1.0
     
+    # Best estimate of Ric.A, sREP, SMSY, and Sgen
     Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
     if(min(Ric.A)<=0) Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
     if(min(Ric.A)<=0) Ric.A <- exp(rnorm(length(Scale), Mean.Ric.A, Sig.Ric.A))
     
-    sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP), SREP_logSE$SE))
-    if(min(sREP)<=0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, 
-                                        SREP_SE$SE))
-    if(min(sREP)<=0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, 
-                                         SREP_SE$SE))
+    # Without log-normal bias correction when sampling log-beta
+    # sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP), SREP_logSE$SE))
+    # With a log-normal bias correction when sampling log-beta
+    sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP) - 0.5*SREP_logSE$SE^2, 
+                      SREP_logSE$SE))
+    
+    # if(min(sREP)<=0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, SREP_SE$SE))
+    if(min(sREP)<=0)   sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP) - 
+                                           0.5*SREP_logSE$SE^2, SREP_logSE$SE))
+    
     
     SGENcalcs <- purrr::map2_dfr (Ric.A, sREP/Scale, Sgen.fn2)
    
-     wcviRPs <- wcviRPs %>% mutate (SGEN = SGENcalcs$SGEN) %>% 
+    wcviRPs <- wcviRPs %>% mutate (SGEN = SGENcalcs$SGEN) %>% 
       mutate(SGEN=round(SGEN*Scale,0))
     wcviRPs <- wcviRPs %>% mutate (a.par = SGENcalcs$apar) %>% 
       mutate(a.par=round(a.par,2))
@@ -287,9 +322,14 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
     Ric.A.hi <- exp(rnorm(length(Scale), log(wcviRPs$a.par), Sig.Ric.A))
     if(min(Ric.A.hi)<0) Ric.A <- exp(rnorm(length(Scale), wcviRPs$a.RR, Sig.Ric.A))
     
-    sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP), SREP_logSE$SE))
-    if(min(sREP)<0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, 
-                                        SREP_SE$SE))
+    # Without log-normal bias correction when sampling log-beta
+    # sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP), SREP_logSE$SE))
+    # With a log-normal bias correction when sampling log-beta
+    sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP) - 0.5*SREP_logSE$SE^2, 
+                      SREP_logSE$SE))
+    # if(min(sREP)<0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, SREP_SE$SE))
+    if(min(sREP)<0)   sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP) - 
+                                            0.5*SREP_logSE$SE^2, SREP_logSE$SE))
     
     
     SGENcalcs <- purrr::map2_dfr (Ric.A.hi, sREP/Scale, Sgen.fn2)
@@ -323,8 +363,10 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
     if(!ExtInd) {
       WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
         filter (Stock != "Cypre") %>% rename(inlets=Inlet)  
-      if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
-      if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv")
+      if (remove.EnhStocks) wcviRPs_long <- 
+          read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
+      if (!remove.EnhStocks) wcviRPs_long <- 
+          read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv")
       
     }
     if(ExtInd) {
@@ -336,10 +378,17 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
     
     wcvi_SMSY <- wcviRPs_long %>% filter(Param == "SMSY") %>% select(Estimate) 
     wcvi_SREP <- wcviRPs_long %>% filter(Param == "SREP") %>% select(Estimate) 
-    lnalpha_Parkin <- purrr::map2_dfr (wcvi_SMSY, wcvi_SREP, shortloga=FALSE, est_loga)
+    lnalpha_Parkin <- purrr::map2_dfr (wcvi_SMSY, wcvi_SREP, shortloga=FALSE, 
+                                       est_loga)
     
-    sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP), SREP_logSE$SE))
-    if(min(sREP)<0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, SREP_SE$SE))
+    # Without log-normal bias correction when sampling log-beta
+    # sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP), SREP_logSE$SE))
+    # With a log-normal bias correction when sampling log-beta
+    sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP) - 0.5*SREP_logSE$SE^2, 
+                      SREP_logSE$SE))
+    # if(min(sREP)<0)   sREP <- exp(rnorm(length(Scale), wcviRPs$SREP, SREP_SE$SE))
+    if(min(sREP)<0)    sREP <- exp(rnorm(length(Scale), log(wcviRPs$SREP) - 
+                                           0.5*SREP_logSE$SE^2, SREP_logSE$SE))
     
     
     SGENcalcs <- purrr::map2_dfr (exp(median(lnalpha_Parkin$loga)), sREP/Scale, Sgen.fn2)
@@ -359,17 +408,8 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
   
   
   
-  
-  
-  
-  #----------------------------------------------------------------------------
-  # Add Sgen and revised SMSY to wcviRPs data frame
-  #----------------------------------------------------------------------------
-  
-
-  
-  wcviRPs
-  # # Write this to a csv file so that it can be called in plotting functions
+  # In this bootstrapped version, we do not Write this to a csv file 
+  # as ot needs to be complied across bootstrapped samples 
   # # write.csv(wcviRPs, "DataOut/wcviRPs.csv")
   # if (remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_noEnh.csv")
   # if (!remove.EnhStocks) write.csv(wcviRPs, "DataOut/wcviRPs_wEnh.csv")
@@ -401,10 +441,15 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
   #   mutate( SREPha.cSMAX = round( SREPha.cSMAX*Scale, 0 ) )
 
   
+
   if(run_logReg==FALSE){
     return(list(bench= select(SGENcalcs,-apar, -bpar)*Scale))
     
   }
+  
+  #----------------------------------------------------------------------------
+  # Step 1b Estimate logistic regression LRP 
+  #----------------------------------------------------------------------------
   #----------------------------------------------------------------------------
   # Sum escapements across indicators within inlets
   #----------------------------------------------------------------------------
@@ -691,105 +736,105 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
 } # Eng of Get.LRP.bs() function
 
 
-#-------------------------------------------------------------------------------
-# Now run bootstraps to derive benchmarks with uncertainty (see LRP code)
-run.bootstraps <- FALSE
-
-if (run.bootstraps){
-  set.seed(100)#10#12#13(work for 1000)
-  nBS <- 5000 # number trials for bootstrapping
-  outBench <- list() 
-  
-  for (k in 1:nBS) {
-    out <- Get.LRP.bs()
-    outLRP <- as.data.frame(out$out$LRP) 
-    if(k==1) LRP.bs <- data.frame(fit=outLRP$fit, upr=outLRP$upr, lwr=outLRP$lwr)
-    if(k>1) LRP.bs <- add_row(LRP.bs, outLRP)
-    
-    outBench[[k]] <- out$bench
-  }
-  
-  # # Is 200 enough trials? Yes
-  # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
-  # plot(running.mean)
-  
-  # Calculate distribution of overall LRPs by integrating bootstrapped LRP 
-  # values with uncertainty of each LRP value from TMB
-  LRP.samples <- rnorm(nBS*10, LRP.bs$fit, (LRP.bs$fit - LRP.bs$lwr) / 1.96)
-  hist(LRP.samples)
-  LRP.boot <- quantile(LRP.samples, probs=c(0.025, 0.5, 0.975))
-  names(LRP.boot) <- c("lwr", "LRP", "upr")
-  
-  # Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th and 
-  # 95th percentiles
-  SGEN.bs <- select(as.data.frame(outBench), starts_with("SGEN"))
-  stockNames <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
-    filter(Stock != "Cypre") %>% pull(Stock)
-  stockNames <- unique(stockNames)
-  
-  rownames(SGEN.bs) <- stockNames
-  SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.5), 
-                          lwr=apply(SGEN.bs, 1, quantile, 0.025),
-                          upr=apply(SGEN.bs, 1, quantile, 0.975) )
-  
-  SMSY.bs <- select(as.data.frame(outBench), starts_with("SMSY"))
-  rownames(SMSY.bs) <- stockNames
-  SMSY.boot <- data.frame(SMSY= apply(SMSY.bs, 1, quantile, 0.5), 
-                          lwr=apply(SMSY.bs, 1, quantile, 0.025),
-                          upr=apply(SMSY.bs, 1, quantile, 0.975) )
-  
-  SREP.bs <- select(as.data.frame(outBench), starts_with("SREP"))
-  rownames(SREP.bs) <- stockNames
-  SREP.boot <- data.frame(SREP= apply(SREP.bs, 1, quantile, 0.5), 
-                          lwr=apply(SREP.bs, 1, quantile, 0.025),
-                          upr=apply(SREP.bs, 1, quantile, 0.975) )
-  
-  boot <- list(LRP.boot=LRP.boot, SGEN.boot=SGEN.boot, SMSY.boot=SMSY.boot, 
-               SREP.boot=SREP.boot)
-  
-  df1 <- data.frame(boot[["SGEN.boot"]], Stock=rownames(boot[["SGEN.boot"]]), RP="SGEN") 
-  df1 <- df1 %>% rename(Value=SGEN)
-  df2 <- data.frame(boot[["SREP.boot"]], Stock=rownames(boot[["SREP.boot"]]), RP="SREP")
-  df2 <- df2 %>% rename(Value=SREP)
-  df3 <- data.frame(boot[["SMSY.boot"]], Stock=rownames(boot[["SMSY.boot"]]), RP="SMSY")
-  df3 <- df3 %>% rename(Value=SMSY)  
-  dfout <- add_row(df1, df2)
-  dfout <- add_row(dfout, df3)
-  rownames(dfout) <- NULL
-  write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs1000v3.csv") 
-}
-
-#-------------------------------------------------------------------------------
-# Now run bootstraps to derive LRPs with uncertainty in benchmarks
+# #-------------------------------------------------------------------------------
+# # Now run bootstraps to derive logistic regression LRPs with uncertainty 
 # See implementation of this in WCVI_LRPs.Rmd
+# run.bootstraps <- FALSE
+# 
+# if (run.bootstraps){
+#   set.seed(100)#10#12#13(work for 1000)
+#   nBS <- 5000 # number trials for bootstrapping
+#   outBench <- list() 
+#   
+#   for (k in 1:nBS) {
+#     out <- Get.LRP.bs()
+#     outLRP <- as.data.frame(out$out$LRP) 
+#     if(k==1) LRP.bs <- data.frame(fit=outLRP$fit, upr=outLRP$upr, lwr=outLRP$lwr)
+#     if(k>1) LRP.bs <- add_row(LRP.bs, outLRP)
+#     
+#     outBench[[k]] <- out$bench
+#   }
+#   
+#   # # Is 200 enough trials? Yes
+#   # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
+#   # plot(running.mean)
+#   
+#   # Calculate distribution of overall LRPs by integrating bootstrapped LRP 
+#   # values with uncertainty of each LRP value from TMB
+#   LRP.samples <- rnorm(nBS*10, LRP.bs$fit, (LRP.bs$fit - LRP.bs$lwr) / 1.96)
+#   hist(LRP.samples)
+#   LRP.boot <- quantile(LRP.samples, probs=c(0.025, 0.5, 0.975))
+#   names(LRP.boot) <- c("lwr", "LRP", "upr")
+#   
+#   # Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th and 
+#   # 95th percentiles
+#   SGEN.bs <- select(as.data.frame(outBench), starts_with("SGEN"))
+#   stockNames <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
+#     filter(Stock != "Cypre") %>% pull(Stock)
+#   stockNames <- unique(stockNames)
+#   
+#   rownames(SGEN.bs) <- stockNames
+#   SGEN.boot <- data.frame(SGEN= apply(SGEN.bs, 1, quantile, 0.5), 
+#                           lwr=apply(SGEN.bs, 1, quantile, 0.025),
+#                           upr=apply(SGEN.bs, 1, quantile, 0.975) )
+#   
+#   SMSY.bs <- select(as.data.frame(outBench), starts_with("SMSY"))
+#   rownames(SMSY.bs) <- stockNames
+#   SMSY.boot <- data.frame(SMSY= apply(SMSY.bs, 1, quantile, 0.5), 
+#                           lwr=apply(SMSY.bs, 1, quantile, 0.025),
+#                           upr=apply(SMSY.bs, 1, quantile, 0.975) )
+#   
+#   SREP.bs <- select(as.data.frame(outBench), starts_with("SREP"))
+#   rownames(SREP.bs) <- stockNames
+#   SREP.boot <- data.frame(SREP= apply(SREP.bs, 1, quantile, 0.5), 
+#                           lwr=apply(SREP.bs, 1, quantile, 0.025),
+#                           upr=apply(SREP.bs, 1, quantile, 0.975) )
+#   
+#   boot <- list(LRP.boot=LRP.boot, SGEN.boot=SGEN.boot, SMSY.boot=SMSY.boot, 
+#                SREP.boot=SREP.boot)
+#   
+#   df1 <- data.frame(boot[["SGEN.boot"]], Stock=rownames(boot[["SGEN.boot"]]), RP="SGEN") 
+#   df1 <- df1 %>% rename(Value=SGEN)
+#   df2 <- data.frame(boot[["SREP.boot"]], Stock=rownames(boot[["SREP.boot"]]), RP="SREP")
+#   df2 <- df2 %>% rename(Value=SREP)
+#   df3 <- data.frame(boot[["SMSY.boot"]], Stock=rownames(boot[["SMSY.boot"]]), RP="SMSY")
+#   df3 <- df3 %>% rename(Value=SMSY)  
+#   dfout <- add_row(df1, df2)
+#   dfout <- add_row(dfout, df3)
+#   rownames(dfout) <- NULL
+#   write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs1000v3.csv") 
+# }
+
+#-------------------------------------------------------------------------------
+# Run bootstraps to derive uncertainty in benchmarks
+#-------------------------------------------------------------------------------
+
+# Must change this in the function above as well (lines 73-75)
+ExtInd <- TRUE # This is run for purposes of generating benchmarks for all 
+  # indicators for the FSAR Res. Doc. (2024)
+CoreInd <- FALSE
+AllExMH <- FALSE
 
 run.bootstraps <- FALSE
 
 if (run.bootstraps){
-  # for (j in 1:5){
-    set.seed(1)#j#10#12#13(work for 1000), for 100, 200, 300, (for 5000trials), 1, 2, 3 (for 20000trials)
-    # set.seed(3)#10#12#13(work for 1000), for 100, 200, 300, (for 5000trials), 1, 2, 3 (for 20000trials)
-    nBS <- 80000#40000  # number trials for bootstrapping
+    set.seed(1)
+    nBS <- 80000 # number trials for bootstrapping
     outBench <- list() 
     
     for (k in 1:nBS) {
-      # out <- Get.LRP.bs(run_logReg=FALSE, prod = "LifeStageModel")
-      out <- Get.LRP.bs(run_logReg=FALSE, prod = "LifeStageModel")
+      out <- Get.LRP.bs(run_logReg=FALSE, prod = "RunReconstruction")#LifeStageModel")
       outBench[[k]] <- out$bench
     }
     
-    # # Is 200 enough trials? Yes
     # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
     # plot(running.mean)
     
     
-    # Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th and 
-    # 95th percentiles
+    # Compile bootstrapped estimates of Sgen, SMSY, and SREP, and identify 5th
+    # and 95th percentiles
     SGEN.bs <- select(as.data.frame(outBench), starts_with("SGEN"))
-    ExtInd <- FALSE# must change this in the function above as well ****
-    CoreInd <- TRUE# must change this in the function above as well ****
-    AllExMH <- FALSE# must change this in the function above as well ****
-    if(!ExtInd){
+     if(!ExtInd){
       if(!CoreInd & !AllExMH){
         if(remove.EnhStocks) {
           stockNames <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv") %>% 
@@ -821,8 +866,9 @@ if (run.bootstraps){
     }
     if(ExtInd){
       stockNames <- read.csv("DataOut/WCVI_SMSY_ExtInd.csv") %>% 
+        filter(Param=="SMSY") %>% 
         pull(Stock)
-      stockNames <- stockNames %>% filter(Param=SMSY)
+      # stockNames <- stockNames %>% filter(Param=SMSY)
     }
     
    
@@ -862,50 +908,49 @@ if (run.bootstraps){
       mutate (upr=signif(upr,2))
     
     if(!ExtInd & !CoreInd & !AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs.csv") 
-    if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd.csv") 
+    if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_RunReconstruction.csv") 
     if(CoreInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_CoreInd.csv") 
-    if(AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_AllExMH_Aug2024.csv") 
+    if(AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_AllExMH.csv") 
     # write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_Parken.csv")     
     # write.csv(dfout, paste("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v",j,".csv", sep=""))     
     
    
   }
   
-# }
-#Found with 20000 the results have stabilized to two significant digits. Use 20000v1, and recommend 2 signifcant digits to users
+#----------------------------------------------------------------------------
+# Code to assess how many bootstrapped samples are needed
+#----------------------------------------------------------------------------
+
+# Found with 20000 the results have stabilized to two significant digits. Use 20000v1, and recommend 2 signifcant digits to users
 # To check the SE is within 2% with 5 trials of 20,000
-# Reran with 80000 to get closer results 20 March 2024
+# Reran with 80000 to get closer results, 20 March 2024
+# 
+# d1 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v1.csv")
+# d2 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v2.csv")
+# d3 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v3.csv")
+# d4 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v4.csv")
+# d5 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v5.csv")
 
-d1 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v1.csv")
-d2 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v2.csv")
-d3 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v3.csv")
-d4 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v4.csv")
-d5 <- read.csv("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v5.csv")
-
-# d1 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v1.csv")
-# d2 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v2.csv")
-# d3 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v3.csv")
-# d4 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v4.csv")
-# d5 <- read.csv("DataOut/wcviCK-BootstrappedRPs20000v5.csv")
-n<-length(d1$Value)
-sd.Value <- NA; sd.lwr <- NA; sd.upr <- NA
-mean.Value <- NA; mean.lwr <- NA; mean.upr <- NA
-se.Value <- NA; se.lwr <- NA; se.upr <- NA
-for (i in 1:n){
- sd.Value[i] <- sd(c(d1$Value[i], d2$Value[i], d3$Value[i], d4$Value[i], d5$Value[i])) 
- mean.Value[i] <- mean(c(d1$Value[i], d2$Value[i], d3$Value[i], d4$Value[i], d5$Value[i]))
- se.Value[i] <- sd.Value[i]/mean.Value[i]
- sd.lwr[i] <- sd(c(d1$lwr[i], d2$lwr[i], d3$lwr[i], d4$lwr[i], d5$lwr[i])) 
- mean.lwr[i] <- mean(c(d1$lwr[i], d2$lwr[i], d3$lwr[i], d4$lwr[i], d5$lwr[i]))
- se.lwr[i] <- sd.lwr[i]/mean.lwr[i]
- sd.upr[i] <- sd(c(d1$upr[i], d2$upr[i], d3$upr[i], d4$upr[i], d5$upr[i])) 
- mean.upr[i] <- mean(c(d1$upr[i], d2$upr[i], d3$upr[i], d4$upr[i], d5$upr[i]))
- se.upr[i] <- sd.upr[i]/mean.upr[i]
-}
+# n<-length(d1$Value)
+# sd.Value <- NA; sd.lwr <- NA; sd.upr <- NA
+# mean.Value <- NA; mean.lwr <- NA; mean.upr <- NA
+# se.Value <- NA; se.lwr <- NA; se.upr <- NA
+# for (i in 1:n){
+#  sd.Value[i] <- sd(c(d1$Value[i], d2$Value[i], d3$Value[i], d4$Value[i], d5$Value[i])) 
+#  mean.Value[i] <- mean(c(d1$Value[i], d2$Value[i], d3$Value[i], d4$Value[i], d5$Value[i]))
+#  se.Value[i] <- sd.Value[i]/mean.Value[i]
+#  sd.lwr[i] <- sd(c(d1$lwr[i], d2$lwr[i], d3$lwr[i], d4$lwr[i], d5$lwr[i])) 
+#  mean.lwr[i] <- mean(c(d1$lwr[i], d2$lwr[i], d3$lwr[i], d4$lwr[i], d5$lwr[i]))
+#  se.lwr[i] <- sd.lwr[i]/mean.lwr[i]
+#  sd.upr[i] <- sd(c(d1$upr[i], d2$upr[i], d3$upr[i], d4$upr[i], d5$upr[i])) 
+#  mean.upr[i] <- mean(c(d1$upr[i], d2$upr[i], d3$upr[i], d4$upr[i], d5$upr[i]))
+#  se.upr[i] <- sd.upr[i]/mean.upr[i]
+# }
 
 #----------------------------------------------------------------------------
 # R version of logistic regression
 #   This matches results from TMB code when penalty=FALSE
+#   For model checking purposes only
 #----------------------------------------------------------------------------
 R.logReg <- FALSE
 

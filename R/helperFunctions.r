@@ -221,3 +221,25 @@ ggplot.corr <- function(data, lag.max = 10, ci = 0.95, title="") {
   return(plot.acf)
  
 }
+
+
+# Functions to estimate inferred log(a) from SMSY and SREP from IWAM or Parken et al
+calc_loga <- function(loga, SMSY, SREP){
+  # 1 - log( gsl::lambert_Wm1(1 - SMSY * loga / SREP)) - loga
+  # (1 - gsl::lambert_W0 (exp( 1 - loga))) * (SREP / SMSY) - loga 
+  abs( (1-(loga/SREP) * SMSY) * exp(loga - (loga/SREP) * SMSY) - 1)
+  
+}
+# lnalpha_Parkin_example <- nlminb(start = (0.5 - exampleSMSY/exampleSREP) / 0.07, objective = calc_loga,  SMSY = exampleSMSY, SREP = exampleSREP)$par
+
+est_loga <- function(SMSY, SREP, shortloga=FALSE){
+  
+  loga <- nlminb(start = (0.5 - SMSY/SREP) / 0.07, 
+                 objective = calc_loga, 
+                 SMSY= SMSY, 
+                 SREP=SREP)$par
+  if(shortloga) loga <- (0.5 - SMSY/SREP) / 0.07
+  beta <- loga/SREP
+  return( list( loga = loga , beta = beta, SMSY = SMSY, SREP = SREP) )
+}
+

@@ -15,7 +15,14 @@
 # Steps:
 # 1. Read in stock-recruitment data, life-history type, and watershed areas
 #   for synoptic survey data, and watershed area and life-history type for 
-#   additional 'test' (out-of-sample) stocks, e.g., for WCVI Chinook here
+#   additional 'test' (out-of-sample) stocks, e.g., for WCVI Chinook here. Note, 
+#   in this step, the code has the option for separating out 3 types of stock-recruitment models
+#   for the synoptic data set: standard Ricker, Ricker with autocorrelated
+#   recruitment deviations, and Ricker with a marine survival covariate, as in 
+#   Parken et al. (2006). However, the standard Ricker is used for all stocks  
+#   in implementation here as a hierarchical Ricker model to fit all stock 
+#   simultaneously which requires the same underlying model for each component 
+#   stock.
 # 2. Create data and parameter lists for TMB
 # 3. Run TMB model to estimate Ricker parameters and SMSY & SREP for synoptic 
 #   data sets, estimate parameters of watershed-area regression, and 
@@ -59,13 +66,14 @@ source ("R/PlotSR.r")
   #"IWAM_FixedSep_Constyi"#"IWAM_FixedSep_RicStd"
   #"IWAM_FixedSep"#"IWAM_FixedCombined"
 # plot <- FALSE # A logical representing if plots should be produced
-# Ext <- FALSE # A logical representing if all extensive indicators are to be 
-  # included for WCVI Chinook out-of-sample stocks
-# CoreInd <- FALSE # A logical representing if only core indicators are to be 
-  # included for WCVI Chinook out-of-sample stocks
+# ExtInd <- FALSE # A logical representing if all extensive indicators are to be 
+  # included for WCVI Chinook out-of-sample stocks. This set is provided in 
+  # Appendix B of FSAR Res. Doc. (2024)
+# CoreInd <- FALSE # A logical representing if only core indicators (6) are to
+  # be included for WCVI Chinook out-of-sample stocks
 # AllExMH <- FALSE # A logical representing if all indicators except those from 
   # major hatchery facilities are to be included for WCVI Chinook out-of-sample 
-  # stocks. This set is used for the FSAR Res. Doc. (2024)
+  # stocks. This set is used for Table 4.1 of the FSAR Res. Doc. (2024)
 
 
 # Returns:
@@ -986,7 +994,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
 #-------------------------------------------------------------------------------
 
 runIWAM(AllExMH=TRUE)
-
+#runIWAM(ExtInd=TRUE)
 
 
 

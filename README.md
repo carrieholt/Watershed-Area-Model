@@ -1,14 +1,65 @@
 # Watershed-Area-Model
-## Code to run watershed-area model to estiamte LRPs for wCVI Chinook
+Code to run the integrated accessible watershed-area model for WCVI Chinook
 
------  
-
-**Authors: Carrie Holt, Kendra Holt, and Brooke Davis, adapted from Parken et al. (2006)**  
-**Date: 2021-01-12 (ONGOING)**
-
------
-
+Primary contact: Carrie Holt, carrie.holt@dfo-mpo.gc.ca
+Date created: 2021-01-12, updates ongoing
 
 
 ### Summary
-This repository contains files to run the watershed-area model to estimate benchmarks and LRPs for West Coast Vancouver Island Chinook salmon. The principal file to run the model, `runWCVILRPs.R`, first runs the integrated watershed-area model within the function `runIWAM()` using a synpotic data set of 25 Chinook stocks across BC, Alaska, Washington, and Oregon. The data and model are adapted from Parken et al. (2006) and Liermann et al. (2010). The `runIWAM()` function also estiamtes SMSY and SREP for WCVI indicator stocks, inlets, and CUs based on the watershed-area regression. Then, the function `get.LRP()` is run to estimate Sgen and adjusted SMSY values for indicators stocks, inlets, and CUs. Finally,`get.LRP()` estiamtes a stock-manatement unit level LRP based on a logistic regression between the aggregate abundances and proportion of CUs above the red zone (i.e., CUs with all component inlets > inlet-level Sgen). Example plot outputs both including and excluding enhanced stocks are shown in `RmdReports/WCVI_LRPs.Rmd`.
+This repository contains files to run the watershed-area model to estimate benchmarks and logistic regression based reference points for West Coast Vancouver Island  (WCVI) Chinook salmon. The model is adapted from Parken et al. (2006) and Liermann et al. (2011) and used to derive benchmarks and reference points for Holt, K. et al. (2023) and Brown et al. (in revision). Citations are provided below. Benchmarks are provided at the population (or stock), Conservation Unit (CU) and inlet scale. For WCVI Chinook inlets are nested within CUs. Logistic-regression reference points are provided at the Stock Management Unit (SMU) scale, which represent various probabilities of all component inlets or CUs being above their lower benchmark.
+
+Benchmarks for all escapement indicators except those associated with major hatcheries (AllExMH) are reported in Table 4.1 of Brown et al. (in revision). These escapement indicators are: Artlish, Bedwell/Ursus, Burman, Cayeghle, Gold, Kaouk, Leiner, Marble, Megin, Moyeha, Nahmint, San Juan, Sarita, Tahsis, Tahsish, Tranquil and Zeballos.
+
+Benchmarks for all extensive indicators (ExtInd) are reported Appendix B of Brown et al. (in revision). There are 55 extensive indicator systems.
+
+### Contents of repository
+Code and associated files are organized into the following sub-folders:  
+
+1. **DataIn** Folder of input data required for analyses
+2. **DataOut** Folder of output results generated from analyses
+3. **R** Folder of R code used in analyses
+4. **RmdReports** Folder of Rmd reports used for preliminary analyses for Holt, K. et al. (2023)
+5. **stan_Files** Folder of stan files for estimating the integrated watershed-area model (Not currently used)
+6. **TMB_Files** Folder of TMB files used to estimate the integrated watershed-area model
+ 
+### To run analyses, follow these steps:
+**Step 1)** Run the integrated watershed-area model using the runIWAM() function. In this function, parameters of the watershed-area-model are estimated from a synoptic data set of spawner-recruitment time-series and watershed areas, and SMSY and SREP benchmarks for out-of-sample  stocks (default being WCVI Chinook) are predicted with prediction intervals.
+File: 'R/IWAM.R' Arguments for the runIWAM() function are described at the top of IWAM.R
+
+Input: 
+'DataIn/SRinputfile.csv' Synoptic data set of spawner-recruitment time-series used to estimate accessible watershed-area model. These data were used in Parken et al (2010) and Liermann et al (2011) and are available upon request.
+'DataIn/Surv.csv' file of marine survival covariates for Cowichan and Harrison Chinook, not currently used
+'DataIn/WatershedArea.csv' Accessible watershed areas for synoptic data sets, provided in Parken et al. (2006)
+'DataIn/WCVIStocks.csv' Names and accessible watershed areas for escapement indicators for WCVI Chinook
+'DataIn/WCVIStocks_ExtInd.csv' Names and accessible watershed areas for extensive indicators for WCVI Chinook
+
+
+Output: 
+'DataOut/SR_std.png' Plot of Ricker spawner-recruitment fits for synoptic data sets (if plot==TRUE)
+'DataOut/SRL_std.png' Plot of linearized Ricker spawner-recruitment fits for synoptic data sets (if plot==TRUE)
+'DataOut/SRResid_std.png' Plot of residuals of Ricker spawner-recruitment fits for synoptic data sets (if plot==TRUE)
+'DataOut/ACF_std.png' Plot of autocorrelation in residuals of Ricker spawner-recruitment fits for synoptic data sets (if plot==TRUE)
+'DataOut/WAregSMSY_std_wBC.png' Plot of linear fit of watershed area vs SMSY for synoptic data set (if plot==TRUE)
+'DataOut/WAregSREP_std_wBC.png' Plot of linear fit of watershed area vs SREP for synoptic data set (if plot==TRUE)
+
+'DataOut/WCVI_SMSY_AllExMH.csv' File of benchmarks SMSY and SREP for escapement indicators except those associated with major hatchery facilities, inlets and CUs, including 95% prediction intervals (lower limit, LL and upper limit, UL).
+OR
+'DataOut/WCVI_SMSY_ExtInd.csv' File of benchmarks SMSY and SREP for escapement indicators except those associated with major hatchery facilities, including 95% prediction intervals (lower limit, LL and upper limit, UL).
+
+**Step 2)** Bootstrap benchmark estimates to derive uncertainty intervals for SMSY, SREP and SGEN, and estimate logistic regression reference point (optionally) using the function Get.LRP.bs(). This function has two sections. In the first section, for each stock (or indicator), benchmarks are calculated from stock-specific SREP values and inferences about productivity (log alpha). Stock-specific bootstrapped values of SREP are drawn from a distribution defined by the prediction intervals in step 1 for that stock, and from a distribution of productivities defined by a life-cycle model, a run reconstruction, or as inferred from the synoptic data sets used in step 1 (as in Parken et al. 2006).  In the second section, logistic-regression based reference points are estimated, as described in Holt, K. et al. (2023) and in the RMD file, 'RmdReports/WCVI_LRPs_Bernoulli.Rmd'. The second section is optional.
+
+File: 'WCVILRPs_boostrapped.R' The function Get.LRP.bs() gets a single draw of the stock-specific benchmarks from distributions of SREP and productivity, which is iterated over a large number of bootstraps (8000, the number required to stabilize benchmark values to two significant digits). The distribution of bootstrapped benchmarks, Sgen, SMSY, and SREP, are then summarized by the median, and 2.5th and 97.5th percentiles.
+
+Input: 'DataOut/WCVI_SMSY_ExtInd.csv' File of predicted SMSY and SREP values for the accessible watershed area model
+Output: 'DataOut/wcviCK-BootstrappedRPs_ExtInd.csv' File of Sgen, SMSY and SREP values with uncertainty intervals from bootstrapped draws of SREP and productivity.
+
+
+
+### Citations
+Brown, N. et al. (in revision). West Coast of Vancouver Island Natural-Origin Chinook Salmon (Oncorhynchus tshawytscha) Stock Assessment. CSAS Working Paper20xx/nnn.
+
+Holt, K.R., Holt, C.A., Warkentin, L., Wor, C., Davis, B., Arbeider, M., Bokvist, J., Crowley, S., Grant, S., Luedke, W., McHugh, D., Picco, C., and Van  Will, P. 2023. Case Study Applications of LRP Estimation Methods to Pacific  Salmon Stock Management Units. DFO Can. Sci. Advis. Sec. Res. Doc. 2023/010.  iv+129p.
+
+Liermann, M.C., Sharma, R., and Parken, C.K. 2010. Using accessible watershed size to predict management parameters for Chinook salmon, Oncorhynchus tshawytscha, populations with little or no spawner-recruit data: A Bayesian hierarchical modelling approach. Fisheries Management and Ecology 17(1): 40–51.
+
+Parken, C.K., McNicol, R.E., and Irvine, J.R. 2006. Habitat-based methods to estimate escapement goals for data limited Chinook salmon stocks in British Columbia, 2004. DFO Can. Sci. Advis. Res. Doc. 2006/83. vii + 67 p.

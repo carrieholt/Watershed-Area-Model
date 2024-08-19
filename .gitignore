@@ -9,6 +9,7 @@
 
 # Private data files
 DataIn/SRInputfile.csv
+DataIn/SRInputfile_Liermann.csv
 
 # Session Data files
 .RData

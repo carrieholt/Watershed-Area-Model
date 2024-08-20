@@ -49,12 +49,17 @@ source("R/helperFunctions.r")
   # Dataframe $SMU_ppn
 
 
-Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE, 
-                        prod="LifeStageModel", LOO = NA, run_logReg=TRUE){
+Get.LRP.bs <- function (remove.EnhStocks=TRUE,  
+                        Bern_logistic=FALSE, 
+                        prod="LifeStageModel", 
+                        LOO = NA, 
+                        run_logReg=TRUE){
 
   #----------------------------------------------------------------------------
   # Read in watershed area-based reference points (SREP and SMSY)
   #----------------------------------------------------------------------------
+  
+  
   if (remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
   if (!remove.EnhStocks) wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv")
   
@@ -547,8 +552,9 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
     
     
   }
-   
-} # Eng of Get.LRP.bs() function
+  # FUNCTION IS HALTING HERE
+}
+ # Eng of Get.LRP.bs() function
 
 
 #-------------------------------------------------------------------------------

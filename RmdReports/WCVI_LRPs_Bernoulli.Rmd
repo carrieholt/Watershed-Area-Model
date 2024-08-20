@@ -73,6 +73,7 @@ for (i in c(2,1,3)){
 ```
 
 SMU-level status is identified from the proportion of CUs that are in the red zone. Only years when status of all three CUs are available are plotted and used in the logistic regression to derive an LRP (n=13).
+
 ```{r , echo=FALSE, warning=FALSE, message=FALSE, error=FALSE, fig.cap = "**Figure 4**. Time-series indicating whether all CUs within the SMU are above their lower benchmark."}
 
 

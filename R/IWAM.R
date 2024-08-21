@@ -77,9 +77,13 @@ source ("R/PlotSR.r")
 
 
 # Returns:
-# csv file of SMSY and SREP values from watershed-area model
-  # DataOut/WCVI_SMSY_noEnh_wBC,csv (without enhancement) or 
-  # DataOutWCVI_SMSY_wEnh_wBC.csv (with enhancement)
+# csv file of SMSY and SREP values from watershed-area model, labelled according
+# to indicators included, as specified in inputs
+  # DataOut/WCVI_SMSY_noEnh_wBC,csv (without enhancement, as in Holt, K 2023),or 
+  # DataOutWCVI_SMSY_wEnh_wBC.csv (with enhancement) or
+  # DataOut/WCVI_SMSY_AllExMH.csv (for all esc indicators except major hatch.)
+  # DataOut/WCVI_SMSY_ExtInd.csv (for all extensive indicators)
+
 # plots of SR diagnostics and Watershed-area regression
 
 runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE, 

@@ -451,15 +451,25 @@ plotWAregressionSMSY_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream,
                                            WCVIlnWA_file = 
                                              "DataIn/WCVIStocks.csv") {
   
+  options(scipen=5) # This removes the tendancy for ticks with sci. notation.
   SMSY <- All_Est %>% filter(Param=="SMSY") %>% 
-    mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
+    mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1)) 
+  
+  # Only ocean-type WAs
+  SMSY.x <- SMSY %>% select(Stocknumber, lh)
+  WA.x <- left_join(SMSY.x,WA, by=c("Stocknumber"))
+  WA.x <- WA.x %>% filter(lh==1)
+  lnWA <- log(WA.x$WA)
+  
+  # Only ocean-type SMSYs
+  SMSY <- SMSY %>% filter(lh==1)
+  
   # what is scale of SMSY?
   Sc <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
   SMSY <- SMSY %>% left_join(Sc, by="Stocknumber") %>% 
     mutate(rawSMSY=Estimate*Scale)
   lnSMSY <- log(SMSY$rawSMSY)
-  lnWA <- log(WA$WA)
-  
+   
   par(cex=1.5)
   col.use <- NA
   for(i in 1:length(SMSY$lh)) {
@@ -493,7 +503,7 @@ plotWAregressionSMSY_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream,
     simWA <-  seq(2,12,0.5)
     Preds <-  logD1 + simWA*exp(logD2) 
     Predso <- logD1o + simWA*D2o
-    lines(x=exp(simWA), y=exp(Preds), col="forestgreen", lwd=2)
+    # lines(x=exp(simWA), y=exp(Preds), col="forestgreen", lwd=2)
     lines(x=exp(simWA), y=exp(Predso), col="dodgerblue3", lwd=2)
   }
   if(exists("PredlnSMSY")){
@@ -511,9 +521,9 @@ plotWAregressionSMSY_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream,
       dplyr::select(up) %>% pull()
     lo <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% 
       dplyr::select(lo) %>% pull()
-    if(is.na(up_S[1])==FALSE) polygon(x = c(exp(PredlnWA), exp(rev(PredlnWA))), 
-                                      y = c(exp(up_S), exp(rev(lo_S))), 
-                                      col = rgb(0,0.4,0, alpha=0.2), border=NA)
+    # if(is.na(up_S[1])==FALSE) polygon(x = c(exp(PredlnWA), exp(rev(PredlnWA))), 
+    #                                   y = c(exp(up_S), exp(rev(lo_S))), 
+    #                                   col = rgb(0,0.4,0, alpha=0.2), border=NA)
     if(is.na(up_O[1])==FALSE) polygon(x = c(exp(PredlnWA), exp(rev(PredlnWA))), 
                                       y = c(exp(up_O), exp(rev(lo_O))), 
                                       col = rgb(0,0.2,0.4, alpha=0.2), 
@@ -558,15 +568,24 @@ plotWAregressionSREP_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream,
                                            WCVIlnWA_file = 
                                              "DataIn/WCVIStocks.csv") {
   
+  options(scipen=5) # This removes the tendancy for ticks with sci. notation.
   SREP <- All_Est %>% filter(Param=="SREP") %>% 
     mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
+  # Only ocean-type WAs
+  SREP.x <- SREP %>% select(Stocknumber, lh)
+  WA.x <- left_join(SREP.x,WA, by=c("Stocknumber"))
+  WA.x <- WA.x %>% filter(lh==1)
+  lnWA <- log(WA.x$WA)
+  
+  # Only ocean-type SREP:
+  
+  SREP <- SREP %>% filter(lh==1)
   # what is scale of SMSY?
   Sc <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
   SREP <- SREP %>% left_join(Sc, by="Stocknumber") %>% 
     mutate(rawSREP=Estimate*Scale)
   lnSREP <- log(SREP$rawSREP)
-  lnWA <- log(WA$WA)
-  
+ 
   par(cex=1.5)
   col.use <- NA
   for(i in 1:length(SREP$lh)) {
@@ -576,7 +595,7 @@ plotWAregressionSREP_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream,
   plot(y = exp(lnSREP), x = exp(lnWA), log="xy", pch = 20, col = col.use, 
        xlab = expression("Accessible watershed area, km"^2), 
        ylab=expression(S[REP]), 
-       xlim =c(10,100000) , ylim=c(50,50000))
+       xlim =c(10,100000) , ylim=c(50,100000))
   
   logD1 <- All_Deltas %>% filter(Param=="logNu1") %>% 
     dplyr::select(Estimate) %>% pull()
@@ -600,7 +619,7 @@ plotWAregressionSREP_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream,
     simWA <-  seq(2,12,0.5)
     Preds <-  logD1 + simWA*exp(logD2) 
     Predso <- logD1o + simWA*D2o
-    lines(x=exp(simWA), y=exp(Preds), col="forestgreen", lwd=2)
+    # lines(x=exp(simWA), y=exp(Preds), col="forestgreen", lwd=2)
     lines(x=exp(simWA), y=exp(Predso), col="dodgerblue3", lwd=2)
   }
   if(exists("PredlnSREP")){
@@ -618,9 +637,9 @@ plotWAregressionSREP_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream,
       dplyr::select(up) %>% pull()
     lo <- PredlnSREP %>% filter(Param== "PredlnSREP_CI") %>% 
       dplyr::select(lo) %>% pull()
-    if(is.na(up_S[1])==FALSE) polygon(x = c(exp(PredlnWA), exp(rev(PredlnWA))), 
-                                      y = c(exp(up_S), exp(rev(lo_S))), 
-                                      col = rgb(0,0.4,0, alpha=0.2), border=NA)
+    # if(is.na(up_S[1])==FALSE) polygon(x = c(exp(PredlnWA), exp(rev(PredlnWA))), 
+    #                                   y = c(exp(up_S), exp(rev(lo_S))), 
+    #                                   col = rgb(0,0.4,0, alpha=0.2), border=NA)
     if(is.na(up_O[1])==FALSE) polygon(x = c(exp(PredlnWA), exp(rev(PredlnWA))), 
                                       y = c(exp(up_O), exp(rev(lo_O))), 
                                       col = rgb(0,0.2,0.4, alpha=0.2), 

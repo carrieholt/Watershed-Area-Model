@@ -52,7 +52,7 @@ source ("R/helperFunctions.R")
 source ("R/PlotSR.r")
 
 #-------------------------------------------------------------------------------
-# Function to run integrated watershed-area model
+# Function to run integrated watershed-area model: runIWAM()
 
 # Arguments:
 # remove.EnhStocks <- TRUE # A logical representing if enhanced stocks should 
@@ -599,9 +599,11 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   # 3. Estimate SR parameters from synoptic data set and SMSY and SREPs
   # -----------------------------------------------------------------------
   
-  # Compile model if changed:
+  # Re-compile model if changed:
   #dyn.unload(dynlib(paste("TMB_Files/", mod, sep="")))
-  #compile(paste("TMB_Files/", mod, ".cpp", sep=""))
+  if (file.exists(paste("TMB_Files/", mod, ".dll", sep="")) == FALSE) {
+    compile(paste("TMB_Files/", mod, ".cpp", sep=""))}
+  
   dyn.load(dynlib(paste("TMB_Files/", mod, sep="")))
   if(mod=="IWAM_FixedSep"|mod=="IWAM_FixedCombined"|mod=="IWAM_FixedSep_Constyi"|
      mod=="IWAM_FixedSep_Constm"|mod=="IWAM_FixedSep_RicStd"|mod=="Ricker_AllMod"){
@@ -866,6 +868,24 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     dev.off()
     #plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, 
     # title1="Common, fixed yi (logDelta1), \nRandom slope (Delta2)")
+    
+    png(paste("DataOut/WAregSMSY_withWCVI", mod, "_wBC.png", sep=""), width=7, 
+        height=7, units="in", res=500)
+    par(mfrow=c(1,1), mar=c(4, 4, 2, 2) + 0.1)
+    title_plot <- ""
+    plotWAregressionSMSY_withWCVI (All_Est, All_Deltas, SRDat, Stream, WA,
+                                   PredlnSMSY, PredlnWA = data$PredlnWA, 
+                                   WCVISMSY, title1=title_plot, mod)
+    dev.off()
+    
+    png(paste("DataOut/WAregSREP_withWCVI", mod, "_wBC.png", sep=""), width=7, 
+        height=7, units="in", res=500)
+    par(mfrow=c(1,1), mar=c(4, 4, 2, 2) + 0.1)
+    title_plot <- ""
+    plotWAregressionSREP_withWCVI (All_Est, All_Deltas, SRDat, Stream, WA,
+                                   PredlnSREP, PredlnWA = data$PredlnWA, 
+                                   WCVISREP, title1=title_plot, mod)
+    dev.off()
     
   }
   

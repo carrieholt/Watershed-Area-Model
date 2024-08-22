@@ -442,7 +442,220 @@ plotWAregressionSREP <- function (All_Est, All_Deltas, SRDat, Stream, WA,  Predl
   
 }
 
+#-------------------------------------------------------------------------------
+# Plot WA regression for SMSY with WCVI Chinook stock superimposed
 
+plotWAregressionSMSY_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream, 
+                                           WA,  PredlnSMSY=NA, PredlnWA, 
+                                           WCVISMSY, title1, mod,
+                                           WCVIlnWA_file = 
+                                             "DataIn/WCVIStocks.csv") {
+  
+  SMSY <- All_Est %>% filter(Param=="SMSY") %>% 
+    mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
+  # what is scale of SMSY?
+  Sc <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
+  SMSY <- SMSY %>% left_join(Sc, by="Stocknumber") %>% 
+    mutate(rawSMSY=Estimate*Scale)
+  lnSMSY <- log(SMSY$rawSMSY)
+  lnWA <- log(WA$WA)
+  
+  par(cex=1.5)
+  col.use <- NA
+  for(i in 1:length(SMSY$lh)) {
+    if (SMSY$lh[i]==0) col.use[i] <- "forestgreen" 
+    else col.use[i] <- "dodgerblue3"
+    }
+  plot(y = exp(lnSMSY), x = exp(lnWA), log="xy", pch = 20, col = col.use, 
+       xlab = expression("Accessible watershed area, km"^2), 
+       ylab=expression(S[MSY]), 
+       xlim =c(10,100000) , ylim=c(50,50000))
+
+  logD1 <- All_Deltas %>% filter(Param=="logDelta1") %>% 
+    dplyr::select(Estimate) %>% pull()
+  logD2 <- All_Deltas %>% filter(Param=="logDelta2") %>% 
+    dplyr::select(Estimate) %>% pull()
+  if(mod=="Liermann_PriorRicSig_PriorDeltaSig") {
+    logD1o <- All_Deltas %>% 
+      filter(Param=="logDelta1ocean") %>% 
+      dplyr::select(Estimate) %>% pull() + logD1
+    }
+  if(mod=="Liermann_PriorRicSig_PriorDeltaSig") {
+    D2o <- exp(All_Deltas %>% filter(Param=="logDelta2ocean") %>% 
+                 dplyr::select(Estimate) %>% pull() ) + exp(logD2)
+    
+    if(nrow(All_Deltas %>% filter(Param=="Delta2ocean"))>=1)  {
+      D2o <- (All_Deltas %>% filter(Param=="Delta2ocean") %>% 
+                dplyr::select(Estimate) %>% pull() ) + exp(logD2) 
+    }
+  }
+   if(mod=="Liermann_PriorRicSig_PriorDeltaSig") {
+    simWA <-  seq(2,12,0.5)
+    Preds <-  logD1 + simWA*exp(logD2) 
+    Predso <- logD1o + simWA*D2o
+    lines(x=exp(simWA), y=exp(Preds), col="forestgreen", lwd=2)
+    lines(x=exp(simWA), y=exp(Predso), col="dodgerblue3", lwd=2)
+  }
+  if(exists("PredlnSMSY")){
+    PredlnSMSY <- PredlnSMSY %>% 
+      mutate (up = Estimate + 1.96 * Std..Error, lo=Estimate - 1.96*Std..Error) 
+    up_S <- PredlnSMSY %>% filter(Param== "PredlnSMSYs_CI") %>% 
+      dplyr::select(up) %>% pull()
+    lo_S <- PredlnSMSY %>% filter(Param== "PredlnSMSYs_CI") %>% 
+      dplyr::select(lo) %>% pull()
+    up_O <- PredlnSMSY %>% filter(Param== "PredlnSMSYo_CI") %>% 
+      dplyr::select(up) %>% pull()
+    lo_O <- PredlnSMSY %>% filter(Param== "PredlnSMSYo_CI") %>% 
+      dplyr::select(lo) %>% pull()
+    up <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% 
+      dplyr::select(up) %>% pull()
+    lo <- PredlnSMSY %>% filter(Param== "PredlnSMSY_CI") %>% 
+      dplyr::select(lo) %>% pull()
+    if(is.na(up_S[1])==FALSE) polygon(x = c(exp(PredlnWA), exp(rev(PredlnWA))), 
+                                      y = c(exp(up_S), exp(rev(lo_S))), 
+                                      col = rgb(0,0.4,0, alpha=0.2), border=NA)
+    if(is.na(up_O[1])==FALSE) polygon(x = c(exp(PredlnWA), exp(rev(PredlnWA))), 
+                                      y = c(exp(up_O), exp(rev(lo_O))), 
+                                      col = rgb(0,0.2,0.4, alpha=0.2), 
+                                      border=NA)
+    if(is.na(up[1])==FALSE) polygon(x = c(PredlnWA, rev(PredlnWA)), 
+                                    y = c(up, rev(lo)), 
+                                    col = rgb(0.6,0.2,0.4, alpha=0.2), 
+                                    border=NA)
+  }
+  
+  if(mod=="Liermann_PriorRicSig_PriorDeltaSig"){
+    text(x=9, y=7,labels= 
+           paste0( "log(Delta1)=", round(logD1[1],2), ", \nDelta2=", 
+                   round(exp(logD2[1]),2)), col="forestgreen", cex=0.8)
+    text(x=6, y=9.5,labels= 
+           paste0("log(Delta1)=", round(logD1o[1],2), ", \nDelta2=", 
+                  round(D2o[1],2)), col="dodgerblue3", cex=0.8)
+  }
+
+  WCVIlnWA <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% 
+    filter(lh==1) %>% select(Stock, lnWA)
+  WCVISMSY.x <- WCVISMSY %>% filter(Param=="SMSY") %>% 
+    select(Stock, Estimate, LL, UL)
+  WCVIplot.df <- left_join(WCVIlnWA, WCVISMSY.x)
+  WCVIplot.df <- WCVIplot.df[complete.cases(WCVIplot.df),]
+  WCVIplot.df <- arrange(WCVIplot.df, lnWA)
+  points(x=exp(WCVIplot.df$lnWA), y=WCVIplot.df$Estimate, pch = 3, cex=0.5)
+  polygon(x = c(exp(WCVIplot.df$lnWA), exp(rev(WCVIplot.df$lnWA))), 
+          y = c(WCVIplot.df$UL, rev(WCVIplot.df$LL)), 
+          col = grey(0.3, alpha=0.2), border=NA)
+  
+  title(title1, cex.main=0.9)
+  
+}
+
+#------------------------------------------------------------------
+# Plot WA regression for SREP with WCVI Chinook stock superimposed
+
+plotWAregressionSREP_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream, 
+                                           WA,  PredlnSMREP=NA, PredlnWA, 
+                                           WCVISREP, title1, mod,
+                                           WCVIlnWA_file = 
+                                             "DataIn/WCVIStocks.csv") {
+  
+  SREP <- All_Est %>% filter(Param=="SREP") %>% 
+    mutate(ModelOrder=0:(length(unique(All_Est$Stocknumber))-1))
+  # what is scale of SMSY?
+  Sc <- SRDat %>% dplyr::select(Stocknumber, Scale) %>% distinct()
+  SREP <- SREP %>% left_join(Sc, by="Stocknumber") %>% 
+    mutate(rawSREP=Estimate*Scale)
+  lnSREP <- log(SREP$rawSREP)
+  lnWA <- log(WA$WA)
+  
+  par(cex=1.5)
+  col.use <- NA
+  for(i in 1:length(SREP$lh)) {
+    if (SREP$lh[i]==0) col.use[i] <- "forestgreen" 
+    else col.use[i] <- "dodgerblue3"
+  }
+  plot(y = exp(lnSREP), x = exp(lnWA), log="xy", pch = 20, col = col.use, 
+       xlab = expression("Accessible watershed area, km"^2), 
+       ylab=expression(S[REP]), 
+       xlim =c(10,100000) , ylim=c(50,50000))
+  
+  logD1 <- All_Deltas %>% filter(Param=="logNu1") %>% 
+    dplyr::select(Estimate) %>% pull()
+  logD2 <- All_Deltas %>% filter(Param=="logNu2") %>% 
+    dplyr::select(Estimate) %>% pull()
+  if(mod=="Liermann_PriorRicSig_PriorDeltaSig") {
+    logD1o <- All_Deltas %>% 
+      filter(Param=="logNu1ocean") %>% 
+      dplyr::select(Estimate) %>% pull() + logD1
+  }
+  if(mod=="Liermann_PriorRicSig_PriorDeltaSig") {
+    D2o <- exp(All_Deltas %>% filter(Param=="logNu2ocean") %>% 
+                 dplyr::select(Estimate) %>% pull() ) + exp(logD2)
+    
+    if(nrow(All_Deltas %>% filter(Param=="Nu2ocean"))>=1)  {
+      D2o <- (All_Deltas %>% filter(Param=="Nu2ocean") %>% 
+                dplyr::select(Estimate) %>% pull() ) + exp(logD2) 
+    }
+  }
+  if(mod=="Liermann_PriorRicSig_PriorDeltaSig") {
+    simWA <-  seq(2,12,0.5)
+    Preds <-  logD1 + simWA*exp(logD2) 
+    Predso <- logD1o + simWA*D2o
+    lines(x=exp(simWA), y=exp(Preds), col="forestgreen", lwd=2)
+    lines(x=exp(simWA), y=exp(Predso), col="dodgerblue3", lwd=2)
+  }
+  if(exists("PredlnSREP")){
+    PredlnSREP <- PredlnSREP %>% 
+      mutate (up = Estimate + 1.96 * Std..Error, lo=Estimate - 1.96*Std..Error) 
+    up_S <- PredlnSREP %>% filter(Param== "PredlnSREPs_CI") %>% 
+      dplyr::select(up) %>% pull()
+    lo_S <- PredlnSREP %>% filter(Param== "PredlnSREPs_CI") %>% 
+      dplyr::select(lo) %>% pull()
+    up_O <- PredlnSREP %>% filter(Param== "PredlnSREPo_CI") %>% 
+      dplyr::select(up) %>% pull()
+    lo_O <- PredlnSREP %>% filter(Param== "PredlnSREPo_CI") %>% 
+      dplyr::select(lo) %>% pull()
+    up <- PredlnSREP %>% filter(Param== "PredlnSREP_CI") %>% 
+      dplyr::select(up) %>% pull()
+    lo <- PredlnSREP %>% filter(Param== "PredlnSREP_CI") %>% 
+      dplyr::select(lo) %>% pull()
+    if(is.na(up_S[1])==FALSE) polygon(x = c(exp(PredlnWA), exp(rev(PredlnWA))), 
+                                      y = c(exp(up_S), exp(rev(lo_S))), 
+                                      col = rgb(0,0.4,0, alpha=0.2), border=NA)
+    if(is.na(up_O[1])==FALSE) polygon(x = c(exp(PredlnWA), exp(rev(PredlnWA))), 
+                                      y = c(exp(up_O), exp(rev(lo_O))), 
+                                      col = rgb(0,0.2,0.4, alpha=0.2), 
+                                      border=NA)
+    if(is.na(up[1])==FALSE) polygon(x = c(PredlnWA, rev(PredlnWA)), 
+                                    y = c(up, rev(lo)), 
+                                    col = rgb(0.6,0.2,0.4, alpha=0.2), 
+                                    border=NA)
+  }
+  
+  if(mod=="Liermann_PriorRicSig_PriorDeltaSig"){
+    text(x=9, y=7,labels= 
+           paste0( "log(Delta1)=", round(logD1[1],2), ", \nDelta2=", 
+                   round(exp(logD2[1]),2)), col="forestgreen", cex=0.8)
+    text(x=6, y=9.5,labels= 
+           paste0("log(Delta1)=", round(logD1o[1],2), ", \nDelta2=", 
+                  round(D2o[1],2)), col="dodgerblue3", cex=0.8)
+  }
+  
+  WCVIlnWA <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% 
+    filter(lh==1) %>% select(Stock, lnWA)
+  WCVISREP.x <- WCVISREP %>% filter(Param=="SREP") %>% 
+    select(Stock, Estimate, LL, UL)
+  WCVIplot.df <- left_join(WCVIlnWA, WCVISREP.x)
+  WCVIplot.df <- WCVIplot.df[complete.cases(WCVIplot.df),]
+  WCVIplot.df <- arrange(WCVIplot.df, lnWA)
+  points(x=exp(WCVIplot.df$lnWA), y=WCVIplot.df$Estimate, pch = 3, cex=0.5)
+  polygon(x = c(exp(WCVIplot.df$lnWA), exp(rev(WCVIplot.df$lnWA))), 
+          y = c(WCVIplot.df$UL, rev(WCVIplot.df$LL)), 
+          col = grey(0.3, alpha=0.2), border=NA)
+  
+  title(title1, cex.main=0.9)
+  
+}
+#-------------------------------------------------------------------------------
 plotWAregression_Parken <- function(data, All_Deltas){
   par(cex=1.5)
   col.use <- NA

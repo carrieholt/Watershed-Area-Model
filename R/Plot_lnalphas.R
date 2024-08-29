@@ -142,7 +142,7 @@ alpha_plot <- ggplot(df) +
                      guide = "none") + 
   scale_linetype_manual(values = c("Life-Cycle-Model" = "solid", 
                                    "Run-Reconstruction" = "dashed")) +
-  labs(x = "ln(alpha)", y = "Density") + 
+  labs(x = "ln(alpha)", y = "Probability density") + 
   theme_bw() + 
   theme(strip.background = element_rect(fill = alpha('black', 0.1))) + 
   theme(legend.title = element_blank(), legend.position = "bottom") + 

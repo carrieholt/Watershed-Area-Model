@@ -536,7 +536,8 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   
   if (mod=="IWAM_FixedSep"|mod=="IWAM_FixedSep_RicStd"|mod=="Liermann"|
       mod=="Liermann_PriorRicSig_PriorDeltaSig"){
-    ## Lierman model
+    ## Lierman model. Note, log(delta2) is estimated to ensure the slope, 
+    # delta2, is >0. The y-intercept, logDelta1, is not exponentiated.
     param$logDelta1 <- 3#10# with skagit 2.881
     param$logDelta1ocean <- 0# with skagit 2.881
     param$logDelta2 <- log(0.72)#log(0.72/(1-0.72)) 
@@ -544,6 +545,8 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     param$logDeltaSigma <- -0.412 #from Parken et al. 2006 where sig=0.662
   }
  if (mod=="Liermann"| mod=="Liermann_PriorRicSig_PriorDeltaSig"){ 
+    # Note, log(nu2) is estimated to ensure the slope, nu2, is >0.
+    # The y-intercept, lognu1, is not exponentiated.
     param$logNu1 <- 3#10# with skagit 2.881
     param$logNu1ocean <- 0# with skagit 2.881
     param$logNu2 <- log(0.72)#log(0.72/(1-0.72)) 
@@ -714,7 +717,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
                                                   "Delta2_bounded", "logDelta1ocean", 
                                                   "logDelta2ocean", "Delta2ocean", "logNu1", 
                                                   "logNu2", "sigma_nu", "logNu1ocean", 
-                                                  "Nu2ocean"))
+                                                  "Nu2ocean", "logDeltaSigma", "logNuSigma"))
   
   # -----------------------------------------------------------------------
   # 5. Calculate diagnostics and plot SR curves, etc.
@@ -836,7 +839,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   #---------------------------------------------------------------------------------
   # Plot WA regression
   if(plot==TRUE){
-    png(paste("DataOut/WAregSMSY_", mod, "_wBC.png", sep=""), width=7, height=7, units="in", res=500)
+    png(paste("DataOut/WAregSMSY_", mod, "_wWABC.png", sep=""), width=7, height=7, units="in", res=500)
     par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
     if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
     if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -851,7 +854,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
                           PredlnWA = data$PredlnWA, title1=title_plot, mod)
     dev.off()
     
-    png(paste("DataOut/WAregSREP_", mod, "_wBC.png", sep=""), width=7, height=7, units="in", res=500)
+    png(paste("DataOut/WAregSREP_", mod, "_wWABC.png", sep=""), width=7, height=7, units="in", res=500)
     #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
     par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
     if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -1004,7 +1007,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
       
     }  
     if(ExtInd){# this includes BC
-      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd.csv")
+      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd_wWAbc.csv")
     }  
     
   }
@@ -1017,8 +1020,8 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
 # associated with major hatchery facilities, used in FSAR  Res. Doc. (2024)
 #-------------------------------------------------------------------------------
 
-runIWAM(AllExMH=TRUE)
-#runIWAM(ExtInd=TRUE)
+# runIWAM(AllExMH=TRUE)
+runIWAM(ExtInd=TRUE)
 
 
 

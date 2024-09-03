@@ -173,6 +173,14 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
 # sigma.theta <- abs(xi)/sqrt(tau.eta)
 # plot(x=test, y=sigma.theta, type="l")
 
+# Plotting for: Sigma for Watershed Area Regression ####
+# TK: Shows the probability density function for each of the prior distributions
+# TK: For examples see TWG LRPs Mtg 7 ppt
+# plotPriors only has two inputs - so 4 possible plots
+# Plot should be the same between prior sets since it should have no dependence
+# on the data itself, just the density functions?
+  # E.g. one only has to change the labelling between results sections for
+  # the sensitivity analysis
 
 par(mfrow=c(1,1))  
 
@@ -181,14 +189,14 @@ plotPriors(plot_inv_gamma_only=TRUE, Delta=FALSE)
 dev.off()
 
 #png(paste("DataOut/DeltaPriors_InvGamma.png", sep=""), width=7, height=7, units="in", res=500)
-#plotPriors(plot_inv_gamma_only=TRUE, Delta=TRUE)
+plotPriors(plot_inv_gamma_only=TRUE, Delta=TRUE)
 #dev.off()
 
 #png(paste("DataOut/RicPriors_sm.png", sep=""), width=7, height=7, units="in", res=500)
-#plotPriors(plot_inv_gamma_only=FALSE, Delta=FALSE)
+plotPriors(plot_inv_gamma_only=FALSE, Delta=FALSE)
 #dev.off()
 
 
 #png(paste("DataOut/DeltaPriors.png", sep=""), width=7, height=7, units="in", res=500)
-#plotPriors(plot_inv_gamma_only=FALSE, Delta=TRUE)
+# plotPriors(plot_inv_gamma_only=FALSE, Delta=TRUE)
 #dev.off()

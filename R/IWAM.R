@@ -313,7 +313,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     data$SigRicPriorGamma <- as.numeric(T)
     data$SigRicPriorCauchy <- as.numeric(F)
     data$biasCor <- as.numeric(TRUE)
-    data$Tau_dist <- 0.1
+    data$Tau_dist <- 0.1 # *** Gamma penalty term for ricker alpha ***
     
     data$sigDelta_mean <- 0.80# See KFrun.R, #For half-normal use N(0,1)
     data$sigDelta_sig <- 0.28# See KFrun.R,
@@ -322,7 +322,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     data$SigDeltaPriorNorm <- as.numeric(F)
     data$SigDeltaPriorGamma <- as.numeric(T)
     data$SigDeltaPriorCauchy <- as.numeric(F)
-    data$Tau_D_dist <- 1
+    data$Tau_D_dist <- 1 # *** Gamma penalty term for watershed area model ***
     data$TestlnWAo <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>%
       filter(lh==1) %>% pull(lnWA)
     # Add aggregated WAs at inlet level

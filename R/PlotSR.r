@@ -544,16 +544,16 @@ plotWAregressionSMSY_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream,
   }
 
   WCVIlnWA <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% 
-    filter(lh==1) %>% select(Stock, lnWA)
+    filter(lh==1) %>% select(Stock, lnWA) %>% filter(Stock!="Cypre")
   WCVISMSY.x <- WCVISMSY %>% filter(Param=="SMSY") %>% 
-    select(Stock, Estimate, LL, UL)
+    select(Stock, Estimate, LL, UL) %>% filter(Stock!="Cypre")
   WCVIplot.df <- left_join(WCVIlnWA, WCVISMSY.x)
   WCVIplot.df <- WCVIplot.df[complete.cases(WCVIplot.df),]
   WCVIplot.df <- arrange(WCVIplot.df, lnWA)
   points(x=exp(WCVIplot.df$lnWA), y=WCVIplot.df$Estimate, pch = 3, cex=0.5)
-  polygon(x = c(exp(WCVIplot.df$lnWA), exp(rev(WCVIplot.df$lnWA))), 
-          y = c(WCVIplot.df$UL, rev(WCVIplot.df$LL)), 
-          col = grey(0.3, alpha=0.2), border=NA)
+  # polygon(x = c(exp(WCVIplot.df$lnWA), exp(rev(WCVIplot.df$lnWA))), 
+  #         y = c(WCVIplot.df$UL, rev(WCVIplot.df$LL)), 
+  #         col = grey(0.3, alpha=0.2), border=NA)
   
   title(title1, cex.main=0.9)
   
@@ -563,7 +563,7 @@ plotWAregressionSMSY_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream,
 # Plot WA regression for SREP with WCVI Chinook stock superimposed
 
 plotWAregressionSREP_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream, 
-                                           WA,  PredlnSMREP=NA, PredlnWA, 
+                                           WA,  PredlnSREP=NA, PredlnWA, 
                                            WCVISREP, title1, mod,
                                            WCVIlnWA_file = 
                                              "DataIn/WCVIStocks.csv") {
@@ -660,16 +660,16 @@ plotWAregressionSREP_withWCVI <- function (All_Est, All_Deltas, SRDat, Stream,
   }
   
   WCVIlnWA <- read.csv("DataIn/WCVIStocks.csv") %>% mutate (lnWA=log(WA)) %>% 
-    filter(lh==1) %>% select(Stock, lnWA)
+    filter(lh==1) %>% select(Stock, lnWA) %>% filter(Stock!="Cypre")
   WCVISREP.x <- WCVISREP %>% filter(Param=="SREP") %>% 
-    select(Stock, Estimate, LL, UL)
+    select(Stock, Estimate, LL, UL) %>% filter(Stock!="Cypre")
   WCVIplot.df <- left_join(WCVIlnWA, WCVISREP.x)
   WCVIplot.df <- WCVIplot.df[complete.cases(WCVIplot.df),]
   WCVIplot.df <- arrange(WCVIplot.df, lnWA)
   points(x=exp(WCVIplot.df$lnWA), y=WCVIplot.df$Estimate, pch = 3, cex=0.5)
-  polygon(x = c(exp(WCVIplot.df$lnWA), exp(rev(WCVIplot.df$lnWA))), 
-          y = c(WCVIplot.df$UL, rev(WCVIplot.df$LL)), 
-          col = grey(0.3, alpha=0.2), border=NA)
+  # polygon(x = c(exp(WCVIplot.df$lnWA), exp(rev(WCVIplot.df$lnWA))), 
+  #         y = c(WCVIplot.df$UL, rev(WCVIplot.df$LL)), 
+  #         col = grey(0.3, alpha=0.2), border=NA)
   
   title(title1, cex.main=0.9)
   

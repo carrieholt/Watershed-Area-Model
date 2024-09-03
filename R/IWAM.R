@@ -443,7 +443,10 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   
   # Read in log(watershed area) for additional stocks
   # Predicated lnWA for plottig CIs:
-  if (mod!="Ricker_AllMod") data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1) 
+  # Prediction intervals covering only synoptic data sets
+  # if (mod!="Ricker_AllMod") data$PredlnWA <- seq(min(log(WA$WA)), max(log(WA$WA)), 0.1) 
+  # Prediction intervals covering only synoptic data sets and WCVI stocks
+  if (mod!="Ricker_AllMod") data$PredlnWA <- seq(min(data$TestlnWAo), max(log(WA$WA)), 0.1) 
   
   # Parameters
   param <- list()
@@ -872,24 +875,6 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
     #plotWAregression (All_Est, All_Deltas, SRDat, Stream, WA, PredlnSMSY, PredlnWA = data$PredlnWA, 
     # title1="Common, fixed yi (logDelta1), \nRandom slope (Delta2)")
     
-    png(paste("DataOut/WAregSMSY_withWCVI", mod, "_wBC.png", sep=""), width=7, 
-        height=7, units="in", res=500)
-    par(mfrow=c(1,1), mar=c(4, 4, 2, 2) + 0.1)
-    title_plot <- ""
-    plotWAregressionSMSY_withWCVI (All_Est, All_Deltas, SRDat, Stream, WA,
-                                   PredlnSMSY, PredlnWA = data$PredlnWA, 
-                                   WCVISMSY, title1=title_plot, mod)
-    dev.off()
-    
-    png(paste("DataOut/WAregSREP_withWCVI", mod, "_wBC.png", sep=""), width=7, 
-        height=7, units="in", res=500)
-    par(mfrow=c(1,1), mar=c(4, 4, 2, 2) + 0.1)
-    title_plot <- ""
-    plotWAregressionSREP_withWCVI (All_Est, All_Deltas, SRDat, Stream, WA,
-                                   PredlnSREP, PredlnWA = data$PredlnWA, 
-                                   WCVISREP, title1=title_plot, mod)
-    dev.off()
-    
   }
   
   
@@ -989,6 +974,29 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   WCVISREP <- TestSREP %>% mutate(Estimate=round(Estimate, 0), LL=round(LL,0), UL=round(UL,0))
   WCVISMSY <- WCVISMSY %>% bind_rows(WCVISREP)
   
+  #-----------------------------------------------------------------------------
+  # Plot WA regression with WCVI predictions
+  #-----------------------------------------------------------------------------
+  if (plot){    
+    png(paste("DataOut/WAregSMSY_withWCVI", mod, "_wWABC.png", sep=""), width=7, 
+        height=7, units="in", res=500)
+    par(mfrow=c(1,1), mar=c(4, 4, 2, 2) + 0.1)
+    title_plot <- ""
+    plotWAregressionSMSY_withWCVI (All_Est, All_Deltas, SRDat, Stream, WA,
+                                   PredlnSMSY, PredlnWA = data$PredlnWA, 
+                                   WCVISMSY = WCVISMSY, title1=title_plot, mod)
+    dev.off()
+    
+    png(paste("DataOut/WAregSREP_withWCVI", mod, "_wWABC.png", sep=""), width=7, 
+        height=7, units="in", res=500)
+    par(mfrow=c(1,1), mar=c(4, 4, 2, 2) + 0.1)
+    title_plot <- ""
+    plotWAregressionSREP_withWCVI (All_Est, All_Deltas, SRDat, Stream, WA,
+                                   PredlnSREP = PredlnSREP, 
+                                   PredlnWA = data$PredlnWA, 
+                                   WCVISREP = WCVISREP, title1=title_plot, mod)
+    dev.off()
+  }
   # Write SMSY and SREP with PIs to file
   write.results <- TRUE
   if(write.results)
@@ -1020,8 +1028,8 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
 # associated with major hatchery facilities, used in FSAR  Res. Doc. (2024)
 #-------------------------------------------------------------------------------
 
-# runIWAM(AllExMH=TRUE)
-runIWAM(ExtInd=TRUE)
+runIWAM(AllExMH=TRUE)
+# runIWAM(ExtInd=TRUE)
 
 
 

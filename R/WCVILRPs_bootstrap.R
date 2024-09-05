@@ -352,7 +352,7 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
     est_loga <- function(SMSY, SREP, shortloga=FALSE){
       
       loga <- nlminb(start = (0.5 - SMSY/SREP) / 0.07, 
-                     objective = calc_loga, 
+                     objective = calc_loga, # Try 
                      SMSY= SMSY, 
                      SREP=SREP)$par
       if(shortloga) loga <- (0.5 - SMSY/SREP) / 0.07

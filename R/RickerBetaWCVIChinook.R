@@ -39,7 +39,7 @@ dum2 <- wcviRPs_long %>%  filter (Param == "SREP") %>%
   filter(Stock %in% inlets) %>% rename(inlets=Stock, SREP=Estimate) %>% select(-c(LL, UL, Param, X))
 # Remove double instance of San Juan, as it's a indicator stock and an inlet
 dum2 <- dum2[-1,]
-dum2$SREP <- signif(dum2$SREP,2)
+# dum2$SREP <- signif(dum2$SREP,2)
 
 out <- dum2 %>% left_join(dum, by="inlets")
 out <- out %>% mutate(beta=lnalpha_inlet_nbc/SREP)

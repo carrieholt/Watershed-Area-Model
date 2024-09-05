@@ -97,6 +97,9 @@ lnalpha_Parken <- purrr::map2_dfr (wcvi_SMSY, wcvi_SREP, shortloga=FALSE,
 hist(lnalpha_Parken$loga)
 abline(v=median(lnalpha_Parken$loga), lty="dashed")
 
+write.csv(median(lnalpha_Parken$loga), 
+          here::here("DataOut", "lnalphaParken.csv"))
+          
 
 #-------------------------------------------------------------------------------
 # Code to plot various assumptions about productivity: (1) from life-cycle model

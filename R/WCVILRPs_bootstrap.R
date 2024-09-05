@@ -813,7 +813,7 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
 ExtInd <- TRUE # This is run for purposes of generating benchmarks for 
   # all indicators for the FSAR Res. Doc. (2024)
 CoreInd <- FALSE
-AllExMH <- FALSE #This is run for purposes of getting bootstrapped 
+AllExMH <- FALSE#FALSE #This is run for purposes of getting bootstrapped 
   # benchmarks for inlets including all escapement indicators except major
   # hatcheries
 
@@ -825,8 +825,8 @@ if (run.bootstraps){
     outBench <- list() 
     
     for (k in 1:nBS) {
-      out <- Get.LRP.bs(run_logReg=FALSE, prod = "LifeStageModel")
-      # prod options are: "RunReconstruction")#Parken")
+      out <- Get.LRP.bs(run_logReg=FALSE, prod = "Parken")
+      # prod options are: "LifeStageModel"#"RunReconstruction")#Parken")
       outBench[[k]] <- out$bench
     }
     
@@ -911,10 +911,11 @@ if (run.bootstraps){
       mutate (upr=signif(upr,2))
     
     if(!ExtInd & !CoreInd & !AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs.csv") 
-    if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_LifeCycleModel.csv") 
+    # if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_LifeCycleModel.csv") 
+    # if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_RunReconstruction.csv") 
+    if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_Parken.csv") 
     if(CoreInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_CoreInd.csv") 
     if(AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_AllExMH.csv") 
-    # write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_Parken.csv")     
     # write.csv(dfout, paste("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v",j,".csv", sep=""))     
     
    

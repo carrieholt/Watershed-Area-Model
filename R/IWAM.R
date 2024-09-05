@@ -721,6 +721,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
                                                   "logDelta2ocean", "Delta2ocean", "logNu1", 
                                                   "logNu2", "sigma_nu", "logNu1ocean", 
                                                   "Nu2ocean", "logDeltaSigma", "logNuSigma"))
+  # write.csv(All_Deltas, "DataOut/All_Deltas.csv")
   
   # -----------------------------------------------------------------------
   # 5. Calculate diagnostics and plot SR curves, etc.

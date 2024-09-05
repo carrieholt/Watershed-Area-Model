@@ -98,7 +98,7 @@ hist(lnalpha_Parken$loga)
 abline(v=median(lnalpha_Parken$loga), lty="dashed")
 
 write.csv(median(lnalpha_Parken$loga), 
-          here::here("DataOut", "lnalphaParkin.csv"))
+          here::here("DataOut", "lnalphaParken.csv"))
           
 
 #-------------------------------------------------------------------------------

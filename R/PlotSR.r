@@ -753,6 +753,10 @@ plotRicA <- function (){#All_Est_Liermann, All_Est_Ricker_AllMod, All_Est_Lierma
 
   
   #box.data <- data.frame(RicLogA=c(RicAL$Estimate,RicALsep$Estimate, RicAR$Estimate), Model=c(rep("Hierarchical_logA_combined",nRicA),rep("Hierarchical_logA_sep",nRicA), rep("Fixed_logA",nRicA)))
+    # Labelling:
+      # Fixed effects: nRicAstd
+      # InvGamma: nRicAL (all 3 variants)
+      # Half normal + Half cauchy: nRicAL (why these also?)
   box.data <- data.frame(RicLogA = c(RicARstd_noWAreg$Estimate, RicARstd$Estimate, RicALsep_0.1$Estimate, RicALsep$Estimate, RicALsep_0.001$Estimate, 
                                    RicALhNRV$Estimate, RicALhCRV$Estimate, RicALsep_uni$Estimate, RicALsep_none$Estimate), 
                          Model = c(rep("Fixed\neffects\nNoWAreg",nRicAstd), rep("Fixed\neffects",nRicAstd), rep("InvGamma\n(0.1, 0.1)", nRicAL), 

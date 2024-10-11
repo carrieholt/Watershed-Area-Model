@@ -6,7 +6,7 @@ Date created: 2021-01-12, updates ongoing
 
 
 ### Summary
-This repository contains files to run the accessible watershed-area model to estimate benchmarks and logistic regression based reference points for West Coast Vancouver Island  (WCVI) Chinook salmon. The accessible waterhsed-area model is adapted from Parken et al. (2006) and Liermann et al. (2011) and used to derive benchmarks and reference points for Holt, K. et al. (2023) and Brown et al. (in revision). Citations are provided below. Benchmarks are provided at the population (or stock), Conservation Unit (CU) and inlet scale. For WCVI Chinook inlets are nested within CUs. Logistic-regression reference points are provided at the Stock Management Unit (SMU) scale, which represent various probabilities of all component inlets or CUs being above their lower benchmark (see Holt, K. et al. (2023) for more details).
+This repository contains files to run the accessible watershed-area model to estimate benchmarks and logistic regression based reference points for West Coast Vancouver Island  (WCVI) Chinook salmon. The accessible watershed-area model is adapted from Parken et al. (2006) and Liermann et al. (2011) and used to derive benchmarks and reference points for Holt, K. et al. (2023) and Brown et al. (in revision). Citations are provided below. Benchmarks are provided at the population (or stock), Conservation Unit (CU) and inlet scale. For WCVI Chinook inlets are nested within CUs. Logistic-regression reference points are provided at the Stock Management Unit (SMU) scale, which represent various probabilities of all component inlets or CUs being above their lower benchmark (see Holt, K. et al. (2023) for more details).
 
 Benchmarks for all escapement indicators except those associated with major hatcheries (AllExMH) are reported in Table 4.1 of Brown et al. (in revision). These escapement indicators are: Artlish, Bedwell/Ursus, Burman, Cayeghle, Gold, Kaouk, Leiner, Marble, Megin, Moyeha, Nahmint, San Juan, Sarita, Tahsis, Tahsish, Tranquil and Zeballos.
 
@@ -22,7 +22,7 @@ Code and associated files are organized into the following sub-folders:
 5. **stan_Files** Folder of stan files for estimating the integrated watershed-area model (Not currently used)
 6. **TMB_Files** Folder of TMB files used to estimate the integrated watershed-area model
  
-### Steps for runing analyses:
+### Steps for running analyses:
 **Step 1)** Run the integrated watershed-area model using the runIWAM() function. In this function, parameters of the watershed-area-model are estimated from a synoptic data set of spawner-recruitment time-series and watershed areas, and SMSY and SREP benchmarks for out-of-sample  stocks (default being WCVI Chinook) are predicted with prediction intervals. This step can be run on different sets of WCVI Chinook indicators, such as escapement indicators excluding major hatchery facilities (AllExMH) or all extensive indicators (ExtInd).
 
 *File*: 'R/IWAM.R' Arguments for the runIWAM() function are described at the top of IWAM.R

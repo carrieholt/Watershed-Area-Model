@@ -188,15 +188,14 @@ Type objective_function<Type>:: operator() ()
     if(biasCor == 1) {
       PredlnSMSY(i) = logDelta1 + logDelta1ocean * Stream(i) + ( exp(logDelta2) + Delta2ocean * Stream(i) ) * log(WA(i)) - pow(sigma_delta,2) / Type(2);
     }
-    
     ans += -dnorm( PredlnSMSY(i), log(SMSY_std(i) * Scale(i) ),  sigma_delta, true);
+    
     if(biasCor == 0) {
       PredlnSREP(i) = logNu1 + logNu1ocean * Stream(i) + ( exp(logNu2) + Nu2ocean * Stream(i) ) * log(WA(i)) ;
     }
     if(biasCor == 1) {
       PredlnSREP(i) = logNu1 + logNu1ocean * Stream(i) + ( exp(logNu2) + Nu2ocean * Stream(i) ) * log(WA(i))  - pow(sigma_nu,2) / Type(2);
     }
-    
     ans += -dnorm( PredlnSREP(i), log(SREP_std(i) * Scale(i) ),  sigma_nu, true);
   }
   

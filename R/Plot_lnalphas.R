@@ -51,6 +51,18 @@ est_loga <- function(SMSY, SREP, shortloga=FALSE){
 #                                  SREP = exampleSREP)$par
 
 
+## Alternative approach to estimating alpha, not yet integrated into code
+## provided by Paul Van dam-Bates, 8 Oct 2024
+## More efficient and gives same answer
+## Example:
+# Srep <- 1000
+# logalpha <- 2
+# Smsy <- (1-gsl::lambert_W0(exp(1-logalpha)))/(logalpha/Srep)
+# 
+# ## Solution:
+# lalpha <- Srep*(Smsy*gsl::lambert_W0(-exp(1-Srep/Smsy)*(Srep-Smsy)/Smsy) + Srep - Smsy)/(Smsy*(Srep-Smsy))
+# Smax <- Srep/lalpha
+
 
 #-------------------------------------------------------------------------------
 # Code to identify standard deviation in loga that is aligned with uncertainty

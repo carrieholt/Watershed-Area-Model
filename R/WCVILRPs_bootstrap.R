@@ -821,7 +821,7 @@ run.bootstraps <- FALSE
 
 if (run.bootstraps){
     set.seed(1)
-    nBS <- 80000 # number trials for bootstrapping
+    nBS <- 250000#80000 # number trials for bootstrapping
     outBench <- list() 
     
     for (k in 1:nBS) {

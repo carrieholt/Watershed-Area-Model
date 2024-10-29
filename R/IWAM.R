@@ -823,7 +823,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   #---------------------------------------------------------------------------------
   # Save parameter estimates to plot distribution of logA values (box plots)
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
-  #saveRDS( All_Est, paste( "DataOut/All_Est_Ricker_std_wBC.RDS", sep="") )# mod "IWAM_FixedSep_RicStd"
+  #saveRDS( All_Est, paste( "DataOut/All_Est_Ricker_std_wBC.RDS", sep="") ) # mod "IWAM_FixedSep_RicStd"
   
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.1_wBC.RDS", sep="") )
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.01_wBC.RDS", sep="") )

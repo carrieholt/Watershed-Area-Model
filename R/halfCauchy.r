@@ -97,6 +97,8 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
     
       #Uniform 0-1
       lines(x=c(0,2,2,3), y=c(0.5,0.5,0,0), col=cols[4], lwd=2)
+      
+      # legend?
     }
     
     if(Delta){
@@ -110,6 +112,8 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
       lines(x=testb, y=abs(dnorm(testb,0.8,0.28))/norm_scalar, col=cols[2], lwd=4)#See KRrun.R for N(0.8,0.28)
       lines(x=c(0,lower, lower), y=c(0, 0, dnorm(lower,0.8,0.28))/norm_scalar, col=cols[2], lwd=4)
       lines(x=c(upper,upper, 3), y=c(dnorm(upper,0.8,0.28)/norm_scalar, 0, 0), col=cols[2], lwd=4)
+      
+      # legend?
       
     }
     
@@ -131,11 +135,11 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
       #                               "sigma WA regression Parken et al.", "Med. SD of time-varying SMSYs"),
       #        col=c(t_col(cols[1], 30), t_col(cols[1], 50), t_col(cols[1], 70), cols[2:3], rep(grey(0.5),3)),
       #        lty=c(rep("solid", 6), "dashed", "dotted"), bty="n", lwd=2, cex=0.8)
-      # legend(x=1.4, y=0.78, legend=c("Inverse gamma(1,1)", "Inverse gamma(0.1,0.1)", "Inverse gamma(0.01,0.01)", 
-      #                                "Normal bounded", "Uniform bounded", "SD of ln(SMSY) Parken et al.", 
-      #                                "sigma WA regression Parken et al.", "Med. SD of time-varying SMSYs"),
-      #        col=c(t_col(cols[1], 30), t_col(cols[1], 50), t_col(cols[1], 70), cols[2], cols[4], rep(grey(0.5),3)),  
-      #        lty=c(rep("solid", 6), "dashed", "dotted"), bty="n", lwd=2, cex=0.8) 
+      legend(x=1.4, y=0.78, legend=c("Inverse gamma(1,1)", "Inverse gamma(0.1,0.1)", "Inverse gamma(0.01,0.01)",
+                                     "Normal bounded", "Uniform bounded", "SD of ln(SMSY) Parken et al.",
+                                     "sigma WA regression Parken et al.", "Med. SD of time-varying SMSYs"),
+             col=c(t_col(cols[1], 30), t_col(cols[1], 50), t_col(cols[1], 70), cols[2], cols[4], rep(grey(0.5),3)),
+             lty=c(rep("solid", 6), "dashed", "dotted"), bty="n", lwd=2, cex=0.8)
       
     }
   }
@@ -185,18 +189,20 @@ plotPriors <- function (plot_inv_gamma_only, Delta){
 par(mfrow=c(1,1))  
 
 png(paste("DataOut/RicPriors_InvGamma.png", sep=""), width=7, height=7, units="in", res=500)
-plotPriors(plot_inv_gamma_only=TRUE, Delta=FALSE)
+plotPriors(plot_inv_gamma_only=TRUE, Delta=FALSE) # Labelled
 dev.off()
 
 #png(paste("DataOut/DeltaPriors_InvGamma.png", sep=""), width=7, height=7, units="in", res=500)
-plotPriors(plot_inv_gamma_only=TRUE, Delta=TRUE)
+plotPriors(plot_inv_gamma_only=TRUE, Delta=TRUE) # Labelled
 #dev.off()
+plotPriors(plot_inv_gamma_only=FALSE, Delta=TRUE) # NO LABELS
+
 
 #png(paste("DataOut/RicPriors_sm.png", sep=""), width=7, height=7, units="in", res=500)
-plotPriors(plot_inv_gamma_only=FALSE, Delta=FALSE)
+plotPriors(plot_inv_gamma_only=FALSE, Delta=FALSE) # Labelled
 #dev.off()
 
 
 #png(paste("DataOut/DeltaPriors.png", sep=""), width=7, height=7, units="in", res=500)
-# plotPriors(plot_inv_gamma_only=FALSE, Delta=TRUE)
+# plotPriors(plot_inv_gamma_only=FALSE, Delta=TRUE) # NO LABELS
 #dev.off()

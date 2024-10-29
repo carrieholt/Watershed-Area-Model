@@ -1016,7 +1016,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
       
     }  
     if(ExtInd){# this includes BC
-      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd_wWAbc.csv")
+      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd.csv")
     }  
     
   }
@@ -1029,8 +1029,8 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
 # associated with major hatchery facilities, used in FSAR  Res. Doc. (2024)
 #-------------------------------------------------------------------------------
 
-runIWAM(AllExMH=TRUE)
-# runIWAM(ExtInd=TRUE)
+#runIWAM(AllExMH=TRUE)
+runIWAM(ExtInd=TRUE)
 
 
 

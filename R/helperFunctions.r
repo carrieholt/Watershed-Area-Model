@@ -65,6 +65,16 @@ sGenSolver <- function (loga, b) {
   return(fit$minimum)
 }
 
+# # Alternative approach to estimating Sgen, not yet implemented
+# # Provided by Paul Van dam-Bates, 8 Oct 2024
+# # More efficient than current version, and give same results
+# ## Using LambertW a second time.
+# sGenDirect <- function(loga, b){
+#   sMSY <- ( 1 - gsl::lambert_W0 (exp ( 1 - loga) ) ) / b
+#   a <- exp(loga)
+#   -1/b*gsl::lambert_W0(-b*sMSY/a)
+# }
+
 
 bEst <- function(b, SMSY, SREP){
   # Function to estimate Ricker b paramter from SMSY and SREP

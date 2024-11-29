@@ -359,6 +359,7 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
       beta <- loga/SREP
       return( list( loga = loga , beta = beta, SMSY = SMSY, SREP = SREP) )
     }
+
     
     if(!ExtInd) {
       WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
@@ -729,6 +730,7 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
                 CU_Status=CU_Status, SMU_ppn=SMU_ppn, 
                 LRPppn= data$p, nLL=obj$report()$ans, LOO=LOO, 
                 bench= select(SGENcalcs,-apar, -bpar)*Scale))
+
     
     
   }

@@ -235,9 +235,11 @@ ggplot.corr <- function(data, lag.max = 10, ci = 0.95, title="") {
 
 # Functions to estimate inferred log(a) from SMSY and SREP from IWAM or Parken et al
 calc_loga <- function(loga, SMSY, SREP){
-  # 1 - log( gsl::lambert_Wm1(1 - SMSY * loga / SREP)) - loga
-  # (1 - gsl::lambert_W0 (exp( 1 - loga))) * (SREP / SMSY) - loga 
   abs( (1-(loga/SREP) * SMSY) * exp(loga - (loga/SREP) * SMSY) - 1)
+  # Another version from Paul Van Dam Bates that gives the SAME explicit soln:
+  # lalpha <- 
+  # Srep*(Smsy*gsl::lambert_W0(-exp(1-Srep/Smsy)*(Srep-Smsy)/Smsy) + Srep 
+  #       - Smsy)/(Smsy*(Srep-Smsy))
   
 }
 # lnalpha_Parkin_example <- nlminb(start = (0.5 - exampleSMSY/exampleSREP) / 0.07, objective = calc_loga,  SMSY = exampleSMSY, SREP = exampleSREP)$par

@@ -824,6 +824,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   # Save parameter estimates to plot distribution of logA values (box plots)
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, ".RDS", sep="") )
   #saveRDS( All_Est, paste( "DataOut/All_Est_Ricker_std_wBC.RDS", sep="") ) # mod "IWAM_FixedSep_RicStd"
+  # saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_WAsig_Option1.RDS", sep="") )
   
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.1_wBC.RDS", sep="") )
   #saveRDS( All_Est, paste( "DataOut/All_Est_", mod, "_invGamma0.01_wBC.RDS", sep="") )
@@ -843,7 +844,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   #---------------------------------------------------------------------------------
   # Plot WA regression
   if(plot==TRUE){
-    png(paste("DataOut/WAregSMSY_", mod, "_wWABC.png", sep=""), width=7, height=7, units="in", res=500)
+    png(paste("DataOut/WAregSMSY_", mod, "WAsigOption1_wWABC.png", sep=""), width=7, height=7, units="in", res=500)
     par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
     if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
     if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -858,7 +859,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
                           PredlnWA = data$PredlnWA, title1=title_plot, mod)
     dev.off()
     
-    png(paste("DataOut/WAregSREP_", mod, "_wWABC.png", sep=""), width=7, height=7, units="in", res=500)
+    png(paste("DataOut/WAregSREP_", mod, "WAsigOption1_wWABC.png", sep=""), width=7, height=7, units="in", res=500)
     #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
     par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
     if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -1016,7 +1017,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
       
     }  
     if(ExtInd){# this includes BC
-      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd.csv")
+      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd_WASigOption1.csv")
     }  
     
   }

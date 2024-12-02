@@ -104,7 +104,7 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
     }
     
   }
-  if(ExtInd){wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_ExtInd.csv")}
+  if(ExtInd){wcviRPs_long <- read.csv("DataOut/WCVI_SMSY_ExtInd_WASigOption1.csv")}
   
   # Remove Cypre as it's not a core indicator (Diana McHugh, 22 Oct 2020)
   # Remove duplicate San Juan for AllExMH (San Juan is an Inlet and a stock)
@@ -870,7 +870,7 @@ if (run.bootstraps){
           
     }
     if(ExtInd){
-      stockNames <- read.csv("DataOut/WCVI_SMSY_ExtInd.csv") %>% 
+      stockNames <- read.csv("DataOut/WCVI_SMSY_ExtInd_WASigOption1.csv") %>% 
         filter(Param=="SMSY") %>% 
         pull(Stock)
       # stockNames <- stockNames %>% filter(Param=SMSY)
@@ -913,9 +913,9 @@ if (run.bootstraps){
       mutate (upr=signif(upr,2))
     
     if(!ExtInd & !CoreInd & !AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs.csv") 
-    # if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_LifeCycleModel.csv") 
+    if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_LifeCycleModel_WASigOption1.csv") 
     # if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_RunReconstruction.csv") 
-    if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_Parken.csv") 
+    # if(ExtInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_ExtInd_Parken.csv") 
     if(CoreInd) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_CoreInd.csv") 
     if(AllExMH) write.csv(dfout, "DataOut/wcviCK-BootstrappedRPs_AllExMH.csv") 
     # write.csv(dfout, paste("DataOut/wcviCK-BootstrappedRPs_ExtInd80000v",j,".csv", sep=""))     

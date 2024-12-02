@@ -60,10 +60,10 @@ lines(sigma, dgamma(1/(sigma^2), shape=3, scale=1), col="red")
 
 # Option 2: Inverse gamma penalty on variance
 sigma <- seq(0, 2.5, by = 0.01)
-rate <- rev(c(0.5, 1, 2, 3, 5, 7, 10, 13))
+rate <- rev(c(0.5, 1, 2, 3, 4, 5))
 per <- seq(90, 10, length.out=length(rate))
 mean <- 0.75
-plot(sigma, sigma, ylim = c(0,1.4), type = "n", 
+plot(sigma, sigma, ylim = c(0,0.75), type = "n", 
      xlab = "Sigma for watershed-area regression", 
      ylab = "Density", main  = "Inverse gamma penalty on variance")
 abline(v= sd(log(read.csv("DataIn/ParkenSMSY.csv")$SMSY)), col=grey(0.5), 
@@ -74,21 +74,23 @@ abline(v= sd(log(read.csv("DataIn/ParkenSREP.csv")$SREP)), col=grey(0.5),
 # abline(v= sqrt(0.146), col=grey(0.5), lty="dashed")#See Parken et al. (2006)
 
 for(i in 1:length(rate)){
-  lines(sigma, dgamma(sigma^2, shape = rate[i]*mean, 
-                      scale = 1/rate[i])*(sigma^2), 
-        lwd=4, col=t_col(color=cols[1], percent= per[i]))
+  lines(sigma, dgamma(1/sigma^2, shape = rate[i]*mean, 
+                      scale = 1/rate[i])*(1/sigma^4), 
+        lwd=4, col=t_col(color=cols[1], percent= per[i]), type="l")
 }
 
-legend(x=0, y=1.4, legend=c("sigma ln(SMSY) Parken et al. (upper bound)", 
+legend(x=0, y=0.75, legend=c("sigma ln(SMSY) Parken et al. (upper bound)", 
                              "sigma ln(SREP) Parken et al.(upper bound)"),
        col=grey(0.5),
        lty=c("dashed", "dotted"), bty="n", lwd=2, cex=0.5)
 
-lines(sigma, dgamma(sigma^2, shape=7.5, scale=1/10)*(sigma^2), col="red")
+# lines(sigma, dgamma(1/sigma^2, shape=1.5, scale=1/2)*(1/sigma^4), col="red")
+lines(sigma, dgamma(1/sigma^2, shape=0.75, scale=1)*(1/sigma^4), col="red")
+# lines(sigma, dgamma(1/sigma^2, shape=0.375, scale=2)*(1/sigma^4), col="red")
 # lines(sigma, dgamma(sigma^2, shape=3.75, scale=1/5)*(sigma^2), col="red")
 
-# Rate = 10, Scale = 1/10, Shape=7.5 works
-# More diffuse penalties result in singular results for linear regression 
+# Rate = 0.5, Scale = 2, Shape=0.75 works
+# More diffuse penalties result in very narrow variances for linear regression 
 # (sig goes to 0)
 
 # # Option 3: Gamma penalty on sigma 

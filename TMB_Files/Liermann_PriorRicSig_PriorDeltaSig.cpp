@@ -130,7 +130,7 @@ Type objective_function<Type>:: operator() ()
      // add prior on sigma 
     if (SigRicPriorGamma == 1) {
        //ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
-      ans += -dgamma(sigma_std(i), Type(7.5), Type(0.1), true);//shape=2, rate=3, scale=1/3
+      ans += -dgamma(sigma_std(i), Type(7.5), Type(0.1), true);
     }
     if (SigRicPriorNorm == 1) {
       //ans += -abs( dnorm( sigma_std(i), HalfNormMean, HalfNormSig, true) );
@@ -213,12 +213,12 @@ Type objective_function<Type>:: operator() ()
   if (SigDeltaPriorGamma == 1) {
     //ans += -dgamma(pow(sigma_delta,-2), Tau_D_dist, 1/Tau_D_dist, true);
     ans += -dgamma(pow(sigma_delta,-2), Type(3), Type(1), true);
-    //ans += -dgamma(pow(sigma_delta,2), Type(7.5), Type(0.1), true);
-    //ans += -pow(sigma_delta,2);//Jacobian adjustment when invgamma penalty on variance
+    //ans += -dgamma(pow(sigma_delta,-2), Type(0.75), Type(1), true);
+    //ans += Type(2)*log(pow(sigma_delta,2));//Jacobian adjustment when invgamma penalty on variance
     //ans += -dgamma(pow(sigma_nu,-2), Tau_D_dist, 1/Tau_D_dist, true);
     ans += -dgamma(pow(sigma_nu,-2), Type(3), Type(1), true);
-    //ans += -dgamma(pow(sigma_nu,2), Type(7.5), Type(0.1), true);
-    //ans += -pow(sigma_nu,2);///Jacobian adjustment when invgamma penalty on variance
+    //ans += -dgamma(pow(sigma_nu,-2), Type(0.75), Type(1), true);
+    //ans += Type(2)*log(pow(sigma_nu,2));///Jacobian adjustment when invgamma penalty on variance
   }
   
   // Half cauchy prior on sigma_delta and sigma_nu

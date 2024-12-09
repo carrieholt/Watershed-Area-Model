@@ -77,11 +77,11 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
   #----------------------------------------------------------------------------
   # Specify which indicator stocks to include for WCVI Chinook
   #----------------------------------------------------------------------------
-  ExtInd <- TRUE # Should all extensive indicators be included? This is run
+  ExtInd <- FALSE#TRUE # Should all extensive indicators be included? This is run
   # for purposes for generating benchmarks for all indicators for the FSAR Res. 
   # Doc. (2024)
   CoreInd <- FALSE # Should only core indicators be included
-  AllExMH <- FALSE # Should all indicators except those with large 
+  AllExMH <- TRUE # Should all indicators except those with large 
     # hatchery facilities be included? 
   # If all are set to False, then the indicators with PNI >0.5 are used, which 
   # is the base case for: Holt, K. et al. 2023. 2023. Case Study Applications  
@@ -812,10 +812,10 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
 #-------------------------------------------------------------------------------
 
 # Must change this in the function above as well (lines 73-75)
-ExtInd <- TRUE # This is run for purposes of generating benchmarks for 
+ExtInd <- FALSE # This is run for purposes of generating benchmarks for 
   # all indicators for the FSAR Res. Doc. (2024)
 CoreInd <- FALSE
-AllExMH <- FALSE#FALSE #This is run for purposes of getting bootstrapped 
+AllExMH <- TRUE#FALSE #This is run for purposes of getting bootstrapped 
   # benchmarks for inlets including all escapement indicators except major
   # hatcheries
 

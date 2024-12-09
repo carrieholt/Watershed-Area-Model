@@ -1030,8 +1030,8 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
 # associated with major hatchery facilities, used in FSAR  Res. Doc. (2024)
 #-------------------------------------------------------------------------------
 
-#runIWAM(AllExMH=TRUE)
-runIWAM(ExtInd=TRUE)
+runIWAM(AllExMH=TRUE)
+# runIWAM(ExtInd=TRUE)
 
 
 

@@ -54,6 +54,7 @@ legend(x=0, y=0.6, legend=c("sigma ln(SMSY) Parken et al. (upper bound)",
 
 
 lines(sigma, dgamma(1/(sigma^2), shape=3, scale=1), col="red")
+# lines(sigma, dgamma(1/(sigma^2), shape=1.5, scale=2), col="red")
 # Rate = 1, Scale=1, Shape= 3 seems would work
 # It has low densities above the upper bound, and has very lowdensity at zero
 

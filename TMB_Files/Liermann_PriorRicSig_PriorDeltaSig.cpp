@@ -65,8 +65,8 @@ Type objective_function<Type>:: operator() ()
   DATA_INTEGER(SigDeltaPriorNorm);
   DATA_INTEGER(SigDeltaPriorGamma);
   DATA_INTEGER(SigDeltaPriorCauchy);
-  //DATA_SCALAR(Tau_dist);
-  //DATA_SCALAR(Tau_D_dist);
+  DATA_SCALAR(Tau_dist);
+  DATA_SCALAR(Tau_D_dist);
   //DATA_SCALAR(logDeltaSigma);
   //DATA_SCALAR(logNuSigma);
   
@@ -129,8 +129,8 @@ Type objective_function<Type>:: operator() ()
     ans += -dnorm(logA_std(i), logMuAs + logMuAo * Stream(i), sigmaA, true );
      // add prior on sigma 
     if (SigRicPriorGamma == 1) {
-       //ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
-      ans += -dgamma(sigma_std(i), Type(7.5), Type(0.1), true);
+      ans += -dgamma(pow(sigma_std(i),-2), Tau_dist, 1/Tau_dist, true);
+      //ans += -dgamma(sigma_std(i), Type(7.5), Type(0.1), true);
     }
     if (SigRicPriorNorm == 1) {
       //ans += -abs( dnorm( sigma_std(i), HalfNormMean, HalfNormSig, true) );
@@ -151,9 +151,8 @@ Type objective_function<Type>:: operator() ()
   ans += -dnorm(logMuAo, logMuAo_mean, logMuAo_sig, true);
   // sigmaA prior
   if (SigRicPriorGamma == 1) {
-    //ans += -dgamma(pow(sigmaA,-2), Tau_dist, 1/Tau_dist, true);
-    //ans += -dgamma(pow(sigmaA,-2), Type(3), Type(0.2), true);
-    ans += -dgamma(sigmaA, Type(7.5), Type(0.1), true);//shape=2, rate=3, scale=1/3
+    ans += -dgamma(pow(sigmaA,-2), Tau_dist, 1/Tau_dist, true);
+    //ans += -dgamma(sigmaA, Type(7.5), Type(0.1), true);//shape=2, rate=3, scale=1/3
     
   }
   if (SigRicPriorNorm == 1) {
@@ -211,12 +210,12 @@ Type objective_function<Type>:: operator() ()
   
   // Inverse gamma prior on sigma_delta and sigma_nu
   if (SigDeltaPriorGamma == 1) {
-    //ans += -dgamma(pow(sigma_delta,-2), Tau_D_dist, 1/Tau_D_dist, true);
-    ans += -dgamma(pow(sigma_delta,-2), Type(3), Type(1), true);
+    ans += -dgamma(pow(sigma_delta,-2), Tau_D_dist, 1/Tau_D_dist, true);
+    //ans += -dgamma(pow(sigma_delta,-2), Type(3), Type(1), true);
     //ans += -dgamma(pow(sigma_delta,-2), Type(0.75), Type(1), true);
     //ans += Type(2)*log(pow(sigma_delta,2));//Jacobian adjustment when invgamma penalty on variance
-    //ans += -dgamma(pow(sigma_nu,-2), Tau_D_dist, 1/Tau_D_dist, true);
-    ans += -dgamma(pow(sigma_nu,-2), Type(3), Type(1), true);
+    ans += -dgamma(pow(sigma_nu,-2), Tau_D_dist, 1/Tau_D_dist, true);
+    //ans += -dgamma(pow(sigma_nu,-2), Type(3), Type(1), true);
     //ans += -dgamma(pow(sigma_nu,-2), Type(0.75), Type(1), true);
     //ans += Type(2)*log(pow(sigma_nu,2));///Jacobian adjustment when invgamma penalty on variance
   }

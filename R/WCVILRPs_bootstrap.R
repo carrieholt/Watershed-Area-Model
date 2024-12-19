@@ -43,6 +43,8 @@ source("R/helperFunctions.r")
   # Bern_logistic = logical (TRUE/FALSE), indicating if a Bernoulli logistic 
     # regression is used to estimate LRPs based on aggregate abundances 
     # (TRUE, default) or if binomial logistic regression is used (FALSE)
+  # prod = which productivity assumption to make in bootstrapping? 
+    # ('LifeStageModel' ,'RunReconstruction' or 'Parken')
   # LOO = numeric for leave-one-out cross validation of the logistic regression
     # This number is the index of the time-series of ppn of CUs and aggregate 
     # abundances that are removed prior to implementing the logistic regression 
@@ -52,10 +54,10 @@ source("R/helperFunctions.r")
   # The code requires that the IWAM model has been run and 
   # "WCVI_SMSY_noEnh.csv" or "WCVI_SMSY_wEnh.csv" exist
 # Returns:
-  # csv file, DataOut/wcviRPs_noEnh.csv or DataOut/wcviRPs_wEnh.csv of stock, 
-    # inlet, and CU level Sgen and SMSY values (both using expert derived 
+  # csv file, DataOut/wcviCK-BootstrappedRPs_AllExMH or ExtInd.csv for stock, 
+    # inlet, and CU level Sgen and SMSY values (according to assumpttion about 
     # productivity), and SREP values from integrated watershed-area model. SMSY 
-    # is called adjusted SMSY as it differs from SMSY estimates from watershed-
+    # is called an adjusted SMSY as it differs from SMSY estimates from watershed-
     # area model that does not consider expert derived productivity
   # LRP based on logistic regression (out$LRP), where the logistic regression is 
     # described in : 

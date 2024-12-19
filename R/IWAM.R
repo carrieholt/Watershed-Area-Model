@@ -844,7 +844,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
   #---------------------------------------------------------------------------------
   # Plot WA regression
   if(plot==TRUE){
-    png(paste("DataOut/WAregSMSY_", mod, "WAsigOption2_wWABC.png", sep=""), width=7, height=7, units="in", res=500)
+    png(paste("DataOut/WAregSMSY_", mod, "_wWABC.png", sep=""), width=7, height=7, units="in", res=500)
     par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
     if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
     if (mod=="IWAM_FixedSep") title_plot <- "Separate life-histories\nFixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -859,7 +859,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
                           PredlnWA = data$PredlnWA, title1=title_plot, mod)
     dev.off()
     
-    png(paste("DataOut/WAregSREP_", mod, "WAsigOption2_wWABC.png", sep=""), width=7, height=7, units="in", res=500)
+    png(paste("DataOut/WAregSREP_", mod, "_wWABC.png", sep=""), width=7, height=7, units="in", res=500)
     #png(paste("DataOut/WAreg_Liermann_SepRicA_UniformSigmaAPrior.png", sep=""), width=7, height=7, units="in", res=500)
     par(mfrow=c(1,1), mar=c(4, 4, 4, 2) + 0.1)
     if (mod=="IWAM_FixedCombined") title_plot <- "Fixed-effect yi (logDelta1), \nFixed-effect slope (Delta2)"
@@ -1017,7 +1017,7 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
       
     }  
     if(ExtInd){# this includes BC
-      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd_WASigOption2.csv")
+      write.csv(WCVISMSY, "DataOut/WCVI_SMSY_ExtInd.csv")
     }  
     
   }
@@ -1030,8 +1030,8 @@ runIWAM <- function(remove.EnhStocks = TRUE, removeSkagit = FALSE,
 # associated with major hatchery facilities, used in FSAR  Res. Doc. (2024)
 #-------------------------------------------------------------------------------
 
-runIWAM(AllExMH=TRUE)
-# runIWAM(ExtInd=TRUE)
+# runIWAM(AllExMH=TRUE)
+runIWAM(ExtInd=TRUE)
 
 
 

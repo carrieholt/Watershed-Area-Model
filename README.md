@@ -2,15 +2,17 @@
 Code to run the integrated accessible watershed-area model for WCVI Chinook
 
 Primary contact: Carrie Holt, carrie.holt@dfo-mpo.gc.ca
-Date created: 2021-01-12, updates ongoing
+Date created: 2021-01-12
 
 
 ### Summary
 This repository contains files to run the accessible watershed-area model to estimate benchmarks and logistic regression based reference points for West Coast Vancouver Island  (WCVI) Chinook salmon. The accessible watershed-area model is adapted from Parken et al. (2006) and Liermann et al. (2010) and used to derive benchmarks and reference points for Holt, K. et al. (2023) and Brown et al. (in revision). Citations are provided below. Benchmarks are provided at the population (or stock), Conservation Unit (CU) and inlet scale. For WCVI Chinook inlets are nested within CUs. Logistic-regression reference points are provided at the Stock Management Unit (SMU) scale, which represent various probabilities of all component inlets or CUs being above their lower benchmark (see Holt, K. et al. (2023) for more details).
 
-Benchmarks for all escapement indicators except those associated with major hatcheries (AllExMH) are reported in Table 4.1 of Brown et al. (in revision). These escapement indicators are: Artlish, Bedwell/Ursus, Burman, Cayeghle, Gold, Kaouk, Leiner, Marble, Megin, Moyeha, Nahmint, San Juan, Sarita, Tahsis, Tahsish, Tranquil and Zeballos.
+The model is applied to WCVI Chinook salmon on two sets of indicators: 
 
-Benchmarks for all extensive indicators (ExtInd) are reported Appendix B of Brown et al. (in revision). There are 55 extensive indicator systems.
+(1) all escapement indicators except those associated with major hatcheries (AllExMH), reported in Table 4.1 of Brown et al. (in revision). These escapement indicators are: Artlish, Bedwell/Ursus, Burman, Cayeghle, Gold, Kaouk, Leiner, Marble, Megin, Moyeha, Nahmint, San Juan, Sarita, Tahsis, Tahsish, Tranquil and Zeballos.
+
+(2) all extensive indicators (ExtInd) as reported Appendix B of Brown et al. (in revision). There are 55 extensive indicator systems.
 
 ### Contents of repository
 Code and associated files are organized into the following sub-folders:  
@@ -44,7 +46,7 @@ Code and associated files are organized into the following sub-folders:
 
 'DataOut/SR_std.png' Plot of Ricker spawner-recruitment fits for synoptic data sets (if plot==TRUE)
 
-'DataOut/SRL_std.png' Plot of linearized Ricker spawner-recruitment fits for synoptic data sets (if plot==TRUE)
+'DataOut/SRLin_std.png' Plot of linearized Ricker spawner-recruitment fits for synoptic data sets (if plot==TRUE)
 
 'DataOut/SRResid_std.png' Plot of residuals of Ricker spawner-recruitment fits for synoptic data sets (if plot==TRUE)
 
@@ -60,17 +62,21 @@ OR
 
 'DataOut/WCVI_SMSY_ExtInd.csv' File of benchmarks SMSY and SREP for escapement indicators except those associated with major hatchery facilities, including 95% prediction intervals (lower limit, LL and upper limit, UL).
 
-**Step 2)** Bootstrap benchmark estimates to derive uncertainty intervals for SMSY, SREP and SGEN, and estimate logistic regression reference point (optionally) using the function Get.LRP.bs(). This function has two sections. In the first section, for each stock (or indicator), benchmarks are calculated from stock-specific SREP values and inferences about productivity (log alpha). Stock-specific bootstrapped values of SREP are drawn from a distribution defined by the prediction intervals in step 1 for that stock, and from a distribution of productivities defined by a life-cycle model, a run reconstruction, or as inferred from the synoptic data sets used in step 1 (as in Parken et al. 2006).  In the second section, logistic-regression based reference points are estimated, as described in Holt, K. et al. (2023) and in the RMD file, 'RmdReports/WCVI_LRPs_Bernoulli.Rmd'. The second section is optional.
+**Step 2)** Bootstrap benchmark estimates to derive uncertainty intervals for SMSY, SREP and SGEN, and estimate logistic regression reference point (optionally) using the function Get.LRP.bs(). This function has two sections. In the first section, for each stock (or indicator), benchmarks are calculated from stock-specific SREP values and inferences about productivity (log alpha). Stock-specific bootstrapped values of SREP are drawn from a distribution defined by the prediction intervals in step 1 for that stock, and from a distribution of productivities defined by a life-cycle model, a run reconstruction, or as inferred from the synoptic data sets used in step 1 (as in Parken et al. 2006).  In the second section, logistic-regression based reference points are estimated, as described in Holt, K. et al. (2023) and in the RMD file, 'RmdReports/WCVI_LRPs_Bernoulli.Rmd'. The second section is optional and is not used in  Brown et al. (in revision).
 
 *File*: 'R/WCVILRPs_boostrapped.R' The function Get.LRP.bs() gets a single draw of the stock-specific benchmarks from distributions of SREP and productivity, which is iterated over a large number of bootstraps (250000, the number required to stabilize benchmark values to two significant digits). The distribution of bootstrapped benchmarks, Sgen, SMSY, and SREP, are then summarized by the median, and 2.5th and 97.5th percentiles.
 
 *Input*: 
 
-'DataOut/WCVI_SMSY_ExtInd.csv' File of predicted SMSY and SREP values for the accessible watershed area model
+'DataOut/WCVI_SMSY_AllExMH.csv' File of predicted SMSY and SREP values for the accessible watershed area model using escapement indicators except those with major hatchery facilities
+
+OR
+
+'DataOut/WCVI_SMSY_ExtInd.csv' File of predicted SMSY and SREP values for the accessible watershed area model using extensive indicators
 
 *Output*: 
 
-'DataOut/wcviCK-BootstrappedRPs_ExtInd.csv' File of SGEN, SMSY and SREP values with uncertainty intervals from bootstrapped draws of SREP and productivity.
+'DataOut/wcviCK-BootstrappedRPs_AllExMH.csv' or 'DataOut/wcviCK-BootstrappedRPs_ExtInd.csv': File of SGEN, SMSY and SREP values with uncertainty intervals from bootstrapped draws of SREP and productivity.
 
 **Step 3)** Plot distribution of productivity for WCVI Chinook under three different assumptions: (1) from a life-cycle model for WCVI Chinook salmon (Luedke pers. comm), (2) from a run-reconstruction and CU-specific ricker stock-recruitment models (see repository: pacific-salmon-assess/SalmonLRP_wCVI_CK, file: runWCVIChinook_projLRP.r), and (3) as inferred from accessible watershed-area model, as in Parken et al. (2006).
 
@@ -80,7 +86,7 @@ OR
 
 'DataIn/riclogArr.csv' estimates of productivity from run reconstruction
 
-'DataOut/WCVI_SMSY_ExtInd.csv' estimates of SMSY And SREP from accessible watershed-area-model used to estimate inferred productivity from that model
+'DataOut/WCVI_SMSY_AllExMH.csv' estimates of SMSY And SREP from accessible watershed-area-model used to estimate inferred productivity from that model
 
 *Outputs*:
 
@@ -107,7 +113,7 @@ OR
 'DataOut/SREP_plot_prod_assumption.png' Bar plots of SREP estimates under three productivity assumptions, as in Appendix B in Brown et al. (in revision)
 
 ### Citations
-Brown, N. et al. (in revision). West Coast of Vancouver Island Natural-Origin Chinook Salmon (Oncorhynchus tshawytscha) Stock Assessment. CSAS Working Paper20xx/nnn.
+Brown, N., Holt, C., Irvine, J.R., Luedke, W., McHugh, D., and Thom, M. (in revision). West Coast of Vancouver Island Natural-Origin Chinook Salmon (Oncorhynchus tshawytscha) Stock Assessment. CSAS Working Paper20xx/nnn.
 
 Holt, K.R., Holt, C.A., Warkentin, L., Wor, C., Davis, B., Arbeider, M., Bokvist, J., Crowley, S., Grant, S., Luedke, W., McHugh, D., Picco, C., and Van  Will, P. 2023. Case Study Applications of LRP Estimation Methods to Pacific  Salmon Stock Management Units. DFO Can. Sci. Advis. Sec. Res. Doc. 2023/010.  iv+129p.
 

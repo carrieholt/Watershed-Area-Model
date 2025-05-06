@@ -367,6 +367,7 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
       WCVIStocks <- read.csv("DataIn/WCVIStocks.csv") %>% 
         filter (Stock != "Cypre") %>% rename(inlets=Inlet)  
       if (remove.EnhStocks) wcviRPs_long <- 
+          # read.csv("DataOut/WCVI_SMSY_AllExMH.csv")#
           read.csv("DataOut/WCVI_SMSY_noEnh_wBC.csv")
       if (!remove.EnhStocks) wcviRPs_long <- 
           read.csv("DataOut/WCVI_SMSY_wEnh_wBC.csv")
@@ -447,6 +448,7 @@ Get.LRP.bs <- function (remove.EnhStocks=TRUE,  Bern_logistic=FALSE,
 
   if(run_logReg==FALSE){
     return(list(bench= select(SGENcalcs,-apar, -bpar)*Scale))
+    # return(list(apar= median(lnalpha_Parkin$loga)))
     
   }
   
@@ -825,14 +827,16 @@ run.bootstraps <- FALSE
 
 if (run.bootstraps){
     set.seed(1)
-    nBS <- 250000#80000 # number trials for bootstrapping
+    nBS <- 1#250000#80000 # number trials for bootstrapping
     outBench <- list() 
+    outApar <- list() 
     
     for (k in 1:nBS) {
-      out <- Get.LRP.bs(run_logReg=FALSE, prod = "LifeStageModel")
+      out <- Get.LRP.bs(run_logReg=FALSE, prod = "Parken")#LifeStageModel")
       # prod options are: "LifeStageModel"#"RunReconstruction")#Parken")
       outBench[[k]] <- out$bench
-    }
+      # outApar[[k]] <- out$apar
+      }
     
     # running.mean <- cumsum(LRP.bs$fit) / seq_along(LRP.bs$fit) 
     # plot(running.mean)
